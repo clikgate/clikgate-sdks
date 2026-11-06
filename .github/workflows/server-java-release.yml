@@ -1,0 +1,99 @@
+# Publish com.clikgate:clikgate-java, clikgate-servlet-javax, clikgate-servlet-jakarta and
+# clikgate-spring-boot-starter (and the parent POM) to Maven Central on tags server-java-v<semver> (S.17),
+# through the Sonatype Central Portal (central-publishing-maven-plugin) with GPG signatures and checksums,
+# plus a CycloneDX SBOM per artifact attached to the GitHub release. Maven Central has no OIDC trusted
+# publishing, so the Portal user token and the signing key are secrets of the environment maven-central
+# (docs/SERVER_SDKS.md): CENTRAL_TOKEN_USERNAME, CENTRAL_TOKEN_PASSWORD, GPG_PRIVATE_KEY, GPG_PASSPHRASE.
+name: server-java-release
+
+on:
+  push:
+    tags: ["server-java-v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-java-release
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server/java
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: scripts/check-version.sh
+      - run: mvn -B -ntp verify -Dconformance=true
+      - name: The release jars (with -sources and -javadoc; no signing) and the SBOM
+        run: mvn -B -ntp -P release,sbom -Dgpg.skip -DskipTests package
+      - name: Release scan (fails the release on internal comments, TODO notes, debug code, internal or staff URLs)
+        run: node ../scripts/scan-package.mjs clikgate-java/target/*.jar clikgate-servlet-javax/target/*.jar clikgate-servlet-jakarta/target/*.jar ../java-spring-boot-starter/target/*.jar README.md CHANGELOG.md ../java-spring-boot-starter/README.md
+      - name: Collect the SBOMs
+        run: |
+          mkdir -p ../../sbom
+          v="${GITHUB_REF_NAME#server-java-v}"
+          for m in clikgate-java clikgate-servlet-javax clikgate-servlet-jakarta; do cp "$m/target/bom.json" "../../sbom/$m-$v.cdx.json"; done
+          cp ../java-spring-boot-starter/target/bom.json "../../sbom/clikgate-spring-boot-starter-$v.cdx.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom
+          path: sbom/
+          if-no-files-found: error
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: maven-central
+    defaults:
+      run:
+        working-directory: server/java
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # writes settings.xml with the server "central" and imports the signing key
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+          server-id: central
+          server-username: CENTRAL_TOKEN_USERNAME
+          server-password: CENTRAL_TOKEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Sign, upload and publish through the Central Portal
+        env:
+          CENTRAL_TOKEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          CENTRAL_TOKEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: mvn -B -ntp -P release -DskipTests deploy
+
+  release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # attach the SBOMs to the GitHub release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sbom
+          path: sbom
+      - name: GitHub release with the SBOMs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${GITHUB_REF_NAME#server-java-v}"
+          gh release create "$GITHUB_REF_NAME" --title "com.clikgate:clikgate-java $v" \
+            --notes "See server/java/CHANGELOG.md. Published to Maven Central with GPG signatures: clikgate-java, clikgate-servlet-javax, clikgate-servlet-jakarta and clikgate-spring-boot-starter." \
+            sbom/*.cdx.json

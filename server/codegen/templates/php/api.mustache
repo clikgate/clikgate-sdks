@@ -1,0 +1,62 @@
+{{#operations}}
+CLASS_START {{classname}}
+/**
+ * {{baseName}}: generated from openapi.json. See https://clikgate.com/docs/api.
+ */
+final class {{classname}}
+{
+    /** @internal */
+    public function __construct(private readonly Requester $r)
+    {
+    }
+{{#operation}}
+
+    /**
+     * {{{summary}}}
+     *
+     * `{{httpMethod}} {{{path}}}`
+     *
+     * ```php
+     * PHP_EXAMPLE {{{vendorExtensions.x-cg-example}}}
+     * ```
+     *
+{{#pathParams}}
+     * @param string ${{paramName}} `{{baseName}}`
+{{/pathParams}}
+{{#bodyParam}}
+     * @param array<string, mixed>{{^required}}|null{{/required}} $body {{baseType}}
+{{/bodyParam}}
+{{#queryParams}}
+     * @param mixed ${{paramName}} `{{baseName}}` ({{{dataType}}})
+{{/queryParams}}
+     * @param array<string, mixed> $options `idempotencyKey`, `timeout` (seconds), `maxRetries`
+     *
+     * @return {{#vendorExtensions.x-cg-binary}}BinaryResponse{{/vendorExtensions.x-cg-binary}}{{^vendorExtensions.x-cg-binary}}mixed {{#returnType}}{{{returnBaseType}}}{{/returnType}}{{^returnType}}JSON{{/returnType}} (the decoded wire JSON){{/vendorExtensions.x-cg-binary}}
+     */
+    public function {{nickname}}({{#pathParams}}string ${{paramName}}, {{/pathParams}}{{#bodyParam}}{{^required}}?{{/required}}array $body{{^required}} = null{{/required}}, {{/bodyParam}}{{#queryParams}}mixed ${{paramName}} = null, {{/queryParams}}array $options = []): {{#vendorExtensions.x-cg-binary}}BinaryResponse{{/vendorExtensions.x-cg-binary}}{{^vendorExtensions.x-cg-binary}}mixed{{/vendorExtensions.x-cg-binary}}
+    {
+        $req = (new ApiRequest('{{httpMethod}}', Requester::path('{{{path}}}', [{{#pathParams}}'{{baseName}}' => ${{paramName}}, {{/pathParams}}]), [{{#queryParams}}'{{baseName}}' => ${{paramName}}, {{/queryParams}}]))->withOptions($options);
+{{#bodyParam}}
+{{#required}}
+        $req->withBody($body);
+{{/required}}
+{{^required}}
+        if (null !== $body) {
+            $req->withBody($body);
+        }
+{{/required}}
+{{/bodyParam}}
+{{#vendorExtensions.x-cg-binary}}
+        $res = $this->r->send($req);
+
+        return new BinaryResponse($res->headers['content-type'] ?? 'application/octet-stream', $res->body);
+{{/vendorExtensions.x-cg-binary}}
+{{^vendorExtensions.x-cg-binary}}
+
+        return $this->r->request($req)[1];
+{{/vendorExtensions.x-cg-binary}}
+    }
+{{/operation}}
+}
+CLASS_END
+{{/operations}}

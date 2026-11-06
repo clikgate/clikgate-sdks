@@ -1,0 +1,130 @@
+{
+  "name": "@clikgate/node",
+  "version": "1.1.0",
+  "description": "The official Clikgate server SDK for Node.js and TypeScript: send goals in three lines, keep the click ID, verify webhooks, with private mode built in.",
+  "keywords": [
+    "clikgate",
+    "attribution",
+    "goals",
+    "conversions",
+    "deep-linking",
+    "webhooks",
+    "express",
+    "fastify",
+    "nextjs"
+  ],
+  "homepage": "https://clikgate.com/docs/sdks/node",
+  "bugs": {
+    "url": "https://github.com/clikgate/clikgate-sdks/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clikgate/clikgate-sdks.git",
+    "directory": "server/node"
+  },
+  "license": "MIT",
+  "author": "Clikgate <sdk@clikgate.com> (https://clikgate.com)",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    },
+    "./express": {
+      "import": {
+        "types": "./dist/esm/express.d.ts",
+        "default": "./dist/esm/express.js"
+      },
+      "require": {
+        "types": "./dist/cjs/express.d.ts",
+        "default": "./dist/cjs/express.js"
+      }
+    },
+    "./fastify": {
+      "import": {
+        "types": "./dist/esm/fastify.d.ts",
+        "default": "./dist/esm/fastify.js"
+      },
+      "require": {
+        "types": "./dist/cjs/fastify.d.ts",
+        "default": "./dist/cjs/fastify.js"
+      }
+    },
+    "./next": {
+      "import": {
+        "types": "./dist/esm/next.d.ts",
+        "default": "./dist/esm/next.js"
+      },
+      "require": {
+        "types": "./dist/cjs/next.d.ts",
+        "default": "./dist/cjs/next.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:examples": "tsc -p examples/express/tsconfig.json --noEmit && tsc -p examples/nextjs/tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "node scripts/run-tests.mjs",
+    "test:unit": "node scripts/run-tests.mjs --unit",
+    "test:conformance": "node scripts/run-tests.mjs --conformance",
+    "check:version": "node scripts/check-version.mjs",
+    "check:package": "node scripts/check-package.mjs",
+    "generate": "node ../codegen/generate.mjs --lang node",
+    "generate:check": "node ../codegen/generate.mjs --lang node --check",
+    "sbom": "npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --omit dev --omit peer --omit optional --package-lock-only --spec-version 1.6 --output-reproducible --output-format JSON --output-file sbom.cdx.json",
+    "prepublishOnly": "npm run check:version && npm run build && npm run check:package"
+  },
+  "peerDependencies": {
+    "fastify": ">=5",
+    "next": ">=15"
+  },
+  "peerDependenciesMeta": {
+    "fastify": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/express": "5.0.6",
+    "@types/node": "18.19.130",
+    "@types/react": "19.3.0",
+    "eslint": "10.13.0",
+    "express": "5.3.0",
+    "fastify": "5.12.7",
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

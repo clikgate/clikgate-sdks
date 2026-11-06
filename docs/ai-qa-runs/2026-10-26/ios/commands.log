@@ -1,0 +1,3 @@
+npx -y @clikgate/setup --cwd $QA_OUT/runs/ios/project --sdk-key cg_sdk_test_x --domain go.example.com --platform ios --dry-run
+npx -y @clikgate/setup --cwd $QA_OUT/runs/ios/project --sdk-key cg_sdk_test_x --domain go.example.com --platform ios --yes
+npx -y @clikgate/setup doctor --json --cwd $QA_OUT/runs/ios/project --domain go.example.com

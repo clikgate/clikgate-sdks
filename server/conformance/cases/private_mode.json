@@ -1,0 +1,3178 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "private_mode",
+  "description": "Server SDK config and the private-mode guard (SPEC 12)",
+  "cases": [
+    {
+      "id": "private_mode.on.metadata",
+      "description": "private_mode true: metadata is refused locally and nothing reaches HTTP",
+      "client": {
+        "private_mode": true
+      },
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "metadata": {
+              "email": "secret@example.com"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "metadata",
+              "param": "metadata",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "logs_exclude": [
+          "secret@example.com"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.consent",
+      "description": "consent (the four-purpose consent object) is allowed in private mode, as the backend allows it since change 09",
+      "client": {
+        "private_mode": true
+      },
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "consent": {
+              "attribution": "granted",
+              "analytics": "denied"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-1",
+              "consent": {
+                "attribution": "granted",
+                "analytics": "denied"
+              }
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.consent_batch_background_conversion",
+      "description": "consent is allowed on batch items, background goal() and conversions in private mode",
+      "client": {
+        "private_mode": true,
+        "send_mode": "background"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "conversion",
+            "id": "cnv_7"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send_batch",
+          "args": {
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "R-0",
+                "consent": {
+                  "attribution": "granted"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-1",
+            "consent": {
+              "ad_user_data": "granted"
+            }
+          }
+        },
+        {
+          "call": "flush"
+        },
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-3",
+              "goal": "order_paid",
+              "consent": {
+                "attribution": "granted"
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-0",
+                  "consent": {
+                    "attribution": "granted"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-1",
+                  "consent": {
+                    "ad_user_data": "granted"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "method": "POST",
+            "path": "/v1/conversions",
+            "json": {
+              "external_id": "ORD-3",
+              "goal": "order_paid",
+              "consent": {
+                "attribution": "granted"
+              }
+            }
+          }
+        ],
+        "on_error": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.metadata_still_refused_with_consent",
+      "description": "metadata is still refused when consent is sent alongside it",
+      "client": {
+        "private_mode": true
+      },
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "consent": {
+              "attribution": "granted"
+            },
+            "metadata": {
+              "email": "secret@example.com"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "metadata",
+              "param": "metadata",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "logs_exclude": [
+          "secret@example.com"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.extra_email",
+      "description": "An extra email field is refused by name",
+      "client": {
+        "private_mode": true
+      },
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "extra": {
+              "email": "secret@example.com"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "email",
+              "param": "email",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "logs_exclude": [
+          "secret@example.com"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.order",
+      "description": "The first refused field is metadata, then consent, then alphabetical",
+      "client": {
+        "private_mode": true
+      },
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "metadata": {
+              "a": 1
+            },
+            "extra": {
+              "hashed_phone": "abc"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "metadata",
+              "param": "metadata",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        },
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "extra": {
+              "zeta": 1,
+              "alpha": 2
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "alpha",
+              "param": "alpha",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.allowed",
+      "description": "The allow-list fields are sent",
+      "client": {
+        "private_mode": true
+      },
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000",
+            "currency": "NGN",
+            "is_first": true,
+            "occurred_at": "2026-10-23T09:12:00Z"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-55231",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "value": "2000000",
+              "currency": "NGN",
+              "is_first": true,
+              "occurred_at": "2026-10-23T09:12:00Z"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.provider_allowed",
+      "description": "Change 12 (backend V.7): provider is on the goal allow-list (a gateway name, not personal data)",
+      "client": {
+        "private_mode": true
+      },
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T123456",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "7500",
+            "currency": "NGN",
+            "provider": "paystack"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "order_paid",
+              "reference": "T123456",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "value": "7500",
+              "currency": "NGN",
+              "provider": "paystack"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.provider_batch_and_conversion",
+      "description": "Change 12: provider is allowed on batch items and conversions in private mode too",
+      "client": {
+        "private_mode": true
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "conversion",
+            "id": "cnv_5"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send_batch",
+          "args": {
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "R-0",
+                "provider": "stripe"
+              }
+            ]
+          }
+        },
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-2",
+              "goal": "order_paid",
+              "value": "10",
+              "provider": "stripe"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-0",
+                  "provider": "stripe"
+                }
+              ]
+            }
+          },
+          {
+            "method": "POST",
+            "path": "/v1/conversions",
+            "json": {
+              "external_id": "ORD-2",
+              "goal": "order_paid",
+              "value": "10",
+              "provider": "stripe"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.null_is_unset",
+      "description": "A null metadata is \"unset\", not refused",
+      "client": {
+        "private_mode": true
+      },
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-2",
+            "metadata": null
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-2"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.reverse_reason",
+      "description": "Free-text reason on a reversal is refused",
+      "client": {
+        "private_mode": true
+      },
+      "steps": [
+        {
+          "call": "goals.reverse",
+          "args": {
+            "key": "loan_disbursed",
+            "reference": "LN-1",
+            "reason": "customer Ada asked"
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "reason",
+              "param": "reason",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.reverse_value",
+      "description": "A partial reversal value is allowed",
+      "client": {
+        "private_mode": true
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.reverse",
+          "args": {
+            "key": "loan_disbursed",
+            "reference": "LN-1",
+            "value": "1000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "json": {
+              "goal": "loan_disbursed",
+              "reference": "LN-1",
+              "value": "1000"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.conversion_allowed",
+      "description": "conversions.create allows external_id with the goal fields",
+      "client": {
+        "private_mode": true
+      },
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "conversion",
+            "id": "cnv_3"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-1",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "goal": "order_paid",
+              "value": "1500.50",
+              "currency": "NGN"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/conversions",
+            "json": {
+              "external_id": "ORD-1",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "goal": "order_paid",
+              "value": "1500.50",
+              "currency": "NGN"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.conversion_type",
+      "description": "conversions.create refuses type",
+      "client": {
+        "private_mode": true
+      },
+      "steps": [
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-1",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "type": "purchase"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "type",
+              "param": "type",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "logs_exclude": [
+          "secret@example.com"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.conversion_amount_minor",
+      "description": "conversions.create refuses amount_minor",
+      "client": {
+        "private_mode": true
+      },
+      "steps": [
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-1",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "amount_minor": 150050
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "amount_minor",
+              "param": "amount_minor",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "logs_exclude": [
+          "secret@example.com"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.conversion_customer",
+      "description": "conversions.create refuses customer",
+      "client": {
+        "private_mode": true
+      },
+      "steps": [
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-1",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "customer": {
+                "email": "secret@example.com"
+              }
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "customer",
+              "param": "customer",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "logs_exclude": [
+          "secret@example.com"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.batch",
+      "description": "A refused field in a batch throws with the index; nothing is sent",
+      "client": {
+        "private_mode": true
+      },
+      "steps": [
+        {
+          "call": "goals.send_batch",
+          "args": {
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "R-0"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-1",
+                "metadata": {
+                  "email": "secret@example.com"
+                }
+              }
+            ]
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "metadata",
+              "param": "metadata",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ],
+              "index": 1
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.on.background_redacts",
+      "description": "Background: a refused event goes to on_error with the reference redacted; the others are sent",
+      "client": {
+        "send_mode": "background",
+        "private_mode": true
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-SECRET-77",
+            "metadata": {
+              "email": "secret@example.com"
+            }
+          }
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-OK-1"
+          }
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "json": {
+              "events": [
+                {
+                  "goal": "account_opened",
+                  "reference": "APP-OK-1"
+                }
+              ]
+            }
+          }
+        ],
+        "on_error": [
+          {
+            "class": "PrivateModeFieldRejectedError",
+            "field": "metadata",
+            "events": [
+              {
+                "goal": "account_opened",
+                "reference": "[redacted]"
+              }
+            ]
+          }
+        ],
+        "logs_exclude": [
+          "APP-SECRET-77",
+          "APP-OK-1",
+          "secret@example.com"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.off.no_config",
+      "description": "private_mode false never fetches config and sends metadata",
+      "client": {
+        "private_mode": false
+      },
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "metadata": {
+              "plan": "gold"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-1",
+              "metadata": {
+                "plan": "gold"
+              }
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.on",
+      "description": "auto + config private_mode true: config is fetched, then metadata is refused locally",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": true,
+            "click_id_param": "cgid",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "metadata": {
+              "email": "secret@example.com"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "metadata",
+              "param": "metadata",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.off",
+      "description": "auto + config private_mode false: metadata is sent",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": false,
+            "click_id_param": "cgid",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "metadata": {
+              "plan": "gold"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-1",
+              "metadata": {
+                "plan": "gold"
+              }
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.cached",
+      "description": "Config is cached: two sends, one config request",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": false,
+            "click_id_param": "cgid",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        },
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-2"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.cache_fresh_at_599999",
+      "description": "Still cached 599,999 ms later",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": false,
+            "click_id_param": "cgid",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        },
+        {
+          "call": "advance_clock",
+          "args": {
+            "ms": 599999
+          }
+        },
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-2"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.cache_expires",
+      "description": "Refetched once 10 minutes have passed, and the new answer applies",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": false,
+            "click_id_param": "cgid",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": true,
+            "click_id_param": "cgid",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        },
+        {
+          "call": "advance_clock",
+          "args": {
+            "ms": 600000
+          }
+        },
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-2",
+            "metadata": {
+              "a": 1
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "metadata",
+              "param": "metadata",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          },
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.config_404_fails_closed",
+      "description": "Config unavailable (404 from an older backend): the guard is on, warning config_unavailable",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 404,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "not_found",
+              "code": "resource_missing",
+              "message": "Not found.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "metadata": {
+              "email": "secret@example.com"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "metadata",
+              "param": "metadata",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          }
+        ],
+        "warnings": [
+          "config_unavailable"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.config_500_single_attempt",
+      "description": "The config request is never retried; an allowed goal is still sent",
+      "client": {
+        "private_mode": "auto",
+        "max_retries": 3
+      },
+      "responses": [
+        {
+          "status": 500,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "internal_error",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ],
+        "warnings": [
+          "config_unavailable"
+        ],
+        "sleeps_ms": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.config_timeout",
+      "description": "A config timeout fails closed too",
+      "client": {
+        "private_mode": "auto",
+        "timeout_ms": 300
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": false,
+            "click_id_param": "cgid",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          },
+          "delay_ms": 1500
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "metadata": {
+              "plan": "gold"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "metadata",
+              "param": "metadata",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          }
+        ],
+        "warnings": [
+          "config_unavailable"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.negative_cache",
+      "description": "After a config failure the SDK waits 60 s before asking again",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": false,
+            "click_id_param": "cgid",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        },
+        {
+          "call": "advance_clock",
+          "args": {
+            "ms": 30000
+          }
+        },
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-2"
+          }
+        },
+        {
+          "call": "advance_clock",
+          "args": {
+            "ms": 30000
+          }
+        },
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-3"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          },
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ],
+        "warnings": [
+          "config_unavailable"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.minimum_version",
+      "description": "Below the minimum SDK version: one warning per client",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": false,
+            "click_id_param": "cgid",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "99.0.0",
+              "python": "99.0.0",
+              "php": "99.0.0",
+              "java": "99.0.0",
+              "dotnet": "99.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        },
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-2"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ],
+        "warnings": [
+          "sdk_below_minimum_version"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.unknown_goal",
+      "description": "An unknown goal warns once per key and is still sent",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": false,
+            "click_id_param": "cgid",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "mystery_goal",
+            "reference": "M-1"
+          }
+        },
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "mystery_goal",
+            "reference": "M-2"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ],
+        "warnings": [
+          "unknown_goal"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.value_rules",
+      "description": "value_not_allowed and value_required warn (the server decides)",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": false,
+            "click_id_param": "cgid",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "signup",
+            "reference": "S-1",
+            "value": "5"
+          }
+        },
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "loan_disbursed",
+            "reference": "L-1"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ],
+        "warnings": [
+          "value_not_allowed",
+          "value_required"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.config_call",
+      "description": "config() returns the cached config",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": false,
+            "click_id_param": "ref",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "config.get",
+          "expect": {
+            "result": {
+              "private_mode": false,
+              "click_id_param": "ref",
+              "organization_id": {
+                "$regex": "^org_"
+              }
+            }
+          }
+        },
+        {
+          "call": "config.get",
+          "expect": {
+            "result": {
+              "click_id_param": "ref"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.links_skip_config",
+      "description": "Link calls never fetch config",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.create",
+          "args": {
+            "params": {
+              "destination_url": "https://example.com/spring"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/links"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "private_mode.auto.background",
+      "description": "Background + auto: the sender fetches config before the first batch",
+      "client": {
+        "send_mode": "background",
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": false,
+            "click_id_param": "cgid",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-0"
+          }
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-0"
+                }
+              ]
+            }
+          }
+        ],
+        "on_error": []
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

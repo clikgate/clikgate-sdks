@@ -1,0 +1,264 @@
+{
+  "description": "Change 11 server helper vectors (payments.fromPaystack / fromFlutterwave / fromMonnify / fromStripe). `amount` is what a helper sends (the shortest exact decimal in normal units); `amount_minor` is what Clikgate stores (ISO 4217 minor units). The backend tests (tests/payments/test_helpers_and_gateways.py) run every vector.",
+  "checked_at": "2026-10-28",
+  "amounts": [
+    {
+      "provider": "paystack",
+      "input_amount": 750000,
+      "currency": "NGN",
+      "amount": "7500",
+      "amount_minor": 750000
+    },
+    {
+      "provider": "paystack",
+      "input_amount": 10050,
+      "currency": "GHS",
+      "amount": "100.5",
+      "amount_minor": 10050
+    },
+    {
+      "provider": "paystack",
+      "input_amount": 10000,
+      "currency": "XOF",
+      "amount": "100",
+      "amount_minor": 100
+    },
+    {
+      "provider": "paystack",
+      "input_amount": "5000",
+      "currency": "NGN",
+      "amount": "50",
+      "amount_minor": 5000
+    },
+    {
+      "provider": "flutterwave",
+      "input_amount": 100,
+      "currency": "NGN",
+      "amount": "100",
+      "amount_minor": 10000
+    },
+    {
+      "provider": "flutterwave",
+      "input_amount": 1500.25,
+      "currency": "NGN",
+      "amount": "1500.25",
+      "amount_minor": 150025
+    },
+    {
+      "provider": "flutterwave",
+      "input_amount": "10.70",
+      "currency": "USD",
+      "amount": "10.7",
+      "amount_minor": 1070
+    },
+    {
+      "provider": "flutterwave",
+      "input_amount": 5000,
+      "currency": "UGX",
+      "amount": "5000",
+      "amount_minor": 5000
+    },
+    {
+      "provider": "monnify",
+      "input_amount": "100.00",
+      "currency": "NGN",
+      "amount": "100",
+      "amount_minor": 10000
+    },
+    {
+      "provider": "monnify",
+      "input_amount": 3000,
+      "currency": "NGN",
+      "amount": "3000",
+      "amount_minor": 300000
+    },
+    {
+      "provider": "stripe",
+      "input_amount": 2000,
+      "currency": "usd",
+      "amount": "20",
+      "amount_minor": 2000
+    },
+    {
+      "provider": "stripe",
+      "input_amount": 500,
+      "currency": "jpy",
+      "amount": "500",
+      "amount_minor": 500
+    },
+    {
+      "provider": "stripe",
+      "input_amount": 50000,
+      "currency": "ugx",
+      "amount": "500",
+      "amount_minor": 500
+    },
+    {
+      "provider": "stripe",
+      "input_amount": 50000,
+      "currency": "isk",
+      "amount": "500",
+      "amount_minor": 500
+    },
+    {
+      "provider": "stripe",
+      "input_amount": 1000,
+      "currency": "xof",
+      "amount": "1000",
+      "amount_minor": 1000
+    },
+    {
+      "provider": "stripe",
+      "input_amount": 1999,
+      "currency": "eur",
+      "amount": "19.99",
+      "amount_minor": 1999
+    }
+  ],
+  "helpers": [
+    {
+      "helper": "fromPaystack",
+      "source": "PaystackOSS/doc-code-snippets src/api/transactions/verify/response.json (fields the helper reads)",
+      "input": {
+        "status": true,
+        "data": {
+          "reference": "re4lyvq3s3",
+          "status": "success",
+          "amount": 40333,
+          "currency": "NGN",
+          "paid_at": "2024-08-22T09:15:02.000Z",
+          "domain": "test",
+          "metadata": ""
+        }
+      },
+      "expected": {
+        "provider": "paystack",
+        "reference": "re4lyvq3s3",
+        "aliases": [],
+        "status": "success",
+        "amount": "403.33",
+        "currency": "NGN",
+        "occurred_at": "2024-08-22T09:15:02Z",
+        "click_id": null
+      }
+    },
+    {
+      "helper": "fromFlutterwave",
+      "source": "developer.flutterwave.com/docs/transaction-verification (fields the helper reads)",
+      "input": {
+        "status": "success",
+        "data": {
+          "id": 1163068,
+          "tx_ref": "akhlm-pstmn-blkchrge-xx6",
+          "flw_ref": "FLW-M03K-02c21a8095c7e064b8b9714db834080b",
+          "status": "successful",
+          "amount": 3000,
+          "currency": "NGN",
+          "created_at": "2020-03-11T19:22:07.000Z"
+        }
+      },
+      "expected": {
+        "provider": "flutterwave",
+        "reference": "akhlm-pstmn-blkchrge-xx6",
+        "aliases": [
+          "1163068",
+          "FLW-M03K-02c21a8095c7e064b8b9714db834080b"
+        ],
+        "status": "success",
+        "amount": "3000",
+        "currency": "NGN",
+        "occurred_at": "2020-03-11T19:22:07Z",
+        "click_id": null
+      }
+    },
+    {
+      "helper": "fromMonnify",
+      "source": "Monnify Get Transaction Status (teamapt.atlassian.net/wiki/spaces/MON/pages/213909851)",
+      "input": {
+        "requestSuccessful": true,
+        "responseBody": {
+          "transactionReference": "MNFY|20200226093601|002095",
+          "paymentReference": "330854835",
+          "amountPaid": "100.00",
+          "paidOn": "26/02/2020 09:38:13 AM",
+          "paymentStatus": "PAID",
+          "currency": "NGN",
+          "metaData": {
+            "name": "Damilare",
+            "age": "45"
+          }
+        }
+      },
+      "expected": {
+        "provider": "monnify",
+        "reference": "330854835",
+        "aliases": [
+          "MNFY|20200226093601|002095"
+        ],
+        "status": "success",
+        "amount": "100",
+        "currency": "NGN",
+        "occurred_at": null,
+        "click_id": null
+      }
+    },
+    {
+      "helper": "fromStripe",
+      "source": "docs.stripe.com/api/payment_intents/object, status set to succeeded",
+      "input": {
+        "id": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+        "object": "payment_intent",
+        "amount": 2000,
+        "amount_received": 2000,
+        "currency": "usd",
+        "status": "succeeded",
+        "created": 1680800504,
+        "livemode": false,
+        "metadata": {
+          "cg_click_id": "clk_01JFABCDEFGHJKMNPQRSTVWXYZ"
+        }
+      },
+      "expected": {
+        "provider": "stripe",
+        "reference": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+        "aliases": [],
+        "status": "success",
+        "amount": "20",
+        "currency": "USD",
+        "occurred_at": "2023-04-06T17:01:44Z",
+        "click_id": "clk_01JFABCDEFGHJKMNPQRSTVWXYZ"
+      }
+    },
+    {
+      "helper": "fromStripe",
+      "source": "docs.stripe.com/api/checkout/sessions/object, paid",
+      "input": {
+        "id": "cs_test_a11YYufWQzNY63zpQ6QSNRQhkUpVph4WRmzW0zWJO2znZKdVujZ0N0S22u",
+        "object": "checkout.session",
+        "amount_total": 2198,
+        "currency": "usd",
+        "payment_status": "paid",
+        "status": "complete",
+        "payment_intent": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+        "client_reference_id": "cart-77",
+        "created": 1679600215,
+        "livemode": false,
+        "metadata": {}
+      },
+      "expected": {
+        "provider": "stripe",
+        "reference": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+        "aliases": [
+          "cs_test_a11YYufWQzNY63zpQ6QSNRQhkUpVph4WRmzW0zWJO2znZKdVujZ0N0S22u",
+          "cart-77"
+        ],
+        "status": "success",
+        "amount": "21.98",
+        "currency": "USD",
+        "occurred_at": "2023-03-23T19:36:55Z",
+        "click_id": null
+      }
+    }
+  ],
+  "helper_rules": "Send only provider, reference, aliases (when any), status, amount, currency, occurred_at (omit when the gateway's time isn't ISO 8601 or Unix seconds) and click_id (when cg_click_id is in the metadata). `test` may be sent from Paystack `domain` and Stripe `livemode`."
+}

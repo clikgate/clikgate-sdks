@@ -1,0 +1,71 @@
+{
+    "name": "clikgate/clikgate-laravel",
+    "description": "Laravel integration for the Clikgate server SDK: auto-discovered provider, Clikgate facade, click-ID middleware and queued goal sending.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "clikgate",
+        "laravel",
+        "attribution",
+        "goals",
+        "webhooks"
+    ],
+    "homepage": "https://clikgate.com/docs/sdks/php/laravel",
+    "support": {
+        "issues": "https://github.com/clikgate/clikgate-sdks/issues",
+        "source": "https://github.com/clikgate/clikgate-laravel",
+        "security": "https://clikgate.com/trust"
+    },
+    "authors": [
+        {
+            "name": "Clikgate",
+            "email": "sdk@clikgate.com",
+            "homepage": "https://clikgate.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "clikgate/clikgate-php": "^1.0",
+        "illuminate/contracts": "^11.0 || ^12.0 || ^13.0",
+        "illuminate/http": "^11.0 || ^12.0 || ^13.0",
+        "illuminate/queue": "^11.0 || ^12.0 || ^13.0",
+        "illuminate/support": "^11.0 || ^12.0 || ^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0 || ^10.0 || ^11.0",
+        "phpstan/phpstan": "^2.3",
+        "phpunit/phpunit": "^10.5 || ^11.5 || ^12.4 || ^13.4",
+        "friendsofphp/php-cs-fixer": "^3.95"
+    },
+    "autoload": {
+        "psr-4": {
+            "Clikgate\\Laravel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Clikgate\\Laravel\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Clikgate\\Laravel\\ClikgateServiceProvider"
+            ],
+            "aliases": {
+                "Clikgate": "Clikgate\\Laravel\\Facades\\Clikgate"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": false
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "lint": "php-cs-fixer fix --dry-run --diff"
+    }
+}

@@ -1,0 +1,17 @@
+#!/bin/sh
+# QA shim: `npm install @clikgate/node[@version]` installs the local tarball ($CLIKGATE_QA_NODE_TGZ),
+# because the package isn't on npm yet. Everything else goes to the real npm. Calls are logged.
+printf 'npm %s\n' "$*" >> "${CLIKGATE_QA_LOG:-/dev/null}"
+case "$1" in
+  install|i|add|isntall)
+    out=""
+    for a in "$@"; do
+      case "$a" in
+        @clikgate/node|@clikgate/node@*) a="$CLIKGATE_QA_NODE_TGZ" ;;
+      esac
+      out="$out '$(printf %s "$a" | sed "s/'/'\\\\''/g")'"
+    done
+    eval "set -- $out"
+    ;;
+esac
+exec "$CLIKGATE_QA_REAL_NPM" "$@"

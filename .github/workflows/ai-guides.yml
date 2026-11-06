@@ -1,0 +1,133 @@
+# AI guides (ai-guides/): validate the skill, keep api-surface.md in sync with the SDKs, compile every
+# `clikgate-check` code block, and publish the resolved skill to the public clikgate/clikgate-skills repository.
+#
+# The setup command (`npx @clikgate/setup`) and the mobile SDKs live in clikgate/clikgate-mobile-sdk: the jobs
+# check it out into mobile-sdk/ (CLIKGATE_CLI_DIR=mobile-sdk/cli for check.mjs). Changes there don't trigger
+# this workflow, so it also runs weekly to catch drift (versions, flags, check IDs, public APIs).
+# MOBILE_SDK_READ_TOKEN is only needed while clikgate/clikgate-mobile-sdk is private: a fine-grained token with
+# read-only "Contents" on that repository. Once it is public, github.token is enough and the secret can go.
+name: ai-guides
+
+on:
+  push:
+    branches: [main]
+    paths: ["ai-guides/**", "server/node/src/**", ".github/workflows/ai-guides.yml"]
+  pull_request:
+    paths: ["ai-guides/**", "server/node/src/**", ".github/workflows/ai-guides.yml"]
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish to clikgate/clikgate-skills (run after an SDK release)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-guides-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MOBILE_SDK_REPO: clikgate/clikgate-mobile-sdk
+  SKILLS_REPO: clikgate/clikgate-skills
+
+jobs:
+  validate:
+    # Frontmatter, links, versions, commands against `--help`, check IDs and doctor JSON fields.
+    runs-on: ubuntu-latest
+    env:
+      CLIKGATE_CLI_DIR: mobile-sdk/cli
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.MOBILE_SDK_REPO }}
+          path: mobile-sdk
+          token: ${{ secrets.MOBILE_SDK_READ_TOKEN || github.token }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile-sdk/cli/package-lock.json
+      - name: Build the setup command (clikgate-mobile-sdk/cli)
+        run: npm ci && npm run build
+        working-directory: mobile-sdk/cli
+      - run: node ai-guides/scripts/check.mjs
+      - run: node ai-guides/scripts/build.mjs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ai-guides-dist
+          path: ai-guides/dist
+          if-no-files-found: error
+
+  sdk-sync:
+    # api-surface.md must match the SDKs' public API, and every checked code block must compile.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.MOBILE_SDK_REPO }}
+          path: mobile-sdk
+          token: ${{ secrets.MOBILE_SDK_READ_TOKEN || github.token }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+      - name: Build @clikgate/node (declarations for api-surface.md and the ts blocks)
+        run: npm ci && npm run build
+        working-directory: server/node
+      - name: Install the React Native package's dev dependencies (types for the ts blocks)
+        run: npm ci --ignore-scripts
+        working-directory: mobile-sdk/react-native
+      - name: api-surface.md is up to date
+        # The web script lives in the private backend repository: its section is kept as committed.
+        run: node ai-guides/scripts/generate-api-surface.mjs --mobile mobile-sdk --check
+      - name: Build the Android SDK classes (for the kotlin blocks)
+        run: |
+          (cd mobile-sdk/android && ./gradlew --no-daemon :clikgate:assembleRelease)
+          aar=$(ls mobile-sdk/android/clikgate/build/outputs/aar/*release*.aar | head -1)
+          mkdir -p "$RUNNER_TEMP/aar" && unzip -q -o "$aar" classes.jar -d "$RUNNER_TEMP/aar"
+          platform=$(ls -d "$ANDROID_HOME"/platforms/android-* | sort -V | tail -1)
+          echo "ANDROID_JAR=$platform/android.jar" >> "$GITHUB_ENV"
+          echo "CLIKGATE_ANDROID_CLASSES=$RUNNER_TEMP/aar/classes.jar" >> "$GITHUB_ENV"
+      - name: Compile the checked code blocks
+        # Swift is syntax-checked only (no Mac in CI); the typecheck runs locally with --swift-typecheck.
+        run: node ai-guides/scripts/check-code-blocks.mjs --mobile mobile-sdk --require ts,swift,dart,kotlin
+
+  publish:
+    # On an SDK release: copy the resolved skill to the public skills repository (S.7 distribution).
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    needs: [validate, sdk-sync]
+    runs-on: ubuntu-latest
+    environment: skills
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ai-guides-dist
+          path: dist
+      - name: Push to clikgate/clikgate-skills
+        env:
+          DEPLOY_KEY: ${{ secrets.SKILLS_DEPLOY_KEY }}
+        run: |
+          test -n "$DEPLOY_KEY" || { echo "SKILLS_DEPLOY_KEY is not set"; exit 1; }
+          mkdir -p ~/.ssh && printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/skills && chmod 600 ~/.ssh/skills
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/skills -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          git clone --depth 1 "git@github.com:${SKILLS_REPO}.git" skills-repo
+          rsync -a --delete --exclude .git dist/clikgate-skills/ skills-repo/
+          cd skills-repo
+          git config user.name "clikgate-bot" && git config user.email "sdk@clikgate.com"
+          git add -A
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -m "Update clikgate-setup from clikgate-sdks@${GITHUB_SHA::12}"
+          git push origin HEAD

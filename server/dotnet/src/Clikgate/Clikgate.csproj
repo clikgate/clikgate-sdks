@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- .NET Standard 2.0 covers .NET Framework 4.6.2+ (S.9); net8.0 and net10.0 use the in-box System.Text.Json -->
+    <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
+    <RootNamespace>Clikgate</RootNamespace>
+    <PackageId>Clikgate</PackageId>
+    <Description>The official Clikgate server SDK for .NET: send goals in three lines, keep the click ID, verify webhooks, with private mode built in. No dependencies on .NET 8+; System.Text.Json on .NET Standard 2.0.</Description>
+    <PackageTags>clikgate;attribution;goals;conversions;deep-linking;webhooks</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsTrimmable Condition="'$(TargetFramework)' != 'netstandard2.0'">true</IsTrimmable>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Text.Json" Version="10.0.14" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <InternalsVisibleTo Include="Clikgate.Tests" />
+    <InternalsVisibleTo Include="Clikgate.Conformance" />
+    <InternalsVisibleTo Include="Clikgate.AspNetCore" />
+  </ItemGroup>
+</Project>

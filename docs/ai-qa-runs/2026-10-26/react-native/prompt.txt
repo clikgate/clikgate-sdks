@@ -1,0 +1,3 @@
+Set up Clikgate in this project using the Clikgate setup skill (or https://clikgate.com/docs/ai/setup.md). My Clikgate app is "QA React Native" (Android: com.example.rnapp, iOS: com.example.rnapp). Prefer running `npx @clikgate/setup` and let me approve the sign-in in my browser. If you can't, use offline mode with my test SDK key `cg_sdk_test_x` and link domains `go.example.com`. Show me every change before making it, then run `npx @clikgate/setup doctor`.
+
+(This is an unattended run: nobody can open a browser or answer questions, so don't wait for an answer. I approve in advance the changes you show me: show them, then apply them.)

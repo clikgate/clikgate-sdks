@@ -1,0 +1,108 @@
+# Server SDK for PHP (server/php) and the Laravel package (server/php-laravel): static analysis (PHPStan max),
+# code style, unit tests and the cross-language conformance suite on every supported PHP plus the minimum
+# (8.1), on Linux and Windows; the Laravel package on Laravel 11, 12 and 13.
+# PHP versions checked 2026-10-26 (docs/DECISIONS.md): 8.2-8.5 are supported; 8.1 (EOL 2025-12-31) stays
+# tested because S.9 makes it the documented minimum.
+name: server-php
+
+on:
+  push:
+    branches: [main]
+    paths: ["server/php/**", "server/php-laravel/**", "server/conformance/**", "server/scripts/**", "server/SPEC.md", ".github/workflows/server-php.yml"]
+  pull_request:
+    paths: ["server/php/**", "server/php-laravel/**", "server/conformance/**", "server/scripts/**", "server/SPEC.md", ".github/workflows/server-php.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-php-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: phpstan, code style, version
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server/php
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: "8.4"
+          extensions: curl, mbstring
+          coverage: none
+      # the release scan (server/scripts/scan-package.mjs) needs Node 18+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: composer update --no-interaction --no-progress
+      - run: php scripts/check-version.php
+      - run: composer validate --strict
+      - run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+      - run: vendor/bin/php-cs-fixer fix --dry-run --diff
+      - name: Release scan of the Composer archives (no internal comments, notes, debug code, internal or staff URLs)
+        run: |
+          composer archive --format=zip --dir="$RUNNER_TEMP/archives" --file=clikgate-php
+          (cd ../php-laravel && composer archive --format=zip --dir="$RUNNER_TEMP/archives" --file=clikgate-laravel)
+          node ../scripts/scan-package.mjs "$RUNNER_TEMP/archives/clikgate-php.zip" "$RUNNER_TEMP/archives/clikgate-laravel.zip"
+
+  test:
+    name: test (php ${{ matrix.php }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        php: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+    defaults:
+      run:
+        working-directory: server/php
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, mbstring
+          coverage: none
+      # the conformance mock server needs Node 18+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      # resolves PHPUnit 10.5 on PHP 8.1 up to 13.x on PHP 8.4+
+      - run: composer update --no-interaction --no-progress
+      - run: vendor/bin/phpunit
+      - run: php tests/Conformance/runner.php
+
+  laravel:
+    name: laravel ${{ matrix.laravel }} (php ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { laravel: "11", testbench: "9", php: "8.2" }
+          - { laravel: "12", testbench: "10", php: "8.3" }
+          - { laravel: "13", testbench: "11", php: "8.3" }
+          - { laravel: "13", testbench: "11", php: "8.5" }
+    defaults:
+      run:
+        working-directory: server/php-laravel
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, mbstring
+          coverage: none
+      - name: Use the core package from this checkout
+        run: composer config repositories.clikgate-php '{"type":"path","url":"../php","options":{"symlink":false,"versions":{"clikgate/clikgate-php":"1.0.0"}}}'
+      - run: composer require --dev --no-update "orchestra/testbench:^${{ matrix.testbench }}.0"
+      - run: composer update --no-interaction --no-progress --with-all-dependencies
+      - run: vendor/bin/phpunit
+      - if: matrix.laravel == '13'
+        run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+      - if: matrix.laravel == '13'
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff

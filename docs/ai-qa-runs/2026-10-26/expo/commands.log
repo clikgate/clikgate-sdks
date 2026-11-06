@@ -1,0 +1,5 @@
+npx --yes @clikgate/setup --cwd $QA_OUT/runs/expo/project --sdk-key cg_sdk_test_x --domain go.example.com --dry-run
+npx --yes @clikgate/setup --cwd $QA_OUT/runs/expo/project --sdk-key cg_sdk_test_x --domain go.example.com --yes
+npm install
+npx --yes @clikgate/setup --cwd $QA_OUT/runs/expo/project --sdk-key cg_sdk_test_x --domain go.example.com --yes --no-install
+npx --yes @clikgate/setup doctor --cwd $QA_OUT/runs/expo/project --json --domain go.example.com

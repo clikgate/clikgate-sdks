@@ -1,0 +1,3 @@
+npx -y @clikgate/setup --cwd $QA_OUT/runs/android/project --sdk-key cg_sdk_test_x --domain go.example.com --dry-run
+npx -y @clikgate/setup --cwd $QA_OUT/runs/android/project --sdk-key cg_sdk_test_x --domain go.example.com --yes
+npx -y @clikgate/setup doctor --json --cwd $QA_OUT/runs/android/project --domain go.example.com

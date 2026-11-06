@@ -1,0 +1,1004 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "webhooks",
+  "description": "Webhook signature verification (SPEC 14, backend spec 13.3)",
+  "cases": [
+    {
+      "id": "webhooks.valid",
+      "description": "A valid signature returns the parsed event",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "result": {
+              "id": "evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV",
+              "type": "goal.completed",
+              "data": {
+                "object": {
+                  "goal": "account_opened"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.valid.bytes",
+      "description": "A byte buffer body works the same",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": {
+              "$bytes_base64": "eyJpZCI6ImV2dF8wMUpDSzhaOVY3UTRNMk42UDhSMFMyVDRFViIsIm9iamVjdCI6ImV2ZW50IiwidHlwZSI6ImdvYWwuY29tcGxldGVkIiwiYXBpX3ZlcnNpb24iOiIyMDI2LTEwLTAxIiwiY3JlYXRlZF9hdCI6IjIwMjYtMTAtMjZUMTI6MDA6MDBaIiwib3JnYW5pemF0aW9uX2lkIjoib3JnXzAxSkNLOFo5VjdRNE0yTjZQOFIwUzJUNE9SIiwibGl2ZW1vZGUiOmZhbHNlLCJkYXRhIjp7Im9iamVjdCI6eyJvYmplY3QiOiJnb2FsX2V2ZW50IiwiaWQiOiJjbnZfMSIsImdvYWwiOiJhY2NvdW50X29wZW5lZCIsInZhbHVlIjoiMjAwMDAwMCIsImN1cnJlbmN5IjoiTkdOIn0sInByZXZpb3VzX2F0dHJpYnV0ZXMiOm51bGx9fQ=="
+            },
+            "header": "t=1793016000,v1=ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "result": {
+              "id": "evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV",
+              "type": "goal.completed",
+              "data": {
+                "object": {
+                  "goal": "account_opened"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.valid.unicode",
+      "description": "Multi-byte UTF-8 is signed over its bytes",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"note\":\"Ọjà ₦ 東京 😀\"}}}",
+            "header": "t=1793016000,v1=dce08fd555d872c4fc30d960ebfa58b530ba8e198aea20e9a674a41bae9ce041",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "result": {
+              "id": "evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV",
+              "data": {
+                "object": {
+                  "note": "Ọjà ₦ 東京 😀"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.valid.whitespace",
+      "description": "Spaces around parts are trimmed",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": " t=1793016000 ,  v1=ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c ",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "result": {
+              "id": "evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV",
+              "type": "goal.completed",
+              "data": {
+                "object": {
+                  "goal": "account_opened"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.valid.rotation_second",
+      "description": "During rotation the header has two v1 values (new first); the old secret matches the second",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=e1cf36796a47144ee48e36d3d60143dbae7fdb7226192c0b24cacbc60250ab0d,v1=ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "result": {
+              "id": "evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV",
+              "type": "goal.completed",
+              "data": {
+                "object": {
+                  "goal": "account_opened"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.valid.v0_ignored",
+      "description": "Unknown schemes are ignored",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v0=deadbeef,v1=ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "result": {
+              "id": "evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV",
+              "type": "goal.completed",
+              "data": {
+                "object": {
+                  "goal": "account_opened"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.valid.edge_of_tolerance",
+      "description": "Exactly 300 s old is accepted",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793015700,v1=b3abe5a3d41a764842a436d6ff31fac85fb0abc231b26180fe8980c183526889",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "result": {
+              "id": "evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV",
+              "type": "goal.completed",
+              "data": {
+                "object": {
+                  "goal": "account_opened"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.valid.tolerance_zero",
+      "description": "tolerance 0 disables the time check (tests only)",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 0,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1792929600,v1=6f02188f3b7fa90f54f6e164d8eb62e980cedc835670dc7ecce6791cae745cc7",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "result": {
+              "id": "evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV",
+              "type": "goal.completed",
+              "data": {
+                "object": {
+                  "goal": "account_opened"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.valid.custom_tolerance",
+      "description": "A custom tolerance of 600 s accepts 500 s old",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 600,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793015500,v1=e8962a220ed060012ec0a8d8710b094fe6fff4aa4c3b70095a5a6c243c727afb",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "result": {
+              "id": "evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV",
+              "type": "goal.completed",
+              "data": {
+                "object": {
+                  "goal": "account_opened"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.valid.subscription_updated",
+      "description": "subscription.updated (change 10) carries the subscription with add_ons, change and add_on_key",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4SU\",\"object\":\"event\",\"type\":\"subscription.updated\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-27T09:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":true,\"data\":{\"object\":{\"object\":\"subscription\",\"id\":\"sub_01JCK8Z9V7Q4M2N6P8R0S2T4SB\",\"plan_key\":\"growth\",\"add_ons\":[{\"key\":\"domains_pack\",\"name\":\"Domains pack\",\"status\":\"active\",\"amount_minor\":4000000,\"ends_at\":null,\"remove_at_renewal\":false}]},\"previous_attributes\":null,\"change\":\"add_on.activated\",\"add_on_key\":\"domains_pack\"}}",
+            "header": "t=1793016000,v1=a890cca994c22c59ee2ec1ff328d6a47763ae86229ee4d64412b920e730ef22b",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "result": {
+              "type": "subscription.updated",
+              "data": {
+                "object": {
+                  "object": "subscription",
+                  "plan_key": "growth",
+                  "add_ons": [
+                    {
+                      "key": "domains_pack",
+                      "status": "active",
+                      "amount_minor": 4000000,
+                      "remove_at_renewal": false
+                    }
+                  ]
+                },
+                "change": "add_on.activated",
+                "add_on_key": "domains_pack"
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.valid.link_destination_changed",
+      "description": "link.destination_changed carries the link, from, to and the actor",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4DC\",\"object\":\"event\",\"type\":\"link.destination_changed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:05:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":true,\"data\":{\"object\":{\"object\":\"link\",\"id\":\"lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA\",\"destination_url\":\"https://example.com/summer\",\"locked\":false},\"previous_attributes\":null,\"from\":\"https://example.com/spring\",\"to\":\"https://example.com/summer\",\"actor\":{\"type\":\"user\",\"id\":\"usr_01JCK8Z9V7Q4M2N6P8R0S2T4US\",\"api_key_prefix\":null,\"requested_by\":\"key_01JCK8Z9V7Q4M2N6P8R0S2T4KY\",\"change_request_id\":\"lcr_01JCK8Z9V7Q4M2N6P8R0S2T4CR\"},\"actor_type\":\"user\",\"api_key_prefix\":null}}",
+            "header": "t=1793016000,v1=34ec78329168e379bba7a7d3518672c30c28bbccaefc3e7ad9769066c0f4e849",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "result": {
+              "type": "link.destination_changed",
+              "data": {
+                "object": {
+                  "object": "link"
+                },
+                "from": "https://example.com/spring",
+                "to": "https://example.com/summer",
+                "actor": {
+                  "type": "user",
+                  "change_request_id": "lcr_01JCK8Z9V7Q4M2N6P8R0S2T4CR"
+                },
+                "actor_type": "user"
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.expired",
+      "description": "301 s old is refused",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793015699,v1=d0857d5cf25f3569051fe65a72f4c71f4e33afbc89b6470f78d72b494ed81e01",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "timestamp_outside_tolerance",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.future",
+      "description": "301 s in the future is refused",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016301,v1=7cf08f719e44e198f55e6011813c75eceb7f613c65252a879cd8689c49537ad1",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "timestamp_outside_tolerance",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.tampered",
+      "description": "A changed body fails",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"9000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "no_matching_signature",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.tampered_timestamp",
+      "description": "A changed timestamp fails",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793015999,v1=ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "no_matching_signature",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.wrong_secret",
+      "description": "The wrong secret fails",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c",
+            "secret": "whsec_wrong"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "no_matching_signature",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.secret_without_prefix",
+      "description": "The key is the whole secret including whsec_",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=e7ac121fc37b9748184b9f498f708574f2a47c076180b8ca1337c70ce04efdfc",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "no_matching_signature",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.uppercase_hex",
+      "description": "Signatures are lowercase hex; uppercase does not match",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=AE7E62E61BA3A7CDEEA129D58EAD152D4C23ACB6C0AF727C4C005178ED4FA02C",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "no_matching_signature",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.short_signature",
+      "description": "A truncated signature is a mismatch, not a crash",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=ae7e62e61ba3a7cdeea1",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "no_matching_signature",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.missing_header",
+      "description": "An empty header",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "missing_signature",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.missing_header_null",
+      "description": "A missing (null) header",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": null,
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "missing_signature",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.no_v1",
+      "description": "No v1 value",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016000",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "malformed_signature",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.no_t",
+      "description": "No timestamp",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "v1=ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "malformed_signature",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.bad_t",
+      "description": "A non-numeric timestamp",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=abc,v1=ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "malformed_signature",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.only_v0",
+      "description": "Only an unknown scheme",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v0=ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "malformed_signature",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.not_json",
+      "description": "A correctly signed body that is not JSON",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "hello",
+            "header": "t=1793016000,v1=51fe857092b7ec2de9aa5f8778a03c060f110d9e1c6d0014698e6421a2212cf7",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "invalid_payload",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.json_array",
+      "description": "A correctly signed JSON array is not an event",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "[1,2]",
+            "header": "t=1793016000,v1=c7c43373cb751d1e47129d765fc06450479574796d0ac53019c8d8427cf4f066",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b"
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "invalid_payload",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.any.second_secret",
+      "description": "verify_any: the second secret matches",
+      "steps": [
+        {
+          "call": "webhooks.verify_any",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c",
+            "secrets": [
+              "whsec_test_old_7a1d33e2c0",
+              "whsec_test_5f2bc1d0a9e84f7b"
+            ]
+          },
+          "expect": {
+            "result": {
+              "id": "evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV",
+              "type": "goal.completed",
+              "data": {
+                "object": {
+                  "goal": "account_opened"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.any.first_secret",
+      "description": "verify_any: the first secret matches the second v1",
+      "steps": [
+        {
+          "call": "webhooks.verify_any",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=e13b0abcc389d34226e052596955a9210779b3c8d89e94c380d5406ce35ba07b,v1=356030ec78c30e569d72e5b74f3f9f954f043c38c9e121a85af046ed7908028d",
+            "secrets": [
+              "whsec_test_old_7a1d33e2c0",
+              "whsec_test_5f2bc1d0a9e84f7b"
+            ]
+          },
+          "expect": {
+            "result": {
+              "id": "evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV",
+              "type": "goal.completed",
+              "data": {
+                "object": {
+                  "goal": "account_opened"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.any.none",
+      "description": "verify_any: no secret matches",
+      "steps": [
+        {
+          "call": "webhooks.verify_any",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=e13b0abcc389d34226e052596955a9210779b3c8d89e94c380d5406ce35ba07b",
+            "secrets": [
+              "whsec_test_old_7a1d33e2c0",
+              "whsec_test_5f2bc1d0a9e84f7b"
+            ]
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "no_matching_signature",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.any.expired",
+      "description": "verify_any still checks the timestamp",
+      "steps": [
+        {
+          "call": "webhooks.verify_any",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793015600,v1=5949a18d1aa45560f0d8bced3f6968476032396f1ba8adc1c876cd9fe170e2f4",
+            "secrets": [
+              "whsec_test_5f2bc1d0a9e84f7b"
+            ]
+          },
+          "expect": {
+            "error": {
+              "class": "SignatureVerificationError",
+              "code": "timestamp_outside_tolerance",
+              "message_excludes": [
+                "whsec_test_5f2bc1d0a9e84f7b",
+                "ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhooks.any.empty",
+      "description": "verify_any with no secrets is an argument error",
+      "steps": [
+        {
+          "call": "webhooks.verify_any",
+          "args": {
+            "now": 1793016000,
+            "tolerance": 300,
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\"},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=ae7e62e61ba3a7cdeea129d58ead152d4c23acb6c0af727c4c005178ed4fa02c",
+            "secrets": []
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_argument"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

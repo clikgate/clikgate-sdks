@@ -1,0 +1,97 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]  # 1.27+ writes PEP 639 licence metadata; 1.32 needs Python 3.10, so no pin
+build-backend = "hatchling.build"
+
+[project]
+name = "clikgate"
+version = "1.1.0"
+description = "The official Clikgate server SDK for Python: send goals in three lines, keep the click ID, verify webhooks, with private mode built in."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+authors = [{ name = "Clikgate", email = "sdk@clikgate.com" }]
+keywords = ["clikgate", "attribution", "goals", "conversions", "deep-linking", "webhooks", "django", "flask", "fastapi"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
+  "Framework :: Django",
+  "Framework :: Flask",
+  "Framework :: FastAPI",
+  "Typing :: Typed",
+]
+# The one runtime dependency (S.13). Framework add-ons use extras and never add core dependencies.
+dependencies = ["httpx>=0.27,<1"]
+
+[project.optional-dependencies]
+django = ["django>=4.2"]
+flask = ["flask>=2.3"]
+fastapi = ["starlette>=0.37"]
+starlette = ["starlette>=0.37"]
+
+[project.urls]
+Homepage = "https://clikgate.com/docs/sdks/python"
+Documentation = "https://clikgate.com/docs/sdks/python"
+Source = "https://github.com/clikgate/clikgate-sdks/tree/main/server/python"
+Issues = "https://github.com/clikgate/clikgate-sdks/issues"
+Changelog = "https://github.com/clikgate/clikgate-sdks/blob/main/server/python/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/clikgate"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/clikgate", "README.md", "CHANGELOG.md", "SECURITY.md", "LICENSE", "pyproject.toml"]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 140
+src = ["src", "tests"]
+extend-exclude = ["src/clikgate/api.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "BLE", "C4", "SIM", "RUF", "PT", "PL", "ANN", "TID"]
+ignore = [
+  "PLR0911", "PLR0912", "PLR0913", "PLR0915", "PLR2004", "PLW0603", "PLC0415",
+  "S101",     # asserts in tests
+  "UP006", "UP007", "UP035", "UP045", # keep typing.Optional/List: annotations are evaluated on Python 3.9
+  "ANN401",   # Any is the honest type for JSON
+  "BLE001",   # goal() must never throw: broad catches are deliberate and documented
+  "S110",     # the same: a broken logger or callback is swallowed on purpose
+  "PLR0917",  # option-heavy internals take their arguments positionally
+  "RUF022",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "S", "PLR", "B017", "PT011", "SIM117", "E501"]
+"scripts/**" = ["S603", "E501"]
+"examples/**" = ["ANN", "S", "T201", "INP001"]
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+files = ["src/clikgate", "tests", "examples"]
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+# decorators of untyped frameworks (Django has no inline types; the add-ons take the app as Any)
+module = ["clikgate.flask", "tests.*", "views", "flask_app", "fastapi_app"]
+disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+module = ["django.*", "flask.*", "werkzeug.*", "starlette.*", "fastapi.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"

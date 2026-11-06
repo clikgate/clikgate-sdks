@@ -1,0 +1,88 @@
+# Publish clikgate (Python) on tags server-python-v<semver> (S.17), with PyPI trusted publishing (OIDC,
+# no token) and PEP 740 attestations (on by default in pypa/gh-action-pypi-publish), plus a CycloneDX SBOM
+# attached to the GitHub release. PyPI side (docs/SERVER_SDKS.md): a pending publisher for project
+# clikgate, repository clikgate/clikgate-sdks, workflow server-python-release.yml, environment pypi.
+name: server-python-release
+
+on:
+  push:
+    tags: ["server-python-v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-python-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server/python
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: pip install -r requirements-dev.txt -e .
+      - run: python scripts/check_version.py
+      - run: ruff check src tests scripts examples
+      - run: mypy
+      - run: python scripts/run_tests.py
+      - run: python -m build
+      - run: python scripts/check_package.py
+      - name: Release scan (no internal comments, notes, debug code, internal or staff URLs)
+        run: node ../scripts/scan-package.mjs dist/*.whl dist/*.tar.gz
+      - name: CycloneDX SBOM (runtime dependencies only)
+        run: |
+          python -m venv --without-pip /tmp/sbom-env
+          pip --python /tmp/sbom-env/bin/python install dist/*.whl
+          cyclonedx-py environment --pyproject pyproject.toml --spec-version 1.6 --output-reproducible --output-format JSON --output-file sbom.cdx.json /tmp/sbom-env
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: server/python/dist/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom
+          path: server/python/sbom.cdx.json
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest # trusted publishing needs a GitHub-hosted runner
+    environment: pypi
+    permissions:
+      id-token: write # OIDC token for PyPI trusted publishing and attestations
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+
+  release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # attach the SBOM to the GitHub release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sbom
+      - name: GitHub release with the SBOM
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${GITHUB_REF_NAME#server-python-v}"
+          mv sbom.cdx.json "clikgate-python-$v.cdx.json"
+          gh release create "$GITHUB_REF_NAME" --title "clikgate (Python) $v" \
+            --notes "See server/python/CHANGELOG.md. Published to PyPI with trusted publishing and PEP 740 attestations." \
+            "clikgate-python-$v.cdx.json"

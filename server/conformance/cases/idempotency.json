@@ -1,0 +1,779 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "idempotency",
+  "description": "Idempotency keys (SPEC 7)",
+  "cases": [
+    {
+      "id": "idempotency.goal.random",
+      "description": "goals.send: Idempotency-Key is a random UUID v4, not a hash of the reference (change 09 X.E15)",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "idempotency.goal.not_hash",
+      "description": "The key is never sha256_hex(goal:reference), also for non-ASCII references",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "ORD-ñ-東京-1",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "ORD-ñ-東京-1"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            },
+            "json": {
+              "goal": "order_paid",
+              "reference": "ORD-ñ-東京-1"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "idempotency.goal.same_twice",
+      "description": "Sending the same goal and reference twice sends two different keys; the API answers 200 with the stored event, a success",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        },
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            }
+          },
+          {
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            },
+            "idempotency_key_differs_from": 0
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "idempotency.goal.retry_reuses_key",
+      "description": "A 503 then 201: the retry of one goals.send call reuses its random key and body",
+      "responses": [
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "counted": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            }
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "idempotency_key_same_as": 0
+          }
+        ],
+        "sleeps_ms": [
+          250
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "idempotency.goal.override",
+      "description": "The idempotency_key request option overrides the random goal key",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000",
+            "idempotency_key": "my-goal-key-1"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "headers": {
+              "idempotency-key": "my-goal-key-1"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "idempotency.reverse.random",
+      "description": "Reversals use a random key per call (two identical partial refunds are legitimate)",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.reverse",
+          "args": {
+            "key": "order_paid",
+            "reference": "ORD-1",
+            "value": "500"
+          }
+        },
+        {
+          "call": "goals.reverse",
+          "args": {
+            "key": "order_paid",
+            "reference": "ORD-1",
+            "value": "500"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            }
+          },
+          {
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            },
+            "idempotency_key_differs_from": 0
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "idempotency.batch.random",
+      "description": "goals.send_batch uses a random UUID v4",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "APP-55231",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                }
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send_batch",
+          "args": {
+            "events": [
+              {
+                "goal": "account_opened",
+                "reference": "APP-55231"
+              }
+            ]
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "idempotency.patch.random",
+      "description": "PATCH sends a random UUID v4",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.update",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "params": {
+              "title": "Spring"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "PATCH",
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "idempotency.conversion.random",
+      "description": "conversions.create sends a random UUID v4",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "conversion",
+            "id": "cnv_1"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-9",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/conversions",
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "idempotency.goal.sync_mode",
+      "description": "goal() in sync mode sends one POST /v1/goals/events with a random UUID v4 key",
+      "client": {
+        "send_mode": "sync"
+      },
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          }
+        },
+        {
+          "call": "flush",
+          "expect": {
+            "result": {
+              "value": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            },
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-55231",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        ],
+        "on_error": []
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

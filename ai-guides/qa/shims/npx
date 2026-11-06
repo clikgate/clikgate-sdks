@@ -1,0 +1,23 @@
+#!/bin/sh
+# QA shim: `npx [-y|--yes] @clikgate/setup[@version] …` runs the local build of the setup command
+# ($CLIKGATE_QA_CLI, set by run.sh to $CLIKGATE_CLI_DIR/dist/cli.cjs, i.e. clikgate_mobile_sdk/cli by
+# default), because the package isn't on npm yet. Everything else goes to the real npx.
+# Every call is logged to $CLIKGATE_QA_LOG so the evaluation can see the order of commands.
+printf 'npx %s\n' "$*" >> "${CLIKGATE_QA_LOG:-/dev/null}"
+pkg_seen=0
+for a in "$@"; do
+  case "$a" in
+    @clikgate/setup|@clikgate/setup@*) pkg_seen=1 ;;
+  esac
+done
+if [ "$pkg_seen" = 1 ]; then
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -y|--yes|--no-install|-q|--quiet) shift ;;
+      @clikgate/setup|@clikgate/setup@*) shift; break ;;
+      *) break ;;
+    esac
+  done
+  exec node "${CLIKGATE_QA_CLI:-${CLIKGATE_CLI_DIR:?set CLIKGATE_QA_CLI or CLIKGATE_CLI_DIR}/dist/cli.cjs}" "$@"
+fi
+exec "$CLIKGATE_QA_REAL_NPX" "$@"

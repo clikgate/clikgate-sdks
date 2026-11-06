@@ -1,0 +1,5132 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "payments",
+  "description": "Payments confirmed by the business server: payments.confirm and the gateway helpers (SPEC 22; backend C11 B2.2, B2.3)",
+  "cases": [
+    {
+      "id": "payments.confirm.full",
+      "description": "Every B2.2 field maps to the wire; the confirmation object is returned",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500.00",
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "aliases": [
+              "T_alias_1"
+            ],
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "goal": "order_paid",
+            "test": true
+          },
+          "expect": {
+            "result": {
+              "object": "payment_confirmation",
+              "match_status": "matched",
+              "duplicate": false,
+              "amount_minor": 750000
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "query": {},
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            },
+            "json": {
+              "provider": "paystack",
+              "reference": "T_ref_001",
+              "status": "success",
+              "amount": "7500.00",
+              "currency": "NGN",
+              "occurred_at": "2026-10-28T10:00:00Z",
+              "aliases": [
+                "T_alias_1"
+              ],
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "goal": "order_paid",
+              "test": true
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.minimal_pending",
+      "description": "pending and failed may omit amount and currency; unset options are omitted",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "T_ref_001",
+            "status": "pending",
+            "amount": null,
+            "amount_minor": null,
+            "currency": null,
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "waiting_for_report",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "flutterwave",
+            "reference": "F_1",
+            "status": "pending",
+            "goal": null,
+            "aliases": null
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "json": {
+              "provider": "flutterwave",
+              "reference": "F_1",
+              "status": "pending"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.amount_minor",
+      "description": "amount_minor is sent as an integer instead of amount",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_2",
+            "status": "success",
+            "amount_minor": 750000,
+            "currency": "NGN"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "json": {
+              "provider": "paystack",
+              "reference": "T_2",
+              "status": "success",
+              "amount_minor": 750000,
+              "currency": "NGN"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.amount_decimal",
+      "description": "A native decimal amount keeps its scale (SPEC 8)",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_3",
+            "status": "success",
+            "amount": {
+              "$decimal": "1500.50"
+            },
+            "currency": "NGN"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "json": {
+              "provider": "paystack",
+              "reference": "T_3",
+              "status": "success",
+              "amount": "1500.50",
+              "currency": "NGN"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.amount_integer",
+      "description": "An integer amount is sent as its digits, in a string",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "stripe",
+            "reference": "pi_4",
+            "status": "refunded",
+            "amount": 20,
+            "currency": "usd"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "json": {
+              "provider": "stripe",
+              "reference": "pi_4",
+              "status": "refunded",
+              "amount": "20",
+              "currency": "usd"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.occurred_at_datetime",
+      "description": "A native datetime is sent as RFC 3339 UTC",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_5",
+            "status": "success",
+            "amount": "10",
+            "currency": "NGN",
+            "occurred_at": {
+              "$datetime": "2026-10-28T10:00:00Z"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "json": {
+              "provider": "paystack",
+              "reference": "T_5",
+              "status": "success",
+              "amount": "10",
+              "currency": "NGN",
+              "occurred_at": "2026-10-28T10:00:00Z"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.duplicate",
+      "description": "A repeat answers 200 with duplicate true: success, not an error",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": true
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "currency": "NGN"
+          },
+          "expect": {
+            "result": {
+              "duplicate": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.retry_same_key",
+      "description": "A 503 is retried with the same Idempotency-Key and body",
+      "responses": [
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_6",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN"
+          },
+          "expect": {
+            "result": {
+              "object": "payment_confirmation"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            }
+          },
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "idempotency_key_same_as": 0
+          }
+        ],
+        "sleeps_ms": [
+          250
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.idempotency_key",
+      "description": "A caller-supplied Idempotency-Key is used as given",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_7",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN",
+            "idempotency_key": "pay-T_7"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "headers": {
+              "idempotency-key": "pay-T_7"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.server_422",
+      "description": "A 422 from the API is an InvalidRequestError with its code and param, not retried",
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "environment_mismatch",
+              "message": "This is a test payment and the key is live.",
+              "param": "test",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_8",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN",
+            "test": true
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "environment_mismatch",
+              "param": "test",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.plan_feature_unavailable",
+      "description": "Change 12 (backend C12 V1.6): payments need Starter or above; Free gets 403 plan_feature_unavailable, a PermissionError with required_plan",
+      "responses": [
+        {
+          "status": 403,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "permission",
+              "code": "plan_feature_unavailable",
+              "message": "You're on Free. Payment goals are included from Starter. Upgrade to Starter to use them.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ",
+              "feature": "payment_goals",
+              "required_plan": "starter"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_9",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN"
+          },
+          "expect": {
+            "error": {
+              "class": "PermissionError",
+              "code": "plan_feature_unavailable",
+              "http_status": 403,
+              "required_plan": "starter"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.unknown_provider",
+      "description": "Change 12: a well-formed provider this SDK does not know is sent; the API answers 422 unknown_provider (not retried)",
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "unknown_provider",
+              "message": "Unknown provider \"acme_pay\". Use a provider from GET /v1/payment-gateways.",
+              "param": "provider",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "acme_pay",
+            "reference": "T_10",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "unknown_provider",
+              "param": "provider",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "json": {
+              "provider": "acme_pay",
+              "reference": "T_10",
+              "status": "success",
+              "amount": "50",
+              "currency": "NGN"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.local.missing_provider",
+      "description": "Local validation: missing provider → invalid_provider; nothing is sent",
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": null,
+            "reference": "T_10",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_provider",
+              "param": "provider",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.local.provider_format",
+      "description": "Local validation: provider format → invalid_provider; nothing is sent",
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "Paystack",
+            "reference": "T_10",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_provider",
+              "param": "provider",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.local.missing_reference",
+      "description": "Local validation: missing reference → invalid_reference; nothing is sent",
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": null,
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_reference",
+              "param": "reference",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.local.empty_reference",
+      "description": "Local validation: empty reference → invalid_reference; nothing is sent",
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_reference",
+              "param": "reference",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.local.long_reference",
+      "description": "Local validation: long reference → invalid_reference; nothing is sent",
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_reference",
+              "param": "reference",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.local.missing_status",
+      "description": "Local validation: missing status → invalid_status; nothing is sent",
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_10",
+            "status": null,
+            "amount": "50",
+            "currency": "NGN"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_status",
+              "param": "status",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.local.unknown_status",
+      "description": "Local validation: unknown status → invalid_status; nothing is sent",
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_10",
+            "status": "paid",
+            "amount": "50",
+            "currency": "NGN"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_status",
+              "param": "status",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.local.amount_and_amount_minor",
+      "description": "Local validation: amount and amount minor → amount_and_amount_minor; nothing is sent",
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_10",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN",
+            "amount_minor": 5000
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "amount_and_amount_minor",
+              "param": "amount",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.local.amount_format",
+      "description": "Local validation: amount format → invalid_amount; nothing is sent",
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_10",
+            "status": "success",
+            "amount": "1,500",
+            "currency": "NGN"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_amount",
+              "param": "amount",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.local.amount_negative",
+      "description": "Local validation: amount negative → invalid_amount; nothing is sent",
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_10",
+            "status": "success",
+            "amount": "-5",
+            "currency": "NGN"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_amount",
+              "param": "amount",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.local.amount_minor_negative",
+      "description": "Local validation: amount minor negative → invalid_amount; nothing is sent",
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_10",
+            "status": "success",
+            "amount": null,
+            "currency": "NGN",
+            "amount_minor": -1
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_amount",
+              "param": "amount_minor",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.local.currency_format",
+      "description": "Local validation: currency format → invalid_currency; nothing is sent",
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_10",
+            "status": "success",
+            "amount": "50",
+            "currency": "NAIRA"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_currency",
+              "param": "currency",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.local.too_many_aliases",
+      "description": "Local validation: too many aliases → invalid_aliases; nothing is sent",
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_10",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN",
+            "aliases": [
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6"
+            ]
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_aliases",
+              "param": "aliases",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.local.goal_format",
+      "description": "Local validation: goal format → invalid_goal_key; nothing is sent",
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_10",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN",
+            "goal": "Order Paid"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_goal_key",
+              "param": "goal",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.private.allowed",
+      "description": "Private mode: every B2.2 field is on the allow-list (click_id included)",
+      "client": {
+        "private_mode": true
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "h:9f2c",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_11",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "aliases": [
+              "A_1"
+            ],
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "goal": "order_paid",
+            "test": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "json": {
+              "provider": "paystack",
+              "reference": "T_11",
+              "status": "success",
+              "amount": "50",
+              "currency": "NGN",
+              "occurred_at": "2026-10-28T10:00:00Z",
+              "aliases": [
+                "A_1"
+              ],
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "goal": "order_paid",
+              "test": true
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.private.extra_email",
+      "description": "Private mode: an extra email field is refused by name and nothing is sent",
+      "client": {
+        "private_mode": true
+      },
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_12",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN",
+            "extra": {
+              "email": "secret@example.com"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "email",
+              "param": "email",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "logs_exclude": [
+          "secret@example.com",
+          "T_12"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.private.extra_order",
+      "description": "Private mode: the first refused extra field is reported alphabetically",
+      "client": {
+        "private_mode": true
+      },
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_13",
+            "status": "success",
+            "extra": {
+              "phone": "+2348000000000",
+              "customer": {
+                "email": "secret@example.com"
+              }
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "customer",
+              "param": "customer",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "logs_exclude": [
+          "secret@example.com"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.extra_off",
+      "description": "Private mode off: extra fields are merged last and sent (the API decides)",
+      "client": {
+        "private_mode": false
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_14",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN",
+            "extra": {
+              "future_field": 1
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "json": {
+              "provider": "paystack",
+              "reference": "T_14",
+              "status": "success",
+              "amount": "50",
+              "currency": "NGN",
+              "future_field": 1
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.confirm.private.auto_config",
+      "description": "private_mode auto: config is fetched before the first confirmation and the guard follows it",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": true,
+            "click_id_param": "cgid",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_15",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN",
+            "extra": {
+              "email": "secret@example.com"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "email",
+              "param": "email",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        },
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "paystack",
+            "reference": "T_15",
+            "status": "success",
+            "amount": "50",
+            "currency": "NGN"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          },
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "json": {
+              "provider": "paystack",
+              "reference": "T_15",
+              "status": "success",
+              "amount": "50",
+              "currency": "NGN"
+            }
+          }
+        ],
+        "logs_exclude": [
+          "secret@example.com"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.from.vector_0_paystack",
+      "description": "fromPaystack sends only the extracted fields (PaystackOSS/doc-code-snippets src/api/transactions/verify/response.json (fields the helper reads))",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "re4lyvq3s3",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.from",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "re4lyvq3s3",
+                "status": "success",
+                "amount": 40333,
+                "currency": "NGN",
+                "paid_at": "2024-08-22T09:15:02.000Z",
+                "domain": "test",
+                "metadata": ""
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "object": "payment_confirmation",
+              "reference": "re4lyvq3s3"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            },
+            "json": {
+              "provider": "paystack",
+              "reference": "re4lyvq3s3",
+              "status": "success",
+              "amount": "403.33",
+              "currency": "NGN",
+              "occurred_at": "2024-08-22T09:15:02Z",
+              "test": true
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.from.vector_1_flutterwave",
+      "description": "fromFlutterwave sends only the extracted fields (developer.flutterwave.com/docs/transaction-verification (fields the helper reads))",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "flutterwave",
+            "reference": "akhlm-pstmn-blkchrge-xx6",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.from",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "status": "success",
+              "data": {
+                "id": 1163068,
+                "tx_ref": "akhlm-pstmn-blkchrge-xx6",
+                "flw_ref": "FLW-M03K-02c21a8095c7e064b8b9714db834080b",
+                "status": "successful",
+                "amount": 3000,
+                "currency": "NGN",
+                "created_at": "2020-03-11T19:22:07.000Z"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "object": "payment_confirmation",
+              "reference": "akhlm-pstmn-blkchrge-xx6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            },
+            "json": {
+              "provider": "flutterwave",
+              "reference": "akhlm-pstmn-blkchrge-xx6",
+              "aliases": [
+                "1163068",
+                "FLW-M03K-02c21a8095c7e064b8b9714db834080b"
+              ],
+              "status": "success",
+              "amount": "3000",
+              "currency": "NGN",
+              "occurred_at": "2020-03-11T19:22:07Z"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.from.vector_2_monnify",
+      "description": "fromMonnify sends only the extracted fields (Monnify Get Transaction Status (teamapt.atlassian.net/wiki/spaces/MON/pages/213909851))",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "monnify",
+            "reference": "330854835",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.from",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "transactionReference": "MNFY|20200226093601|002095",
+                "paymentReference": "330854835",
+                "amountPaid": "100.00",
+                "paidOn": "26/02/2020 09:38:13 AM",
+                "paymentStatus": "PAID",
+                "currency": "NGN",
+                "metaData": {
+                  "name": "Damilare",
+                  "age": "45"
+                }
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "object": "payment_confirmation",
+              "reference": "330854835"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            },
+            "json": {
+              "provider": "monnify",
+              "reference": "330854835",
+              "aliases": [
+                "MNFY|20200226093601|002095"
+              ],
+              "status": "success",
+              "amount": "100",
+              "currency": "NGN"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.from.vector_3_stripe",
+      "description": "fromStripe sends only the extracted fields (docs.stripe.com/api/payment_intents/object, status set to succeeded)",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "stripe",
+            "reference": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.from",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+              "object": "payment_intent",
+              "amount": 2000,
+              "amount_received": 2000,
+              "currency": "usd",
+              "status": "succeeded",
+              "created": 1680800504,
+              "livemode": false,
+              "metadata": {
+                "cg_click_id": "clk_01JFABCDEFGHJKMNPQRSTVWXYZ"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "object": "payment_confirmation",
+              "reference": "pi_3MtwBwLkdIwHu7ix28a3tqPa"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            },
+            "json": {
+              "provider": "stripe",
+              "reference": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+              "status": "success",
+              "amount": "20",
+              "currency": "USD",
+              "occurred_at": "2023-04-06T17:01:44Z",
+              "click_id": "clk_01JFABCDEFGHJKMNPQRSTVWXYZ",
+              "test": true
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.from.vector_4_stripe",
+      "description": "fromStripe sends only the extracted fields (docs.stripe.com/api/checkout/sessions/object, paid)",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "stripe",
+            "reference": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.from",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "cs_test_a11YYufWQzNY63zpQ6QSNRQhkUpVph4WRmzW0zWJO2znZKdVujZ0N0S22u",
+              "object": "checkout.session",
+              "amount_total": 2198,
+              "currency": "usd",
+              "payment_status": "paid",
+              "status": "complete",
+              "payment_intent": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+              "client_reference_id": "cart-77",
+              "created": 1679600215,
+              "livemode": false,
+              "metadata": {}
+            }
+          },
+          "expect": {
+            "result": {
+              "object": "payment_confirmation",
+              "reference": "pi_3MtwBwLkdIwHu7ix28a3tqPa"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            },
+            "json": {
+              "provider": "stripe",
+              "reference": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+              "aliases": [
+                "cs_test_a11YYufWQzNY63zpQ6QSNRQhkUpVph4WRmzW0zWJO2znZKdVujZ0N0S22u",
+                "cart-77"
+              ],
+              "status": "success",
+              "amount": "21.98",
+              "currency": "USD",
+              "occurred_at": "2023-03-23T19:36:55Z",
+              "test": true
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.from.options",
+      "description": "goal and click_id options are added; the click_id option wins over the metadata",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "stripe",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.from",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+              "object": "payment_intent",
+              "amount": 2000,
+              "amount_received": 2000,
+              "currency": "usd",
+              "status": "succeeded",
+              "created": 1680800504,
+              "livemode": false,
+              "metadata": {
+                "cg_click_id": "clk_01JFABCDEFGHJKMNPQRSTVWXYZ"
+              }
+            },
+            "goal": "order_paid",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "json": {
+              "provider": "stripe",
+              "reference": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+              "status": "success",
+              "amount": "20",
+              "currency": "USD",
+              "occurred_at": "2023-04-06T17:01:44Z",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7",
+              "test": true,
+              "goal": "order_paid"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.from.nothing_to_send",
+      "description": "A Checkout Session with no_payment_required: nothing is sent and the result is null",
+      "steps": [
+        {
+          "call": "payments.from",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "cs_test_1",
+              "object": "checkout.session",
+              "amount_total": 0,
+              "currency": "usd",
+              "payment_status": "no_payment_required",
+              "status": "complete",
+              "payment_intent": "pi_1"
+            }
+          },
+          "expect": {
+            "result": null
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.from.unrecognised",
+      "description": "A response the helper does not recognise: nothing is sent, the result is null, unrecognised_payment_response is warned",
+      "steps": [
+        {
+          "call": "payments.from",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": false,
+              "message": "Transaction reference not found"
+            }
+          },
+          "expect": {
+            "result": null
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": [
+          "unrecognised_payment_response"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.from.private",
+      "description": "Private mode: the helper body is all allow-listed and is sent; the reference is not logged",
+      "client": {
+        "private_mode": true
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "h:9f2c",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.from",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "re4lyvq3s3",
+                "status": "success",
+                "amount": 40333,
+                "currency": "NGN",
+                "paid_at": "2024-08-22T09:15:02.000Z",
+                "domain": "test",
+                "metadata": ""
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "json": {
+              "provider": "paystack",
+              "reference": "re4lyvq3s3",
+              "status": "success",
+              "amount": "403.33",
+              "currency": "NGN",
+              "occurred_at": "2024-08-22T09:15:02Z",
+              "test": true
+            }
+          }
+        ],
+        "logs_exclude": [
+          "re4lyvq3s3"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.from.json_string",
+      "description": "The verify response may be passed as the raw JSON text",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "paystack",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "matched",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.from",
+          "args": {
+            "gateway": "paystack",
+            "response": "{\"status\":true,\"data\":{\"reference\":\"re4lyvq3s3\",\"status\":\"success\",\"amount\":40333,\"currency\":\"NGN\",\"paid_at\":\"2024-08-22T09:15:02.000Z\",\"domain\":\"test\",\"metadata\":\"\"}}"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations",
+            "json": {
+              "provider": "paystack",
+              "reference": "re4lyvq3s3",
+              "status": "success",
+              "amount": "403.33",
+              "currency": "NGN",
+              "occurred_at": "2024-08-22T09:15:02Z",
+              "test": true
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.vector_0_paystack",
+      "description": "fromPaystack: PaystackOSS/doc-code-snippets src/api/transactions/verify/response.json (fields the helper reads)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "re4lyvq3s3",
+                "status": "success",
+                "amount": 40333,
+                "currency": "NGN",
+                "paid_at": "2024-08-22T09:15:02.000Z",
+                "domain": "test",
+                "metadata": ""
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "re4lyvq3s3",
+                "status": "success",
+                "amount": "403.33",
+                "currency": "NGN",
+                "occurred_at": "2024-08-22T09:15:02Z",
+                "test": true
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.vector_1_flutterwave",
+      "description": "fromFlutterwave: developer.flutterwave.com/docs/transaction-verification (fields the helper reads)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "status": "success",
+              "data": {
+                "id": 1163068,
+                "tx_ref": "akhlm-pstmn-blkchrge-xx6",
+                "flw_ref": "FLW-M03K-02c21a8095c7e064b8b9714db834080b",
+                "status": "successful",
+                "amount": 3000,
+                "currency": "NGN",
+                "created_at": "2020-03-11T19:22:07.000Z"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "flutterwave",
+                "reference": "akhlm-pstmn-blkchrge-xx6",
+                "aliases": [
+                  "1163068",
+                  "FLW-M03K-02c21a8095c7e064b8b9714db834080b"
+                ],
+                "status": "success",
+                "amount": "3000",
+                "currency": "NGN",
+                "occurred_at": "2020-03-11T19:22:07Z"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.vector_2_monnify",
+      "description": "fromMonnify: Monnify Get Transaction Status (teamapt.atlassian.net/wiki/spaces/MON/pages/213909851)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "transactionReference": "MNFY|20200226093601|002095",
+                "paymentReference": "330854835",
+                "amountPaid": "100.00",
+                "paidOn": "26/02/2020 09:38:13 AM",
+                "paymentStatus": "PAID",
+                "currency": "NGN",
+                "metaData": {
+                  "name": "Damilare",
+                  "age": "45"
+                }
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "330854835",
+                "aliases": [
+                  "MNFY|20200226093601|002095"
+                ],
+                "status": "success",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.vector_3_stripe",
+      "description": "fromStripe: docs.stripe.com/api/payment_intents/object, status set to succeeded",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+              "object": "payment_intent",
+              "amount": 2000,
+              "amount_received": 2000,
+              "currency": "usd",
+              "status": "succeeded",
+              "created": 1680800504,
+              "livemode": false,
+              "metadata": {
+                "cg_click_id": "clk_01JFABCDEFGHJKMNPQRSTVWXYZ"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+                "status": "success",
+                "amount": "20",
+                "currency": "USD",
+                "occurred_at": "2023-04-06T17:01:44Z",
+                "click_id": "clk_01JFABCDEFGHJKMNPQRSTVWXYZ",
+                "test": true
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.vector_4_stripe",
+      "description": "fromStripe: docs.stripe.com/api/checkout/sessions/object, paid",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "cs_test_a11YYufWQzNY63zpQ6QSNRQhkUpVph4WRmzW0zWJO2znZKdVujZ0N0S22u",
+              "object": "checkout.session",
+              "amount_total": 2198,
+              "currency": "usd",
+              "payment_status": "paid",
+              "status": "complete",
+              "payment_intent": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+              "client_reference_id": "cart-77",
+              "created": 1679600215,
+              "livemode": false,
+              "metadata": {}
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+                "aliases": [
+                  "cs_test_a11YYufWQzNY63zpQ6QSNRQhkUpVph4WRmzW0zWJO2znZKdVujZ0N0S22u",
+                  "cart-77"
+                ],
+                "status": "success",
+                "amount": "21.98",
+                "currency": "USD",
+                "occurred_at": "2023-03-23T19:36:55Z",
+                "test": true
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_0_paystack_ngn",
+      "description": "paystack amount 750000 NGN → \"7500\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_amt",
+                "status": "success",
+                "amount": 750000,
+                "currency": "NGN"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_amt",
+                "status": "success",
+                "amount": "7500",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_1_paystack_ghs",
+      "description": "paystack amount 10050 GHS → \"100.5\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_amt",
+                "status": "success",
+                "amount": 10050,
+                "currency": "GHS"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_amt",
+                "status": "success",
+                "amount": "100.5",
+                "currency": "GHS"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_2_paystack_xof",
+      "description": "paystack amount 10000 XOF → \"100\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_amt",
+                "status": "success",
+                "amount": 10000,
+                "currency": "XOF"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_amt",
+                "status": "success",
+                "amount": "100",
+                "currency": "XOF"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_3_paystack_ngn",
+      "description": "paystack amount \"5000\" NGN → \"50\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_amt",
+                "status": "success",
+                "amount": "5000",
+                "currency": "NGN"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_amt",
+                "status": "success",
+                "amount": "50",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_4_flutterwave_ngn",
+      "description": "flutterwave amount 100 NGN → \"100\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "status": "success",
+              "data": {
+                "tx_ref": "F_amt",
+                "status": "successful",
+                "amount": 100,
+                "currency": "NGN"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "flutterwave",
+                "reference": "F_amt",
+                "status": "success",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_5_flutterwave_ngn",
+      "description": "flutterwave amount 1500.25 NGN → \"1500.25\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "status": "success",
+              "data": {
+                "tx_ref": "F_amt",
+                "status": "successful",
+                "amount": 1500.25,
+                "currency": "NGN"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "flutterwave",
+                "reference": "F_amt",
+                "status": "success",
+                "amount": "1500.25",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_6_flutterwave_usd",
+      "description": "flutterwave amount \"10.70\" USD → \"10.7\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "status": "success",
+              "data": {
+                "tx_ref": "F_amt",
+                "status": "successful",
+                "amount": "10.70",
+                "currency": "USD"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "flutterwave",
+                "reference": "F_amt",
+                "status": "success",
+                "amount": "10.7",
+                "currency": "USD"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_7_flutterwave_ugx",
+      "description": "flutterwave amount 5000 UGX → \"5000\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "status": "success",
+              "data": {
+                "tx_ref": "F_amt",
+                "status": "successful",
+                "amount": 5000,
+                "currency": "UGX"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "flutterwave",
+                "reference": "F_amt",
+                "status": "success",
+                "amount": "5000",
+                "currency": "UGX"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_8_monnify_ngn",
+      "description": "monnify amount \"100.00\" NGN → \"100\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_amt",
+                "paymentStatus": "PAID",
+                "amountPaid": "100.00",
+                "currency": "NGN"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_amt",
+                "status": "success",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_9_monnify_ngn",
+      "description": "monnify amount 3000 NGN → \"3000\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_amt",
+                "paymentStatus": "PAID",
+                "amountPaid": 3000,
+                "currency": "NGN"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_amt",
+                "status": "success",
+                "amount": "3000",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_10_stripe_usd",
+      "description": "stripe amount 2000 usd → \"20\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_amt",
+              "object": "payment_intent",
+              "status": "succeeded",
+              "amount": 2000,
+              "amount_received": 2000,
+              "currency": "usd"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_amt",
+                "status": "success",
+                "amount": "20",
+                "currency": "USD"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_11_stripe_jpy",
+      "description": "stripe amount 500 jpy → \"500\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_amt",
+              "object": "payment_intent",
+              "status": "succeeded",
+              "amount": 500,
+              "amount_received": 500,
+              "currency": "jpy"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_amt",
+                "status": "success",
+                "amount": "500",
+                "currency": "JPY"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_12_stripe_ugx",
+      "description": "stripe amount 50000 ugx → \"500\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_amt",
+              "object": "payment_intent",
+              "status": "succeeded",
+              "amount": 50000,
+              "amount_received": 50000,
+              "currency": "ugx"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_amt",
+                "status": "success",
+                "amount": "500",
+                "currency": "UGX"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_13_stripe_isk",
+      "description": "stripe amount 50000 isk → \"500\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_amt",
+              "object": "payment_intent",
+              "status": "succeeded",
+              "amount": 50000,
+              "amount_received": 50000,
+              "currency": "isk"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_amt",
+                "status": "success",
+                "amount": "500",
+                "currency": "ISK"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_14_stripe_xof",
+      "description": "stripe amount 1000 xof → \"1000\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_amt",
+              "object": "payment_intent",
+              "status": "succeeded",
+              "amount": 1000,
+              "amount_received": 1000,
+              "currency": "xof"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_amt",
+                "status": "success",
+                "amount": "1000",
+                "currency": "XOF"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.amount_15_stripe_eur",
+      "description": "stripe amount 1999 eur → \"19.99\" (exact decimal, never a float)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_amt",
+              "object": "payment_intent",
+              "status": "succeeded",
+              "amount": 1999,
+              "amount_received": 1999,
+              "currency": "eur"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_amt",
+                "status": "success",
+                "amount": "19.99",
+                "currency": "EUR"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_status_success",
+      "description": "Paystack status success → success",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "success"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "success",
+                "amount": "5000",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_status_failed",
+      "description": "Paystack status failed → failed",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "failed"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "failed",
+                "amount": "5000",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_status_abandoned",
+      "description": "Paystack status abandoned → failed",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "abandoned"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "failed",
+                "amount": "5000",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_status_reversed",
+      "description": "Paystack status reversed → reversed",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "reversed"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "reversed",
+                "amount": "5000",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_status_ongoing",
+      "description": "Paystack status ongoing → pending",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "ongoing"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "pending",
+                "amount": "5000",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_status_pending",
+      "description": "Paystack status pending → pending",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "pending"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "pending",
+                "amount": "5000",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_status_processing",
+      "description": "Paystack status processing → pending",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "processing"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "pending",
+                "amount": "5000",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_status_queued",
+      "description": "Paystack status queued → pending",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "queued"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "pending",
+                "amount": "5000",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_status_unknown",
+      "description": "Paystack: an unknown status → null (nothing to send)",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "mystery"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": null
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.flutterwave_status_successful",
+      "description": "Flutterwave status successful → success",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "status": "success",
+              "data": {
+                "tx_ref": "F_1",
+                "amount": 100,
+                "currency": "NGN",
+                "status": "successful"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "flutterwave",
+                "reference": "F_1",
+                "status": "success",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.flutterwave_status_succeeded",
+      "description": "Flutterwave status succeeded → success",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "status": "success",
+              "data": {
+                "tx_ref": "F_1",
+                "amount": 100,
+                "currency": "NGN",
+                "status": "succeeded"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "flutterwave",
+                "reference": "F_1",
+                "status": "success",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.flutterwave_status_failed",
+      "description": "Flutterwave status failed → failed",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "status": "success",
+              "data": {
+                "tx_ref": "F_1",
+                "amount": 100,
+                "currency": "NGN",
+                "status": "failed"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "flutterwave",
+                "reference": "F_1",
+                "status": "failed",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.flutterwave_status_voided",
+      "description": "Flutterwave status voided → failed",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "status": "success",
+              "data": {
+                "tx_ref": "F_1",
+                "amount": 100,
+                "currency": "NGN",
+                "status": "voided"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "flutterwave",
+                "reference": "F_1",
+                "status": "failed",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.flutterwave_status_pending",
+      "description": "Flutterwave status pending → pending",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "status": "success",
+              "data": {
+                "tx_ref": "F_1",
+                "amount": 100,
+                "currency": "NGN",
+                "status": "pending"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "flutterwave",
+                "reference": "F_1",
+                "status": "pending",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.flutterwave_status_new_status",
+      "description": "Flutterwave status new_status → pending",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "status": "success",
+              "data": {
+                "tx_ref": "F_1",
+                "amount": 100,
+                "currency": "NGN",
+                "status": "new_status"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "flutterwave",
+                "reference": "F_1",
+                "status": "pending",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_status_paid",
+      "description": "Monnify paymentStatus PAID → success",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_1",
+                "amountPaid": "100.00",
+                "currency": "NGN",
+                "paymentStatus": "PAID"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_1",
+                "status": "success",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_status_overpaid",
+      "description": "Monnify paymentStatus OVERPAID → success",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_1",
+                "amountPaid": "100.00",
+                "currency": "NGN",
+                "paymentStatus": "OVERPAID"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_1",
+                "status": "success",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_status_partially_paid",
+      "description": "Monnify paymentStatus PARTIALLY_PAID → partial",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_1",
+                "amountPaid": "100.00",
+                "currency": "NGN",
+                "paymentStatus": "PARTIALLY_PAID"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_1",
+                "status": "partial",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_status_failed",
+      "description": "Monnify paymentStatus FAILED → failed",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_1",
+                "amountPaid": "100.00",
+                "currency": "NGN",
+                "paymentStatus": "FAILED"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_1",
+                "status": "failed",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_status_cancelled",
+      "description": "Monnify paymentStatus CANCELLED → failed",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_1",
+                "amountPaid": "100.00",
+                "currency": "NGN",
+                "paymentStatus": "CANCELLED"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_1",
+                "status": "failed",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_status_abandoned",
+      "description": "Monnify paymentStatus ABANDONED → failed",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_1",
+                "amountPaid": "100.00",
+                "currency": "NGN",
+                "paymentStatus": "ABANDONED"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_1",
+                "status": "failed",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_status_expired",
+      "description": "Monnify paymentStatus EXPIRED → failed",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_1",
+                "amountPaid": "100.00",
+                "currency": "NGN",
+                "paymentStatus": "EXPIRED"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_1",
+                "status": "failed",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_status_pending",
+      "description": "Monnify paymentStatus PENDING → pending",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_1",
+                "amountPaid": "100.00",
+                "currency": "NGN",
+                "paymentStatus": "PENDING"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_1",
+                "status": "pending",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_status_reversed",
+      "description": "Monnify paymentStatus REVERSED → reversed",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_1",
+                "amountPaid": "100.00",
+                "currency": "NGN",
+                "paymentStatus": "REVERSED"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_1",
+                "status": "reversed",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_status_unknown",
+      "description": "Monnify: an unknown paymentStatus → null",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_1",
+                "amountPaid": "100.00",
+                "currency": "NGN",
+                "paymentStatus": "MYSTERY"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": null
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.stripe_pi_status_succeeded",
+      "description": "Stripe PaymentIntent status succeeded → success",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_1",
+              "object": "payment_intent",
+              "amount": 2000,
+              "amount_received": 2000,
+              "currency": "usd",
+              "status": "succeeded"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_1",
+                "status": "success",
+                "amount": "20",
+                "currency": "USD"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.stripe_pi_status_canceled",
+      "description": "Stripe PaymentIntent status canceled → failed",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_1",
+              "object": "payment_intent",
+              "amount": 2000,
+              "amount_received": 2000,
+              "currency": "usd",
+              "status": "canceled"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_1",
+                "status": "failed",
+                "amount": "20",
+                "currency": "USD"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.stripe_pi_status_processing",
+      "description": "Stripe PaymentIntent status processing → pending",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_1",
+              "object": "payment_intent",
+              "amount": 2000,
+              "amount_received": 2000,
+              "currency": "usd",
+              "status": "processing"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_1",
+                "status": "pending",
+                "amount": "20",
+                "currency": "USD"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.stripe_pi_status_requires_payment_method",
+      "description": "Stripe PaymentIntent status requires_payment_method → pending",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_1",
+              "object": "payment_intent",
+              "amount": 2000,
+              "amount_received": 2000,
+              "currency": "usd",
+              "status": "requires_payment_method"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_1",
+                "status": "pending",
+                "amount": "20",
+                "currency": "USD"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.stripe_pi_status_requires_confirmation",
+      "description": "Stripe PaymentIntent status requires_confirmation → pending",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_1",
+              "object": "payment_intent",
+              "amount": 2000,
+              "amount_received": 2000,
+              "currency": "usd",
+              "status": "requires_confirmation"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_1",
+                "status": "pending",
+                "amount": "20",
+                "currency": "USD"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.stripe_pi_status_requires_action",
+      "description": "Stripe PaymentIntent status requires_action → pending",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_1",
+              "object": "payment_intent",
+              "amount": 2000,
+              "amount_received": 2000,
+              "currency": "usd",
+              "status": "requires_action"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_1",
+                "status": "pending",
+                "amount": "20",
+                "currency": "USD"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.stripe_pi_status_requires_capture",
+      "description": "Stripe PaymentIntent status requires_capture → pending",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_1",
+              "object": "payment_intent",
+              "amount": 2000,
+              "amount_received": 2000,
+              "currency": "usd",
+              "status": "requires_capture"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_1",
+                "status": "pending",
+                "amount": "20",
+                "currency": "USD"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.stripe_session_unpaid",
+      "description": "Stripe Session payment_status unpaid → pending",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "cs_test_1",
+              "object": "checkout.session",
+              "amount_total": 2000,
+              "currency": "usd",
+              "payment_status": "unpaid",
+              "status": "open",
+              "payment_intent": "pi_1"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_1",
+                "status": "pending",
+                "aliases": [
+                  "cs_test_1"
+                ],
+                "amount": "20",
+                "currency": "USD"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.stripe_session_expired",
+      "description": "Stripe Session unpaid and expired → failed",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "cs_test_1",
+              "object": "checkout.session",
+              "amount_total": 2000,
+              "currency": "usd",
+              "payment_status": "unpaid",
+              "status": "expired",
+              "payment_intent": null
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "cs_test_1",
+                "status": "failed",
+                "amount": "20",
+                "currency": "USD"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.stripe_session_no_payment_required",
+      "description": "Stripe Session no_payment_required → null",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "cs_test_1",
+              "object": "checkout.session",
+              "amount_total": 2000,
+              "currency": "usd",
+              "payment_status": "no_payment_required",
+              "status": "complete",
+              "payment_intent": "pi_1"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": null
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_bare_data",
+      "description": "Paystack: the data object alone (no envelope) works too",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "reference": "T_1",
+              "amount": 500000,
+              "currency": "NGN",
+              "status": "success"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "success",
+                "amount": "5000",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_paidAt",
+      "description": "Paystack: paidAt (camelCase) is read when paid_at is absent",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "success",
+                "paidAt": "2026-10-28T10:00:00.000Z"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "success",
+                "amount": "5000",
+                "currency": "NGN",
+                "occurred_at": "2026-10-28T10:00:00Z"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_time_offset",
+      "description": "An ISO time with an offset is converted to UTC; milliseconds are kept when not zero",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "success",
+                "paid_at": "2026-10-28T11:00:00.250+01:00"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "success",
+                "amount": "5000",
+                "currency": "NGN",
+                "occurred_at": "2026-10-28T10:00:00.250Z"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_metadata_object",
+      "description": "Paystack: metadata.cg_click_id",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "success",
+                "metadata": {
+                  "cg_click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+                }
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "success",
+                "amount": "5000",
+                "currency": "NGN",
+                "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_metadata_string",
+      "description": "Paystack: metadata as a JSON string",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "success",
+                "metadata": "{\"cg_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "success",
+                "amount": "5000",
+                "currency": "NGN",
+                "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_metadata_invalid_click",
+      "description": "An invalid cg_click_id is not sent",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "success",
+                "metadata": {
+                  "cg_click_id": "clk_nope"
+                }
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "success",
+                "amount": "5000",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_no_customer_data",
+      "description": "Customer email, phone, authorization and log are never read",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": "T_1",
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "success",
+                "customer": {
+                  "email": "secret@example.com",
+                  "phone": "+2348000000000"
+                },
+                "authorization": {
+                  "last4": "4081",
+                  "bin": "408408"
+                },
+                "log": {
+                  "history": []
+                },
+                "ip_address": "203.0.113.9",
+                "domain": "live"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "paystack",
+                "reference": "T_1",
+                "status": "success",
+                "amount": "5000",
+                "currency": "NGN",
+                "test": false
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.paystack_missing_reference",
+      "description": "Paystack: no reference → null",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": {
+              "status": true,
+              "data": {
+                "reference": null,
+                "amount": 500000,
+                "currency": "NGN",
+                "status": "success"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": null
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.flutterwave_reference_fallback",
+      "description": "Flutterwave: tx_ref missing, data.reference is used",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "status": "success",
+              "data": {
+                "tx_ref": null,
+                "amount": 100,
+                "currency": "NGN",
+                "status": "successful",
+                "reference": "F_ref"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "flutterwave",
+                "reference": "F_ref",
+                "status": "success",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.flutterwave_meta_data",
+      "description": "Flutterwave: meta_data.cg_click_id when meta is absent",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "status": "success",
+              "data": {
+                "tx_ref": "F_1",
+                "amount": 100,
+                "currency": "NGN",
+                "status": "successful",
+                "meta_data": {
+                  "cg_click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+                }
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "flutterwave",
+                "reference": "F_1",
+                "status": "success",
+                "amount": "100",
+                "currency": "NGN",
+                "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.flutterwave_pending_no_amount",
+      "description": "A pending response without an amount: amount and currency are omitted",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": {
+              "data": {
+                "tx_ref": "F_2",
+                "status": "pending"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "flutterwave",
+                "reference": "F_2",
+                "status": "pending"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_iso_time",
+      "description": "Monnify: an ISO paidOn is sent in UTC",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_1",
+                "amountPaid": "100.00",
+                "currency": "NGN",
+                "paymentStatus": "PAID",
+                "paidOn": "2026-10-28T11:00:00+01:00"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_1",
+                "status": "success",
+                "amount": "100",
+                "currency": "NGN",
+                "occurred_at": "2026-10-28T10:00:00Z"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_local_time_omitted",
+      "description": "Monnify: dd/MM/yyyy paidOn is omitted",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_1",
+                "amountPaid": "100.00",
+                "currency": "NGN",
+                "paymentStatus": "PAID",
+                "paidOn": "28/10/2026 10:00:00 AM"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_1",
+                "status": "success",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_currency_code",
+      "description": "Monnify: currencyCode when currency is absent",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_1",
+                "amountPaid": "100.00",
+                "currency": null,
+                "paymentStatus": "PAID",
+                "currencyCode": "NGN"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_1",
+                "status": "success",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_alias_same_as_reference",
+      "description": "Monnify: a transactionReference equal to the reference is not an alias",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "requestSuccessful": true,
+              "responseBody": {
+                "paymentReference": "M_1",
+                "amountPaid": "100.00",
+                "currency": "NGN",
+                "paymentStatus": "PAID",
+                "transactionReference": "M_1"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_1",
+                "status": "success",
+                "amount": "100",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.monnify_event_data",
+      "description": "Monnify: a webhook eventData object works too",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "monnify",
+            "response": {
+              "eventType": "SUCCESSFUL_TRANSACTION",
+              "eventData": {
+                "paymentReference": "M_3",
+                "transactionReference": "MNFY|1",
+                "paymentStatus": "PAID",
+                "amountPaid": 250,
+                "currency": "NGN"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "monnify",
+                "reference": "M_3",
+                "status": "success",
+                "aliases": [
+                  "MNFY|1"
+                ],
+                "amount": "250",
+                "currency": "NGN"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.stripe_pi_amount_fallback",
+      "description": "Stripe: amount_received 0 falls back to amount",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_1",
+              "object": "payment_intent",
+              "amount": 2000,
+              "amount_received": 0,
+              "currency": "usd",
+              "status": "processing"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_1",
+                "status": "pending",
+                "amount": "20",
+                "currency": "USD"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.stripe_pi_livemode",
+      "description": "Stripe: livemode true → test false; created → occurred_at",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "pi_1",
+              "object": "payment_intent",
+              "amount": 2000,
+              "amount_received": 2000,
+              "currency": "usd",
+              "status": "succeeded",
+              "livemode": true,
+              "created": 1793016000
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_1",
+                "status": "success",
+                "amount": "20",
+                "currency": "USD",
+                "occurred_at": "2026-10-26T12:00:00Z",
+                "test": false
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.stripe_session_expanded_intent",
+      "description": "Stripe Session: an expanded payment_intent object gives its id",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "cs_test_1",
+              "object": "checkout.session",
+              "amount_total": 2000,
+              "currency": "usd",
+              "payment_status": "paid",
+              "status": "complete",
+              "payment_intent": {
+                "id": "pi_9",
+                "object": "payment_intent"
+              },
+              "client_reference_id": "cart-1"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "provider": "stripe",
+                "reference": "pi_9",
+                "status": "success",
+                "aliases": [
+                  "cs_test_1",
+                  "cart-1"
+                ],
+                "amount": "20",
+                "currency": "USD"
+              }
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.stripe_unknown_object",
+      "description": "Stripe: an object that is neither a PaymentIntent nor a Checkout Session → null",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "stripe",
+            "response": {
+              "id": "ch_1",
+              "object": "charge",
+              "amount": 2000,
+              "currency": "usd",
+              "status": "succeeded"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": null
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.not_an_object",
+      "description": "A response that is not an object or JSON text → null",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "paystack",
+            "response": "not json"
+          },
+          "expect": {
+            "result": {
+              "value": null
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "payments.build.array",
+      "description": "An array → null",
+      "steps": [
+        {
+          "call": "payments.build",
+          "args": {
+            "gateway": "flutterwave",
+            "response": [
+              1,
+              2
+            ]
+          },
+          "expect": {
+            "result": {
+              "value": null
+            },
+            "exact": true
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

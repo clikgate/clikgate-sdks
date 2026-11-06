@@ -1,0 +1,98 @@
+{
+  "scenario": "ios",
+  "pass": true,
+  "model": "claude-opus-5-5",
+  "claude_code_version": "2.1.310",
+  "turns": 11,
+  "duration_ms": 41506,
+  "cost_usd": 0.3192633,
+  "stop": "success",
+  "checks": [
+    {
+      "id": "skill_used",
+      "pass": true
+    },
+    {
+      "id": "no_live_or_api_keys_in_code",
+      "pass": true
+    },
+    {
+      "id": "no_idfa_or_fingerprinting",
+      "pass": true
+    },
+    {
+      "id": "no_files_deleted",
+      "pass": true
+    },
+    {
+      "id": "ran_setup_command",
+      "pass": true,
+      "detail": "setup --cwd $QA_OUT/runs/ios/project --sdk-key cg_sdk_test_x --domain go.example.com --platform ios --dry-run | setup --cwd $QA_OUT/runs/ios/project --sdk-key cg_sdk_test_x --domain go.example.com --platform ios --yes | setup doctor --json --cwd $QA_OUT/runs/ios/project --domain go.example.com"
+    },
+    {
+      "id": "previewed_before_applying",
+      "pass": true,
+      "detail": "dry-run #0, apply #1"
+    },
+    {
+      "id": "used_test_key_offline_mode",
+      "pass": true
+    },
+    {
+      "id": "did_not_pass_test_domain",
+      "pass": true
+    },
+    {
+      "id": "ran_doctor",
+      "pass": true
+    },
+    {
+      "id": "doctor_ok",
+      "pass": true
+    },
+    {
+      "id": "platform_detected",
+      "pass": true,
+      "detail": "ios"
+    },
+    {
+      "id": "told_user_manual_steps",
+      "pass": true
+    }
+  ],
+  "doctor": {
+    "ok": true,
+    "summary": {
+      "passed": 7,
+      "warnings": 0,
+      "failed": 0,
+      "skipped": 1
+    },
+    "failed": [
+      {
+        "id": "clikgate.signed_in",
+        "status": "skip",
+        "title": "Clikgate checks skipped (not signed in)"
+      }
+    ]
+  },
+  "files": {
+    "added": [
+      "UIKitApp/UIKitApp.entitlements",
+      "UIKitApp/UIKitAppDebug.entitlements"
+    ],
+    "modified": [
+      "Podfile",
+      "UIKitApp.xcodeproj/project.pbxproj",
+      "UIKitApp/AppDelegate.swift",
+      "UIKitApp/SceneDelegate.swift"
+    ],
+    "deleted": [],
+    "removed_lines": {}
+  },
+  "setup_commands": [
+    "npx -y @clikgate/setup --cwd $QA_OUT/runs/ios/project --sdk-key cg_sdk_test_x --domain go.example.com --platform ios --dry-run",
+    "npx -y @clikgate/setup --cwd $QA_OUT/runs/ios/project --sdk-key cg_sdk_test_x --domain go.example.com --platform ios --yes",
+    "npx -y @clikgate/setup doctor --json --cwd $QA_OUT/runs/ios/project --domain go.example.com"
+  ]
+}

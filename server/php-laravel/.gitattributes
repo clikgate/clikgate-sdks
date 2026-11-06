@@ -1,0 +1,13 @@
+# Release archives (Packagist dist zips, composer archive) carry the library only: no tests, tooling or caches.
+/tests export-ignore
+/scripts export-ignore
+/.gitattributes export-ignore
+/.php-cs-fixer.dist.php export-ignore
+/.php-cs-fixer.cache export-ignore
+/.phpstan-cache export-ignore
+/.phpunit.cache export-ignore
+/phpstan.neon.dist export-ignore
+/phpunit.xml.dist export-ignore
+/composer.lock export-ignore
+/sbom.cdx.json export-ignore
+/vendor export-ignore

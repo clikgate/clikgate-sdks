@@ -1,0 +1,33 @@
+{{#operations}}
+/**
+ * {{baseName}}: generated from openapi.json. See https://clikgate.com/docs/api.
+ */
+export class {{classname}} {
+  /** @internal */
+  constructor(private readonly r: ApiRequester) {}
+{{#operation}}
+
+  /**
+   * {{&summary}}{{#notes}}
+   *
+   * {{#lambda.indented_star_4}}{{{unescapedNotes}}}{{/lambda.indented_star_4}}{{/notes}}
+   *
+   * `{{httpMethod}} {{{vendorExtensions.x-cg-path}}}`
+   *
+   * @example
+   * {{{vendorExtensions.x-cg-example}}}
+   */
+  async {{nickname}}({{#pathParams}}{{paramName}}: string, {{/pathParams}}{{#bodyParam}}body{{^required}}?{{/required}}: {{{dataType}}}, {{/bodyParam}}{{#hasQueryParams}}query: { {{#queryParams}}'{{baseName}}'?: {{#isEnum}}{{#allowableValues}}{{#enumVars}}{{{value}}}{{^-last}} | {{/-last}}{{/enumVars}}{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}} | null; {{/queryParams}}} = {}, {{/hasQueryParams}}options: RequestOptions = {}): Promise<{{#vendorExtensions.x-cg-binary}}BinaryResponse{{/vendorExtensions.x-cg-binary}}{{^vendorExtensions.x-cg-binary}}{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}unknown{{/returnType}}{{/vendorExtensions.x-cg-binary}}> {
+    const path = `{{{vendorExtensions.x-cg-path-js}}}`;
+{{#vendorExtensions.x-cg-binary}}
+    const res = await this.r.send({ method: '{{httpMethod}}', path, {{#hasQueryParams}}query, {{/hasQueryParams}}{{#bodyParam}}body, {{/bodyParam}}raw: true, ...options });
+    return { contentType: res.headers['content-type'] ?? 'application/octet-stream', data: res.body };
+{{/vendorExtensions.x-cg-binary}}
+{{^vendorExtensions.x-cg-binary}}
+    const { data } = await this.r.request<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}unknown{{/returnType}}>({ method: '{{httpMethod}}', path, {{#hasQueryParams}}query, {{/hasQueryParams}}{{#bodyParam}}body, {{/bodyParam}}...options });
+    return data;
+{{/vendorExtensions.x-cg-binary}}
+  }
+{{/operation}}
+}
+{{/operations}}

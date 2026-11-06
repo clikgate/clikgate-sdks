@@ -1,0 +1,462 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "client",
+  "description": "Construction, configuration errors, default headers, paths and request IDs (SPEC 3, 4, 5)",
+  "cases": [
+    {
+      "id": "client.headers.get",
+      "description": "A GET carries Authorization, User-Agent and Accept, and no Idempotency-Key or Content-Type",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "click",
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "pending": false,
+            "occurred_at": "2026-10-22T18:01:12Z",
+            "link": {
+              "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA"
+            },
+            "campaign": null,
+            "country": "NG",
+            "device_type": "mobile",
+            "is_suspected_bot": false,
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "clicks.get",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          },
+          "expect": {
+            "result": {
+              "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "object": "click"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/clicks/clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "query": {},
+            "absent_headers": [
+              "idempotency-key",
+              "content-type"
+            ],
+            "no_body": true
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.base_url.trailing_slash",
+      "description": "A trailing slash on base_url is removed",
+      "base_url_suffix": "/",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "click",
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "pending": false,
+            "occurred_at": "2026-10-22T18:01:12Z",
+            "link": {
+              "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA"
+            },
+            "campaign": null,
+            "country": "NG",
+            "device_type": "mobile",
+            "is_suspected_bot": false,
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "clicks.get",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/clicks/clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.mode.test",
+      "description": "The mode comes from the key prefix: cg_test_ is test",
+      "steps": [
+        {
+          "call": "client.mode",
+          "expect": {
+            "result": {
+              "value": "test"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.mode.live",
+      "description": "The mode comes from the key prefix: cg_live_ is live",
+      "client": {
+        "api_key": "cg_live_conformance0000000000"
+      },
+      "steps": [
+        {
+          "call": "client.mode",
+          "expect": {
+            "result": {
+              "value": "live"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.config_error.missing_api_key",
+      "description": "No api_key and no CLIKGATE_API_KEY: ConfigurationError at construction",
+      "client": {
+        "api_key": null
+      },
+      "steps": [],
+      "expect": {
+        "construct_error": {
+          "class": "ConfigurationError",
+          "code": "missing_api_key",
+          "http_status": null
+        },
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.config_error.mobile_sdk_key",
+      "description": "A mobile sdk key is not a server API key: ConfigurationError, and the message never contains the key",
+      "client": {
+        "api_key": "cg_sdk_live_abc123"
+      },
+      "steps": [],
+      "expect": {
+        "construct_error": {
+          "class": "ConfigurationError",
+          "code": "invalid_api_key",
+          "message_excludes": [
+            "cg_sdk_live_abc123"
+          ]
+        },
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.config_error.site_key",
+      "description": "A site key is not a server API key: ConfigurationError, and the message never contains the key",
+      "client": {
+        "api_key": "cg_site_live_abc123"
+      },
+      "steps": [],
+      "expect": {
+        "construct_error": {
+          "class": "ConfigurationError",
+          "code": "invalid_api_key",
+          "message_excludes": [
+            "cg_site_live_abc123"
+          ]
+        },
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.config_error.cli_token",
+      "description": "A cli token is not a server API key: ConfigurationError, and the message never contains the key",
+      "client": {
+        "api_key": "cg_cli_abc123"
+      },
+      "steps": [],
+      "expect": {
+        "construct_error": {
+          "class": "ConfigurationError",
+          "code": "invalid_api_key",
+          "message_excludes": [
+            "cg_cli_abc123"
+          ]
+        },
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.config_error.foreign_key",
+      "description": "A foreign key is not a server API key: ConfigurationError, and the message never contains the key",
+      "client": {
+        "api_key": "sk_live_abc123"
+      },
+      "steps": [],
+      "expect": {
+        "construct_error": {
+          "class": "ConfigurationError",
+          "code": "invalid_api_key",
+          "message_excludes": [
+            "sk_live_abc123"
+          ]
+        },
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.config_error.insecure_base_url",
+      "description": "http:// is refused except for localhost, 127.0.0.1 and [::1]",
+      "client": {
+        "base_url": "http://api.example.com"
+      },
+      "steps": [],
+      "expect": {
+        "construct_error": {
+          "class": "ConfigurationError",
+          "code": "invalid_option"
+        },
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.config_error.max_retries",
+      "description": "max_retries must be 0-10",
+      "client": {
+        "max_retries": 11
+      },
+      "steps": [],
+      "expect": {
+        "construct_error": {
+          "class": "ConfigurationError",
+          "code": "invalid_option"
+        },
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.config_error.click_id_param",
+      "description": "click_id_param must match ^[A-Za-z0-9_]{1,32}$",
+      "client": {
+        "click_id_param": "bad-param!"
+      },
+      "steps": [],
+      "expect": {
+        "construct_error": {
+          "class": "ConfigurationError",
+          "code": "invalid_option"
+        },
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.path.encoding",
+      "description": "Path parameters are percent-encoded",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.get",
+          "args": {
+            "id": "lnk_a/b c"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/links/lnk_a%2Fb%20c"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.request_id.from_header",
+      "description": "request_id falls back to the X-Request-Id header when the body has none",
+      "client": {
+        "max_retries": 0
+      },
+      "responses": [
+        {
+          "status": 404,
+          "headers": {
+            "x-request-id": "req_from_header"
+          },
+          "json": {
+            "error": {
+              "type": "not_found",
+              "code": "resource_missing",
+              "message": "No such click.",
+              "param": "click_id",
+              "request_id": null
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "clicks.get",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          },
+          "expect": {
+            "error": {
+              "class": "NotFoundError",
+              "request_id": "req_from_header",
+              "http_status": 404
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/clicks/clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.idempotency_key.override",
+      "description": "An explicit idempotency_key request option is sent as given",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.create",
+          "args": {
+            "params": {
+              "destination_url": "https://example.com/spring"
+            },
+            "idempotency_key": "my-own-key-1"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/links",
+            "headers": {
+              "idempotency-key": "my-own-key-1"
+            },
+            "json": {
+              "destination_url": "https://example.com/spring"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "client.empty_id",
+      "description": "An empty id is refused locally with invalid_argument",
+      "steps": [
+        {
+          "call": "links.get",
+          "args": {
+            "id": ""
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_argument",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

@@ -1,0 +1,1978 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "retries",
+  "description": "Retries, full-jitter backoff and Retry-After (SPEC 6)",
+  "cases": [
+    {
+      "id": "retries.503_then_success",
+      "description": "Two 503s then 201: three requests with the same Idempotency-Key and body; sleeps 250, 500 with random 0.5",
+      "responses": [
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "counted": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            }
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "idempotency_key_same_as": 0
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "idempotency_key_same_as": 0
+          }
+        ],
+        "sleeps_ms": [
+          250,
+          500
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.jitter.zero",
+      "description": "random() = 0 gives zero delays",
+      "random": [
+        0
+      ],
+      "responses": [
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {},
+          {},
+          {}
+        ],
+        "sleeps_ms": [
+          0,
+          0
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.jitter.high",
+      "description": "random() = 0.999 gives floor(0.999 * 500 * 2^n)",
+      "random": [
+        0.999
+      ],
+      "responses": [
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {},
+          {},
+          {}
+        ],
+        "sleeps_ms": [
+          499,
+          999
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.jitter.sequence",
+      "description": "Each retry draws a new random value",
+      "random": [
+        0.1,
+        0.9,
+        0.5
+      ],
+      "responses": [
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {},
+          {},
+          {},
+          {}
+        ],
+        "sleeps_ms": [
+          50,
+          900,
+          1000
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.exhausted",
+      "description": "max_retries 3: four attempts, then the last error is thrown",
+      "responses": [
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 500,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "internal_error",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "error": {
+              "class": "ServerError",
+              "code": "internal_error",
+              "http_status": 500
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {},
+          {},
+          {},
+          {}
+        ],
+        "sleeps_ms": [
+          250,
+          500,
+          1000
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.cap",
+      "description": "Backoff is capped at 20 s before jitter: with random 0.5 the 7th delay is 10000",
+      "client": {
+        "max_retries": 7
+      },
+      "responses": [
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {}
+        ],
+        "sleeps_ms": [
+          250,
+          500,
+          1000,
+          2000,
+          4000,
+          8000,
+          10000
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.disabled",
+      "description": "max_retries 0: one attempt",
+      "client": {
+        "max_retries": 0
+      },
+      "responses": [
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "error": {
+              "class": "ServerError",
+              "http_status": 503
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {}
+        ],
+        "sleeps_ms": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.500",
+      "description": "500 is retried",
+      "responses": [
+        {
+          "status": 500,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "upstream",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {},
+          {
+            "idempotency_key_same_as": 0
+          }
+        ],
+        "sleeps_ms": [
+          250
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.502",
+      "description": "502 is retried",
+      "responses": [
+        {
+          "status": 502,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "upstream",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {},
+          {
+            "idempotency_key_same_as": 0
+          }
+        ],
+        "sleeps_ms": [
+          250
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.504",
+      "description": "504 is retried",
+      "responses": [
+        {
+          "status": 504,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "upstream",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {},
+          {
+            "idempotency_key_same_as": 0
+          }
+        ],
+        "sleeps_ms": [
+          250
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.429.retry_after_seconds",
+      "description": "429 with Retry-After: 2 waits exactly 2000 ms (no jitter)",
+      "responses": [
+        {
+          "status": 429,
+          "headers": {
+            "retry-after": "2"
+          },
+          "json": {
+            "error": {
+              "type": "rate_limited",
+              "code": "rate_limit_exceeded",
+              "message": "Too many requests.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {},
+          {
+            "idempotency_key_same_as": 0
+          }
+        ],
+        "sleeps_ms": [
+          2000
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.429.retry_after_too_long",
+      "description": "Retry-After above 60 s: no retry, RateLimitError with retry_after",
+      "responses": [
+        {
+          "status": 429,
+          "headers": {
+            "retry-after": "120"
+          },
+          "json": {
+            "error": {
+              "type": "rate_limited",
+              "code": "rate_limit_exceeded",
+              "message": "Too many requests.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "error": {
+              "class": "RateLimitError",
+              "retry_after": 120
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {}
+        ],
+        "sleeps_ms": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.429.retry_after_date",
+      "description": "Retry-After as an HTTP-date is measured against the SDK clock (now 12:00:00 → 12:00:03 = 3000 ms)",
+      "responses": [
+        {
+          "status": 429,
+          "headers": {
+            "retry-after": "Mon, 26 Oct 2026 12:00:03 GMT"
+          },
+          "json": {
+            "error": {
+              "type": "rate_limited",
+              "code": "rate_limit_exceeded",
+              "message": "Too many requests.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {},
+          {}
+        ],
+        "sleeps_ms": [
+          3000
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.429.retry_after_invalid",
+      "description": "An unparseable Retry-After is ignored: normal backoff",
+      "responses": [
+        {
+          "status": 429,
+          "headers": {
+            "retry-after": "soon"
+          },
+          "json": {
+            "error": {
+              "type": "rate_limited",
+              "code": "rate_limit_exceeded",
+              "message": "Too many requests.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {},
+          {}
+        ],
+        "sleeps_ms": [
+          250
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.429.no_retry_after",
+      "description": "429 without Retry-After uses backoff",
+      "responses": [
+        {
+          "status": 429,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "rate_limited",
+              "code": "rate_limit_exceeded",
+              "message": "Too many requests.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {},
+          {}
+        ],
+        "sleeps_ms": [
+          250
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.503.retry_after",
+      "description": "503 with Retry-After: 1 waits 1000 ms",
+      "responses": [
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx",
+            "retry-after": "1"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {},
+          {}
+        ],
+        "sleeps_ms": [
+          1000
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.no_retry.400",
+      "description": "400 is never retried",
+      "responses": [
+        {
+          "status": 400,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "bad_request",
+              "message": "No.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "bad_request",
+              "http_status": 400
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {}
+        ],
+        "sleeps_ms": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.no_retry.401",
+      "description": "401 is never retried",
+      "responses": [
+        {
+          "status": 401,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "authentication",
+              "code": "invalid_credentials",
+              "message": "No.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "error": {
+              "class": "AuthenticationError",
+              "code": "invalid_credentials",
+              "http_status": 401
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {}
+        ],
+        "sleeps_ms": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.no_retry.403",
+      "description": "403 is never retried",
+      "responses": [
+        {
+          "status": 403,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "permission",
+              "code": "insufficient_scope",
+              "message": "No.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "error": {
+              "class": "PermissionError",
+              "code": "insufficient_scope",
+              "http_status": 403
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {}
+        ],
+        "sleeps_ms": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.no_retry.404",
+      "description": "404 is never retried",
+      "responses": [
+        {
+          "status": 404,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "not_found",
+              "code": "goal_not_found",
+              "message": "No.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "error": {
+              "class": "NotFoundError",
+              "code": "goal_not_found",
+              "http_status": 404
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {}
+        ],
+        "sleeps_ms": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.no_retry.422",
+      "description": "422 is never retried",
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "invalid_value",
+              "message": "No.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {}
+        ],
+        "sleeps_ms": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.network_then_success",
+      "description": "A reset connection is retried with the same key",
+      "responses": [
+        {
+          "action": "reset"
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "counted": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            }
+          },
+          {
+            "idempotency_key_same_as": 0
+          }
+        ],
+        "sleeps_ms": [
+          250
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.timeout_then_success",
+      "description": "A timeout is retried with the same key and body",
+      "client": {
+        "timeout_ms": 300
+      },
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          },
+          "delay_ms": 1500
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "counted": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            }
+          },
+          {
+            "idempotency_key_same_as": 0
+          }
+        ],
+        "sleeps_ms": [
+          250
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.get",
+      "description": "GETs are retried too (no Idempotency-Key)",
+      "responses": [
+        {
+          "status": 502,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "upstream",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "object": "click",
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "pending": false,
+            "occurred_at": "2026-10-22T18:01:12Z",
+            "link": {
+              "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA"
+            },
+            "campaign": null,
+            "country": "NG",
+            "device_type": "mobile",
+            "is_suspected_bot": false,
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "clicks.get",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          },
+          "expect": {
+            "result": {
+              "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET"
+          },
+          {
+            "method": "GET"
+          }
+        ],
+        "sleeps_ms": [
+          250
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "retries.random_key_reused",
+      "description": "links.create retries reuse its random UUID v4 key",
+      "responses": [
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.create",
+          "args": {
+            "params": {
+              "destination_url": "https://example.com/spring"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            }
+          },
+          {
+            "idempotency_key_same_as": 0
+          }
+        ],
+        "sleeps_ms": [
+          250
+        ]
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

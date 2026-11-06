@@ -1,0 +1,108 @@
+{
+  "scenario": "flutter",
+  "pass": true,
+  "model": "claude-opus-5-5",
+  "claude_code_version": "2.1.310",
+  "turns": 8,
+  "duration_ms": 43928,
+  "cost_usd": 0.2803531,
+  "stop": "success",
+  "checks": [
+    {
+      "id": "skill_used",
+      "pass": true
+    },
+    {
+      "id": "no_live_or_api_keys_in_code",
+      "pass": true
+    },
+    {
+      "id": "no_idfa_or_fingerprinting",
+      "pass": true
+    },
+    {
+      "id": "no_files_deleted",
+      "pass": true
+    },
+    {
+      "id": "ran_setup_command",
+      "pass": true,
+      "detail": "setup --cwd $QA_OUT/runs/flutter/project --sdk-key cg_sdk_test_x --domain ciz.to,go.example.com --dry-run | setup --cwd $QA_OUT/runs/flutter/project --sdk-key cg_sdk_test_x --domain ciz.to,go.example.com --yes | setup doctor --cwd $QA_OUT/runs/flutter/project --json --domain ciz.to,go.example.com"
+    },
+    {
+      "id": "previewed_before_applying",
+      "pass": true,
+      "detail": "dry-run #0, apply #1"
+    },
+    {
+      "id": "used_test_key_offline_mode",
+      "pass": true
+    },
+    {
+      "id": "did_not_pass_test_domain",
+      "pass": true
+    },
+    {
+      "id": "ran_doctor",
+      "pass": true
+    },
+    {
+      "id": "doctor_ok",
+      "pass": true
+    },
+    {
+      "id": "platform_detected",
+      "pass": true,
+      "detail": "flutter"
+    },
+    {
+      "id": "told_user_manual_steps",
+      "pass": true
+    },
+    {
+      "id": "explained_shared_domain",
+      "pass": true
+    }
+  ],
+  "doctor": {
+    "ok": true,
+    "summary": {
+      "passed": 11,
+      "warnings": 0,
+      "failed": 0,
+      "skipped": 1
+    },
+    "failed": [
+      {
+        "id": "clikgate.signed_in",
+        "status": "skip",
+        "title": "Clikgate checks skipped (not signed in)"
+      }
+    ]
+  },
+  "files": {
+    "added": [
+      "ios/Runner/Runner.entitlements",
+      "ios/Runner/RunnerDebug.entitlements"
+    ],
+    "modified": [
+      "android/app/src/debug/AndroidManifest.xml",
+      "android/app/src/main/AndroidManifest.xml",
+      "ios/Runner.xcodeproj/project.pbxproj",
+      "ios/Runner/Info.plist",
+      "lib/main.dart",
+      "pubspec.yaml"
+    ],
+    "deleted": [],
+    "removed_lines": {
+      "lib/main.dart": [
+        "void main() {"
+      ]
+    }
+  },
+  "setup_commands": [
+    "npx -y @clikgate/setup --cwd $QA_OUT/runs/flutter/project --sdk-key cg_sdk_test_x --domain ciz.to,go.example.com --dry-run",
+    "npx -y @clikgate/setup --cwd $QA_OUT/runs/flutter/project --sdk-key cg_sdk_test_x --domain ciz.to,go.example.com --yes",
+    "npx -y @clikgate/setup doctor --cwd $QA_OUT/runs/flutter/project --json --domain ciz.to,go.example.com"
+  ]
+}

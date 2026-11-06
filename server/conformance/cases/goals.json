@@ -1,0 +1,6215 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "goals",
+  "description": "Goals: send, batch, reverse, background queueing and flush (SPEC 9)",
+  "cases": [
+    {
+      "id": "goals.send.full",
+      "description": "All options map to wire fields; the goal_event is returned",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "is_first": true,
+            "occurred_at": {
+              "$datetime": "2026-10-23T09:12:00Z"
+            }
+          },
+          "expect": {
+            "result": {
+              "object": "goal_event",
+              "counted": true,
+              "status": "counted",
+              "reason": null,
+              "goal_kind": "standard",
+              "event_status": "attributed",
+              "first_for_click": true,
+              "attributed_to": {
+                "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA"
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "query": {},
+            "json": {
+              "goal": "account_opened",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "reference": "APP-55231",
+              "value": "2000000",
+              "currency": "NGN",
+              "is_first": true,
+              "occurred_at": "2026-10-23T09:12:00Z"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.minimal",
+      "description": "Only goal and reference: unattributed events are allowed (the server stores no_click)",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "refused",
+            "reason": "unattributed",
+            "goal_kind": "standard",
+            "counted": false,
+            "value_ignored": false,
+            "event_status": "unattributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": "no_click",
+            "duplicate_of_id": null,
+            "attributed_to": null,
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-2"
+          },
+          "expect": {
+            "result": {
+              "status": "refused",
+              "reason": "unattributed",
+              "event_status": "unattributed",
+              "attributed_to": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-2"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.code",
+      "description": "An offline or creator code instead of a click ID",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-3",
+            "code": "TOLU20"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-3",
+              "code": "TOLU20"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.is_first_false",
+      "description": "is_first false is sent (false is not \"unset\")",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-4",
+            "is_first": false
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-4",
+              "is_first": false
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.occurred_at_ms",
+      "description": "A datetime with milliseconds keeps them",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-5",
+            "occurred_at": {
+              "$datetime": "2026-10-23T09:12:00.123Z"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-5",
+              "occurred_at": "2026-10-23T09:12:00.123Z"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.occurred_at_string",
+      "description": "A string occurred_at is passed through unchanged",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-6",
+            "occurred_at": "2026-10-23T10:12:00+01:00"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-6",
+              "occurred_at": "2026-10-23T10:12:00+01:00"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.metadata_consent_extra",
+      "description": "Outside private mode metadata, consent and extra fields are sent",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "ORD-8",
+            "metadata": {
+              "plan": "gold"
+            },
+            "consent": {
+              "attribution": "granted"
+            },
+            "extra": {
+              "future_field": 1
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "json": {
+              "goal": "order_paid",
+              "reference": "ORD-8",
+              "metadata": {
+                "plan": "gold"
+              },
+              "consent": {
+                "attribution": "granted"
+              },
+              "future_field": 1
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.duplicate_200",
+      "description": "A 200 (already received) is a success, not an error",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "refused",
+            "reason": "already_counted_for_click",
+            "goal_kind": "standard",
+            "counted": false,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "status": "refused",
+              "counted": false,
+              "reason": "already_counted_for_click"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {}
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.status.counted",
+      "description": "Change 12: a counted standard goal returns status counted, goal_kind standard, and the conversion state in event_status",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "status": "counted",
+              "reason": null,
+              "goal_kind": "standard",
+              "counted": true,
+              "value_ignored": false,
+              "event_status": "attributed",
+              "payment": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-55231",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "value": "2000000"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.status.refused_bot",
+      "description": "Change 12: a goal on a bot click is refused (201): status refused, reason rejected_bot; not an error",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "refused",
+            "reason": "rejected_bot",
+            "goal_kind": "standard",
+            "counted": false,
+            "value_ignored": false,
+            "event_status": "rejected_bot",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "status": "refused",
+              "reason": "rejected_bot",
+              "counted": false,
+              "event_status": "rejected_bot"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.status.refused_outside_window",
+      "description": "Change 12: outside the goal window → status refused, reason outside_window",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "refused",
+            "reason": "outside_window",
+            "goal_kind": "standard",
+            "counted": false,
+            "value_ignored": false,
+            "event_status": "unattributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": null,
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "status": "refused",
+              "reason": "outside_window",
+              "counted": false
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.status.waiting_pending_click",
+      "description": "Change 12: recorded after an outage, waiting for its click → status waiting, reason pending_click",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "waiting",
+            "reason": "pending_click",
+            "goal_kind": "standard",
+            "counted": false,
+            "value_ignored": false,
+            "event_status": "pending_click",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": null,
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "status": "waiting",
+              "reason": "pending_click",
+              "counted": false
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.provider",
+      "description": "Change 12: provider is a wire field of every goal call (a standard goal checks it and otherwise ignores it)",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-9",
+            "provider": "flutterwave"
+          },
+          "expect": {
+            "result": {
+              "status": "counted",
+              "goal_kind": "standard"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-9",
+              "provider": "flutterwave"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.provider_newer_gateway",
+      "description": "Change 12: a provider this SDK release does not know (a newer gateway) is sent as given; the API validates it",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T-77",
+            "value": "10",
+            "provider": "acme_pay"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "order_paid",
+              "reference": "T-77",
+              "value": "10",
+              "provider": "acme_pay"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.invalid_provider.upper_case",
+      "description": "Change 12: provider \"Paystack\" is refused locally (a provider key is lower-case snake_case)",
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T-78",
+            "provider": "Paystack"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_provider",
+              "param": "provider",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.invalid_provider.dash",
+      "description": "Change 12: provider \"mtn-momo\" is refused locally (a provider key is lower-case snake_case)",
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T-78",
+            "provider": "mtn-momo"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_provider",
+              "param": "provider",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.invalid_provider.empty",
+      "description": "Change 12: provider \"\" is refused locally (a provider key is lower-case snake_case)",
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T-78",
+            "provider": ""
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_provider",
+              "param": "provider",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.payment.waiting",
+      "description": "Change 12: a Payment goal sent by the server without a click ID waits for its report: status waiting, the confirmation id, payment details",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "status": "waiting",
+            "reason": "waiting_for_confirmation",
+            "goal_kind": "payment",
+            "counted": false,
+            "value_ignored": false,
+            "event_status": null,
+            "goal": "order_paid",
+            "reference": "T123456",
+            "value": "7500",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": null,
+            "is_first": null,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": null,
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": {
+              "confirmation_id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+              "match_status": "waiting_for_report",
+              "report_id": null,
+              "provider": "paystack"
+            },
+            "value_minor": 750000
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T123456",
+            "value": "7500",
+            "currency": "NGN",
+            "provider": "paystack"
+          },
+          "expect": {
+            "result": {
+              "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+              "status": "waiting",
+              "reason": "waiting_for_confirmation",
+              "goal_kind": "payment",
+              "counted": false,
+              "event_status": null,
+              "value": "7500",
+              "value_minor": 750000,
+              "payment": {
+                "confirmation_id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+                "match_status": "waiting_for_report",
+                "report_id": null,
+                "provider": "paystack"
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "order_paid",
+              "reference": "T123456",
+              "value": "7500",
+              "currency": "NGN",
+              "provider": "paystack"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.payment.counted",
+      "description": "Change 12: a Payment goal sent by the server with a click ID is counted at once with the value sent",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "payment",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "order_paid",
+            "reference": "T123456",
+            "value": "7500",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": {
+              "confirmation_id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+              "match_status": "matched",
+              "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+              "provider": "paystack"
+            },
+            "value_minor": 750000
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T123456",
+            "value": "7500",
+            "currency": "NGN",
+            "provider": "paystack",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          },
+          "expect": {
+            "result": {
+              "status": "counted",
+              "goal_kind": "payment",
+              "counted": true,
+              "event_status": "attributed",
+              "value": "7500",
+              "payment": {
+                "match_status": "matched",
+                "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR"
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "order_paid",
+              "reference": "T123456",
+              "value": "7500",
+              "currency": "NGN",
+              "provider": "paystack",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.payment.already_counted",
+      "description": "Change 12: a payment reference already counted (200) is refused with reason already_counted; a success, not an error",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "goal_event",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "status": "refused",
+            "reason": "already_counted",
+            "goal_kind": "payment",
+            "counted": false,
+            "value_ignored": false,
+            "event_status": null,
+            "goal": "order_paid",
+            "reference": "T123456",
+            "value": "7500",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": null,
+            "is_first": null,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": null,
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": {
+              "confirmation_id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+              "match_status": "duplicate",
+              "report_id": null,
+              "provider": "paystack"
+            },
+            "value_minor": 750000
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T123456",
+            "value": "7500",
+            "currency": "NGN",
+            "provider": "paystack"
+          },
+          "expect": {
+            "result": {
+              "status": "refused",
+              "reason": "already_counted",
+              "counted": false,
+              "goal_kind": "payment",
+              "payment": {
+                "match_status": "duplicate"
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.payment.missing_provider",
+      "description": "Change 12: a server Payment goal needs provider and reference (no default provider): the SDK sends what it is given (it never knows the kind) and the API answers 422 payment_goal_needs_confirmation with missing",
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "payment_goal_needs_confirmation",
+              "message": "order_paid is a Payment goal: send provider and reference so your payment provider or server can confirm it.",
+              "param": "provider",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ",
+              "missing": [
+                "provider"
+              ]
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T123456",
+            "value": "7500",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "payment_goal_needs_confirmation",
+              "param": "provider",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "order_paid",
+              "reference": "T123456",
+              "value": "7500",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.error.unknown_provider",
+      "description": "Change 12: 422 unknown_provider is an InvalidRequestError with its param; not retried",
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "unknown_provider",
+              "message": "Unknown provider \"acme_pay\". Use a provider from GET /v1/payment-gateways.",
+              "param": "provider",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T123456",
+            "value": "7500",
+            "currency": "NGN",
+            "provider": "acme_pay"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "unknown_provider",
+              "param": "provider",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.error.value_required",
+      "description": "Change 12: 422 value_required is an InvalidRequestError with its param; not retried",
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "value_required",
+              "message": "A Payment goal sent by your server needs a value.",
+              "param": "value",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T123456",
+            "provider": "paystack"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "value_required",
+              "param": "value",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.error.invalid_value",
+      "description": "Change 12: 422 invalid_value is an InvalidRequestError with its param; not retried",
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "invalid_value",
+              "message": "A payment's value must be more than 0.",
+              "param": "value",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T123456",
+            "value": "0",
+            "currency": "NGN",
+            "provider": "paystack"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "param": "value",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.error.code_not_supported",
+      "description": "Change 12: 422 code_not_supported is an InvalidRequestError with its param; not retried",
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "code_not_supported",
+              "message": "Payment goals take click_id, not code: send the click ID.",
+              "param": "code",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T123456",
+            "value": "7500",
+            "currency": "NGN",
+            "provider": "paystack",
+            "code": "TOLU20"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "code_not_supported",
+              "param": "code",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.error.payment_goal_needs_confirmation",
+      "description": "Change 12: 422 payment_goal_needs_confirmation is an InvalidRequestError with its param; not retried",
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "payment_goal_needs_confirmation",
+              "message": "order_paid is a Payment goal: send provider and reference so your payment provider or server can confirm it.",
+              "param": "provider",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ",
+              "missing": [
+                "provider"
+              ]
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T123456",
+            "value": "7500"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "payment_goal_needs_confirmation",
+              "param": "provider",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.error.validation_error",
+      "description": "Change 12: 422 validation_error is an InvalidRequestError with its param; not retried",
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "validation_error",
+              "message": "kind is not a goal call field: the kind lives in the goal settings.",
+              "param": "kind",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T123456",
+            "value": "7500",
+            "currency": "NGN",
+            "provider": "paystack",
+            "extra": {
+              "kind": "standard"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "validation_error",
+              "param": "kind",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.error.plan_feature_unavailable",
+      "description": "Change 12: a Payment goal on Free → 403 plan_feature_unavailable, a PermissionError with required_plan starter",
+      "client": {
+        "max_retries": 3
+      },
+      "responses": [
+        {
+          "status": 403,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "permission",
+              "code": "plan_feature_unavailable",
+              "message": "You're on Free. Payment goals are included from Starter. Upgrade to Starter to use them.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ",
+              "feature": "payment_goals",
+              "required_plan": "starter"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T123456",
+            "value": "7500",
+            "currency": "NGN",
+            "provider": "paystack"
+          },
+          "expect": {
+            "error": {
+              "class": "PermissionError",
+              "code": "plan_feature_unavailable",
+              "http_status": 403,
+              "required_plan": "starter"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.batch.status_values",
+      "description": "Change 12: batch items carry the GoalStatus in goal_event.status (counted, waiting, refused) and errors per item",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              },
+              {
+                "index": 1,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+                  "status": "waiting",
+                  "reason": "waiting_for_confirmation",
+                  "goal_kind": "payment",
+                  "counted": false,
+                  "value_ignored": false,
+                  "event_status": null,
+                  "goal": "order_paid",
+                  "reference": "T123456",
+                  "value": "7500",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": null,
+                  "is_first": null,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": null,
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": {
+                    "confirmation_id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+                    "match_status": "waiting_for_report",
+                    "report_id": null,
+                    "provider": "paystack"
+                  },
+                  "value_minor": 750000
+                },
+                "error": null
+              },
+              {
+                "index": 2,
+                "ok": true,
+                "status": 200,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "refused",
+                  "reason": "already_counted_for_click",
+                  "goal_kind": "standard",
+                  "counted": false,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-2",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              },
+              {
+                "index": 3,
+                "ok": false,
+                "status": 422,
+                "goal_event": null,
+                "error": {
+                  "type": "invalid_request",
+                  "code": "unknown_provider",
+                  "message": "Unknown provider.",
+                  "param": "provider"
+                }
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send_batch",
+          "args": {
+            "events": [
+              {
+                "goal": "account_opened",
+                "reference": "R-0"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "T123456",
+                "value": "7500",
+                "currency": "NGN",
+                "provider": "paystack"
+              },
+              {
+                "goal": "account_opened",
+                "reference": "R-2",
+                "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "T-3",
+                "value": "10",
+                "provider": "acme_pay"
+              }
+            ]
+          },
+          "expect": {
+            "result": {
+              "object": "list",
+              "data": [
+                {
+                  "index": 0,
+                  "ok": true,
+                  "goal_event": {
+                    "status": "counted",
+                    "goal_kind": "standard"
+                  }
+                },
+                {
+                  "index": 1,
+                  "ok": true,
+                  "goal_event": {
+                    "status": "waiting",
+                    "reason": "waiting_for_confirmation",
+                    "goal_kind": "payment",
+                    "payment": {
+                      "confirmation_id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC"
+                    }
+                  }
+                },
+                {
+                  "index": 2,
+                  "ok": true,
+                  "status": 200,
+                  "goal_event": {
+                    "status": "refused",
+                    "reason": "already_counted_for_click"
+                  }
+                },
+                {
+                  "index": 3,
+                  "ok": false,
+                  "status": 422,
+                  "error": {
+                    "code": "unknown_provider",
+                    "param": "provider"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "account_opened",
+                  "reference": "R-0"
+                },
+                {
+                  "goal": "order_paid",
+                  "reference": "T123456",
+                  "value": "7500",
+                  "currency": "NGN",
+                  "provider": "paystack"
+                },
+                {
+                  "goal": "account_opened",
+                  "reference": "R-2",
+                  "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+                },
+                {
+                  "goal": "order_paid",
+                  "reference": "T-3",
+                  "value": "10",
+                  "provider": "acme_pay"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.batch.invalid_provider",
+      "description": "Change 12: a batch event with a malformed provider throws with its index; nothing is sent",
+      "steps": [
+        {
+          "call": "goals.send_batch",
+          "args": {
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "R-0"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-1",
+                "provider": "PayStack"
+              }
+            ]
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_provider",
+              "param": "provider",
+              "index": 1
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.payment_waiting",
+      "description": "Change 12: background goal() with provider; a waiting Payment goal (ok item) is not an error: on_error stays empty",
+      "client": {
+        "send_mode": "background"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+                  "status": "waiting",
+                  "reason": "waiting_for_confirmation",
+                  "goal_kind": "payment",
+                  "counted": false,
+                  "value_ignored": false,
+                  "event_status": null,
+                  "goal": "order_paid",
+                  "reference": "T123456",
+                  "value": "7500",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": null,
+                  "is_first": null,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": null,
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": {
+                    "confirmation_id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+                    "match_status": "waiting_for_report",
+                    "report_id": null,
+                    "provider": "paystack"
+                  },
+                  "value_minor": 750000
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "T123456",
+            "value": "7500",
+            "currency": "NGN",
+            "provider": "paystack"
+          }
+        },
+        {
+          "call": "flush",
+          "expect": {
+            "result": {
+              "value": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "T123456",
+                  "value": "7500",
+                  "currency": "NGN",
+                  "provider": "paystack"
+                }
+              ]
+            }
+          }
+        ],
+        "on_error": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.payment_item_error",
+      "description": "Change 12: a batch item refused with value_required (a server Payment goal without a value) goes to on_error",
+      "client": {
+        "send_mode": "background"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": false,
+                "status": 422,
+                "goal_event": null,
+                "error": {
+                  "type": "invalid_request",
+                  "code": "value_required",
+                  "message": "A Payment goal sent by your server needs a value.",
+                  "param": "value"
+                }
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "T123456",
+            "provider": "paystack"
+          }
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "T123456",
+                  "provider": "paystack"
+                }
+              ]
+            }
+          }
+        ],
+        "on_error": [
+          {
+            "class": "InvalidRequestError",
+            "code": "value_required",
+            "http_status": 422,
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "T123456"
+              }
+            ]
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.invalid_provider",
+      "description": "Change 12: goal() with a malformed provider never throws: on_error invalid_provider, nothing queued",
+      "client": {
+        "send_mode": "background"
+      },
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "T-1",
+            "provider": "Paystack"
+          }
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "on_error": [
+          {
+            "class": "InvalidRequestError",
+            "code": "invalid_provider",
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "T-1"
+              }
+            ]
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.value_minor",
+      "description": "The result keeps value as a decimal string and value_minor as an integer (change 09 X.E10)",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null,
+            "value_minor": 200000000
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "value": "2000000",
+              "value_minor": 200000000,
+              "currency": "NGN"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {}
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.click_id_and_code",
+      "description": "click_id and code together are refused locally",
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-7",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "code": "TOLU20"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "click_id_and_code",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.invalid_key.uppercase",
+      "description": "Goal key \"Account_Opened\" is refused locally",
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "Account_Opened",
+            "reference": "APP-8"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_goal_key",
+              "param": "goal",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.invalid_key.dash",
+      "description": "Goal key \"account-opened\" is refused locally",
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account-opened",
+            "reference": "APP-8"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_goal_key",
+              "param": "goal",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.invalid_key.too_short",
+      "description": "Goal key \"a\" is refused locally",
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "a",
+            "reference": "APP-8"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_goal_key",
+              "param": "goal",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.invalid_key.too_long",
+      "description": "Goal key \"abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\" is refused locally",
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "reference": "APP-8"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_goal_key",
+              "param": "goal",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.invalid_key.digit_first",
+      "description": "Goal key \"1goal\" is refused locally",
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "1goal",
+            "reference": "APP-8"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_goal_key",
+              "param": "goal",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.missing_reference",
+      "description": "A reference is required",
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_reference",
+              "param": "reference"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.long_reference",
+      "description": "A reference over 128 characters is refused",
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_reference",
+              "param": "reference"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.reference_128",
+      "description": "A 128-character reference is fine",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            },
+            "json": {
+              "goal": "account_opened",
+              "reference": "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.batch.basic",
+      "description": "send_batch posts {events} and returns per-item results without throwing",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              },
+              {
+                "index": 1,
+                "ok": false,
+                "status": 422,
+                "goal_event": null,
+                "error": {
+                  "type": "invalid_request",
+                  "code": "invalid_value",
+                  "message": "Bad value.",
+                  "param": "value"
+                }
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send_batch",
+          "args": {
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "R-0",
+                "value": 100
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-1",
+                "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7",
+                "value": "1.005"
+              }
+            ]
+          },
+          "expect": {
+            "result": {
+              "object": "list",
+              "data": [
+                {
+                  "index": 0,
+                  "ok": true
+                },
+                {
+                  "index": 1,
+                  "ok": false,
+                  "status": 422,
+                  "error": {
+                    "code": "invalid_value"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-0",
+                  "value": "100"
+                },
+                {
+                  "goal": "order_paid",
+                  "reference": "R-1",
+                  "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7",
+                  "value": "1.005"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.batch.empty",
+      "description": "An empty batch is refused locally",
+      "steps": [
+        {
+          "call": "goals.send_batch",
+          "args": {
+            "events": []
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "batch_empty"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.batch.too_large",
+      "description": "More than 500 events are refused locally",
+      "steps": [
+        {
+          "call": "goals.send_batch",
+          "args": {
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "R-0"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-1"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-2"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-3"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-4"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-5"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-6"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-7"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-8"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-9"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-10"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-11"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-12"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-13"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-14"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-15"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-16"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-17"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-18"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-19"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-20"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-21"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-22"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-23"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-24"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-25"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-26"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-27"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-28"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-29"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-30"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-31"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-32"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-33"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-34"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-35"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-36"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-37"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-38"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-39"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-40"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-41"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-42"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-43"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-44"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-45"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-46"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-47"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-48"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-49"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-50"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-51"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-52"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-53"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-54"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-55"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-56"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-57"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-58"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-59"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-60"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-61"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-62"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-63"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-64"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-65"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-66"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-67"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-68"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-69"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-70"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-71"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-72"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-73"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-74"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-75"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-76"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-77"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-78"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-79"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-80"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-81"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-82"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-83"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-84"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-85"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-86"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-87"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-88"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-89"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-90"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-91"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-92"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-93"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-94"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-95"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-96"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-97"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-98"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-99"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-100"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-101"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-102"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-103"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-104"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-105"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-106"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-107"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-108"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-109"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-110"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-111"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-112"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-113"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-114"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-115"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-116"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-117"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-118"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-119"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-120"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-121"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-122"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-123"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-124"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-125"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-126"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-127"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-128"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-129"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-130"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-131"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-132"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-133"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-134"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-135"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-136"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-137"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-138"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-139"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-140"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-141"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-142"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-143"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-144"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-145"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-146"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-147"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-148"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-149"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-150"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-151"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-152"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-153"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-154"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-155"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-156"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-157"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-158"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-159"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-160"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-161"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-162"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-163"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-164"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-165"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-166"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-167"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-168"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-169"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-170"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-171"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-172"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-173"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-174"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-175"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-176"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-177"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-178"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-179"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-180"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-181"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-182"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-183"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-184"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-185"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-186"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-187"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-188"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-189"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-190"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-191"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-192"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-193"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-194"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-195"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-196"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-197"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-198"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-199"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-200"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-201"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-202"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-203"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-204"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-205"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-206"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-207"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-208"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-209"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-210"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-211"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-212"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-213"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-214"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-215"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-216"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-217"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-218"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-219"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-220"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-221"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-222"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-223"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-224"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-225"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-226"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-227"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-228"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-229"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-230"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-231"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-232"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-233"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-234"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-235"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-236"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-237"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-238"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-239"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-240"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-241"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-242"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-243"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-244"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-245"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-246"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-247"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-248"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-249"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-250"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-251"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-252"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-253"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-254"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-255"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-256"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-257"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-258"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-259"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-260"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-261"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-262"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-263"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-264"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-265"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-266"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-267"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-268"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-269"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-270"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-271"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-272"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-273"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-274"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-275"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-276"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-277"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-278"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-279"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-280"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-281"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-282"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-283"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-284"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-285"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-286"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-287"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-288"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-289"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-290"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-291"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-292"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-293"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-294"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-295"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-296"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-297"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-298"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-299"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-300"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-301"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-302"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-303"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-304"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-305"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-306"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-307"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-308"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-309"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-310"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-311"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-312"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-313"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-314"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-315"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-316"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-317"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-318"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-319"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-320"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-321"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-322"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-323"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-324"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-325"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-326"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-327"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-328"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-329"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-330"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-331"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-332"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-333"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-334"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-335"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-336"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-337"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-338"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-339"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-340"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-341"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-342"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-343"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-344"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-345"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-346"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-347"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-348"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-349"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-350"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-351"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-352"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-353"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-354"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-355"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-356"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-357"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-358"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-359"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-360"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-361"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-362"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-363"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-364"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-365"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-366"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-367"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-368"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-369"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-370"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-371"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-372"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-373"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-374"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-375"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-376"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-377"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-378"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-379"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-380"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-381"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-382"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-383"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-384"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-385"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-386"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-387"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-388"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-389"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-390"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-391"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-392"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-393"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-394"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-395"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-396"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-397"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-398"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-399"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-400"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-401"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-402"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-403"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-404"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-405"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-406"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-407"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-408"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-409"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-410"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-411"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-412"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-413"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-414"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-415"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-416"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-417"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-418"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-419"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-420"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-421"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-422"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-423"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-424"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-425"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-426"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-427"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-428"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-429"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-430"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-431"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-432"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-433"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-434"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-435"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-436"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-437"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-438"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-439"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-440"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-441"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-442"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-443"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-444"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-445"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-446"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-447"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-448"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-449"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-450"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-451"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-452"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-453"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-454"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-455"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-456"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-457"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-458"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-459"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-460"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-461"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-462"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-463"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-464"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-465"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-466"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-467"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-468"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-469"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-470"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-471"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-472"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-473"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-474"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-475"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-476"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-477"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-478"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-479"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-480"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-481"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-482"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-483"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-484"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-485"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-486"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-487"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-488"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-489"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-490"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-491"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-492"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-493"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-494"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-495"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-496"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-497"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-498"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-499"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-500"
+              }
+            ]
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "batch_too_large"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.batch.invalid_item",
+      "description": "A locally invalid event throws with its index and nothing is sent",
+      "steps": [
+        {
+          "call": "goals.send_batch",
+          "args": {
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "R-0"
+              },
+              {
+                "goal": "Bad-Key",
+                "reference": "R-1"
+              }
+            ]
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_goal_key",
+              "index": 1
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.reverse.full",
+      "description": "A full reversal sends goal and reference only",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": "2000000",
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.reverse",
+          "args": {
+            "key": "loan_disbursed",
+            "reference": "LN-2201"
+          },
+          "expect": {
+            "result": {
+              "reversed_value": "2000000"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/reverse",
+            "json": {
+              "goal": "loan_disbursed",
+              "reference": "LN-2201"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.reverse.missing_reference",
+      "description": "A reversal needs a reference",
+      "steps": [
+        {
+          "call": "goals.reverse",
+          "args": {
+            "key": "loan_disbursed",
+            "reference": ""
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_reference"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.batch",
+      "description": "Background: three goal() calls and flush → one batch request, in order",
+      "client": {
+        "send_mode": "background"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              },
+              {
+                "index": 1,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-1",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              },
+              {
+                "index": 2,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-2",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-0",
+            "value": "10"
+          }
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-1",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          }
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "signup",
+            "reference": "R-2"
+          }
+        },
+        {
+          "call": "flush",
+          "expect": {
+            "result": {
+              "value": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "headers": {
+              "idempotency-key": {
+                "$uuid4": true
+              }
+            },
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-0",
+                  "value": "10"
+                },
+                {
+                  "goal": "order_paid",
+                  "reference": "R-1",
+                  "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+                },
+                {
+                  "goal": "signup",
+                  "reference": "R-2"
+                }
+              ]
+            }
+          }
+        ],
+        "on_error": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.batch_size",
+      "description": "Background: batch_size 2 and five goals → batches of 2, 2 and 1",
+      "client": {
+        "send_mode": "background",
+        "batch_size": 2
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              },
+              {
+                "index": 1,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-1",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-2",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              },
+              {
+                "index": 1,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-3",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-4",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-0"
+          }
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-1"
+          }
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-2"
+          }
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-3"
+          }
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-4"
+          }
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-0"
+                },
+                {
+                  "goal": "order_paid",
+                  "reference": "R-1"
+                }
+              ]
+            }
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-2"
+                },
+                {
+                  "goal": "order_paid",
+                  "reference": "R-3"
+                }
+              ]
+            }
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-4"
+                }
+              ]
+            }
+          }
+        ],
+        "on_error": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.flush_empty",
+      "description": "flush with nothing queued sends nothing and returns true",
+      "client": {
+        "send_mode": "background"
+      },
+      "steps": [
+        {
+          "call": "flush",
+          "expect": {
+            "result": {
+              "value": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.item_error",
+      "description": "A failed batch item goes to on_error (mapped by its status and error); goal() never throws",
+      "client": {
+        "send_mode": "background"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "APP-55231",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              },
+              {
+                "index": 1,
+                "ok": false,
+                "status": 422,
+                "goal_event": null,
+                "error": {
+                  "type": "invalid_request",
+                  "code": "value_required",
+                  "message": "This goal needs a value.",
+                  "param": "value"
+                }
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-0"
+          }
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "loan_disbursed",
+            "reference": "LN-1"
+          }
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch"
+          }
+        ],
+        "on_error": [
+          {
+            "class": "InvalidRequestError",
+            "code": "value_required",
+            "http_status": 422,
+            "events": [
+              {
+                "goal": "loan_disbursed",
+                "reference": "LN-1"
+              }
+            ]
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.auth_failure",
+      "description": "A non-retryable whole-batch failure drops the events and calls on_error once",
+      "client": {
+        "send_mode": "background"
+      },
+      "responses": [
+        {
+          "status": 401,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "authentication",
+              "code": "invalid_credentials",
+              "message": "Invalid credentials.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-0"
+          }
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-1"
+          }
+        },
+        {
+          "call": "flush"
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch"
+          }
+        ],
+        "on_error": [
+          {
+            "class": "AuthenticationError",
+            "code": "invalid_credentials",
+            "dropped": true,
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "R-0"
+              },
+              {
+                "goal": "order_paid",
+                "reference": "R-1"
+              }
+            ]
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.requeue",
+      "description": "A retryable whole-batch failure re-queues the events; after 3 failed rounds they are dropped",
+      "client": {
+        "send_mode": "background",
+        "max_retries": 0
+      },
+      "responses": [
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-0"
+          }
+        },
+        {
+          "call": "flush"
+        },
+        {
+          "call": "flush"
+        },
+        {
+          "call": "flush"
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-0"
+                }
+              ]
+            }
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-0"
+                }
+              ]
+            },
+            "idempotency_key_differs_from": 0
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-0"
+                }
+              ]
+            }
+          }
+        ],
+        "on_error": [
+          {
+            "class": "ServerError",
+            "http_status": 503,
+            "dropped": true,
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "R-0"
+              }
+            ]
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.501_dropped",
+      "description": "A whole-batch 501 is not retryable: one request, the events are dropped and passed to on_error at once",
+      "client": {
+        "send_mode": "background",
+        "max_retries": 3
+      },
+      "responses": [
+        {
+          "status": 501,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "not_implemented",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-0"
+          }
+        },
+        {
+          "call": "flush"
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-0"
+                }
+              ]
+            }
+          }
+        ],
+        "on_error": [
+          {
+            "class": "ServerError",
+            "code": "not_implemented",
+            "http_status": 501,
+            "dropped": true,
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "R-0"
+              }
+            ]
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.requeue_then_success",
+      "description": "Re-queued events are sent on the next flush, ahead of newer ones",
+      "client": {
+        "send_mode": "background",
+        "max_retries": 0
+      },
+      "responses": [
+        {
+          "status": 503,
+          "headers": {
+            "x-request-id": "req_5xx"
+          },
+          "json": {
+            "error": {
+              "type": "server",
+              "code": "unavailable",
+              "message": "Try again.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              },
+              {
+                "index": 1,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-1",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-0"
+          }
+        },
+        {
+          "call": "flush"
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-1"
+          }
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-0"
+                }
+              ]
+            }
+          },
+          {
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-0"
+                },
+                {
+                  "goal": "order_paid",
+                  "reference": "R-1"
+                }
+              ]
+            }
+          }
+        ],
+        "on_error": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.queue_full",
+      "description": "When the queue is full the oldest event is dropped (warning + on_error queue_full)",
+      "client": {
+        "send_mode": "background",
+        "max_queue_size": 2
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-1",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              },
+              {
+                "index": 1,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-2",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-0"
+          }
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-1"
+          }
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-2"
+          }
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-1"
+                },
+                {
+                  "goal": "order_paid",
+                  "reference": "R-2"
+                }
+              ]
+            }
+          }
+        ],
+        "warnings": [
+          "queue_full_dropped"
+        ],
+        "on_error": [
+          {
+            "class": "InvalidRequestError",
+            "code": "queue_full",
+            "dropped": true,
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "R-0"
+              }
+            ]
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.invalid_never_throws",
+      "description": "goal() with an invalid key never throws: on_error, nothing queued",
+      "client": {
+        "send_mode": "background"
+      },
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "Bad Key",
+            "reference": "R-0"
+          }
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "on_error": [
+          {
+            "class": "InvalidRequestError",
+            "code": "invalid_goal_key",
+            "events": [
+              {
+                "goal": "Bad Key",
+                "reference": "R-0"
+              }
+            ]
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.close",
+      "description": "close() flushes; goal() after close goes to on_error client_closed",
+      "client": {
+        "send_mode": "background"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-0"
+          }
+        },
+        {
+          "call": "close",
+          "expect": {
+            "result": {
+              "value": true
+            }
+          }
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-1"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "json": {
+              "events": [
+                {
+                  "goal": "order_paid",
+                  "reference": "R-0"
+                }
+              ]
+            }
+          }
+        ],
+        "on_error": [
+          {
+            "class": "InvalidRequestError",
+            "code": "client_closed",
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "R-1"
+              }
+            ]
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.sync.error_to_on_error",
+      "description": "goal() in sync mode: a 422 goes to on_error, never thrown",
+      "client": {
+        "send_mode": "sync"
+      },
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "value_not_allowed",
+              "message": "This goal takes no value.",
+              "param": "value",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "signup",
+            "reference": "SU-9",
+            "value": "5"
+          }
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ],
+        "on_error": [
+          {
+            "class": "InvalidRequestError",
+            "code": "value_not_allowed",
+            "events": [
+              {
+                "goal": "signup",
+                "reference": "SU-9"
+              }
+            ]
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

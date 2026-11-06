@@ -1,0 +1,41 @@
+# Drift check for the generated API layer (S.16) and the shared enums (GoalKind, GoalStatus, Provider, change 12):
+# regenerate from the vendored openapi.json with the pinned OpenAPI Generator and fail if the committed output
+# differs, or if a file is no longer generated. To update after the backend
+# changes: node server/codegen/generate.mjs --from ../clikgate_api, then commit. Covers every configured
+# language (Node, Python, PHP, Java, .NET).
+name: server-codegen
+
+on:
+  push:
+    branches: [main]
+    paths: ["server/openapi/**", "server/codegen/**", "server/node/src/generated/**", "server/python/src/clikgate/api.py", "server/php/src/Generated/**", "server/java/clikgate-java/src/main/java/com/clikgate/api/**", "server/dotnet/src/Clikgate/Api/**", "server/node/src/enums.ts", "server/python/src/clikgate/_enums.py", "server/php/src/Enum/**", "server/java/clikgate-java/src/main/java/com/clikgate/model/GoalKind.java", "server/java/clikgate-java/src/main/java/com/clikgate/model/GoalStatus.java", "server/java/clikgate-java/src/main/java/com/clikgate/model/Provider.java", "server/dotnet/src/Clikgate/Enums.cs", ".github/workflows/server-codegen.yml"]
+  pull_request:
+    paths: ["server/openapi/**", "server/codegen/**", "server/node/src/generated/**", "server/python/src/clikgate/api.py", "server/php/src/Generated/**", "server/java/clikgate-java/src/main/java/com/clikgate/api/**", "server/dotnet/src/Clikgate/Api/**", "server/node/src/enums.ts", "server/python/src/clikgate/_enums.py", "server/php/src/Enum/**", "server/java/clikgate-java/src/main/java/com/clikgate/model/GoalKind.java", "server/java/clikgate-java/src/main/java/com/clikgate/model/GoalStatus.java", "server/java/clikgate-java/src/main/java/com/clikgate/model/Provider.java", "server/dotnet/src/Clikgate/Enums.cs", ".github/workflows/server-codegen.yml"]
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Cache the generator JAR
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: server/codegen/.cache
+          key: openapi-generator-${{ hashFiles('server/codegen/generator.json') }}
+      - name: Generator input is the public audience only (Change 21, R.41)
+        run: node --test server/codegen/filter.test.mjs
+      - name: Regenerate and compare
+        run: node server/codegen/generate.mjs --check
