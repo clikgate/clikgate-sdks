@@ -1,0 +1,1306 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "money",
+  "description": "Money is always a decimal string on the wire (SPEC 8)",
+  "cases": [
+    {
+      "id": "money.format.string.integer",
+      "description": "format_value(\"2000000\") → \"2000000\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "value": "2000000"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.decimal",
+      "description": "format_value(\"1500.50\") → \"1500.50\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": "1500.50"
+          },
+          "expect": {
+            "result": {
+              "value": "1500.50"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.trimmed",
+      "description": "format_value(\" 12 \") → \"12\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": " 12 "
+          },
+          "expect": {
+            "result": {
+              "value": "12"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.zero",
+      "description": "format_value(\"0\") → \"0\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": "0"
+          },
+          "expect": {
+            "result": {
+              "value": "0"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.leading_zeros",
+      "description": "format_value(\"007\") → \"007\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": "007"
+          },
+          "expect": {
+            "result": {
+              "value": "007"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.many_places",
+      "description": "format_value(\"0.125\") → \"0.125\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": "0.125"
+          },
+          "expect": {
+            "result": {
+              "value": "0.125"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.invalid_0",
+      "description": "format_value(\"-5\") → invalid_value",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": "-5"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.invalid_1",
+      "description": "format_value(\"1e3\") → invalid_value",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": "1e3"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.invalid_2",
+      "description": "format_value(\"1,000\") → invalid_value",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": "1,000"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.invalid_3",
+      "description": "format_value(\"\") → invalid_value",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": ""
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.invalid_4",
+      "description": "format_value(\".5\") → invalid_value",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": ".5"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.invalid_5",
+      "description": "format_value(\"5.\") → invalid_value",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": "5."
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.invalid_6",
+      "description": "format_value(\"abc\") → invalid_value",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": "abc"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.invalid_7",
+      "description": "format_value(\"NaN\") → invalid_value",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": "NaN"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.invalid_8",
+      "description": "format_value(\"+5\") → invalid_value",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": "+5"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.string.invalid_9",
+      "description": "format_value(\"१२\") → invalid_value",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": "१२"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.integer",
+      "description": "format_value(2000000) → \"2000000\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": 2000000
+          },
+          "expect": {
+            "result": {
+              "value": "2000000"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.integer.zero",
+      "description": "format_value(0) → \"0\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": 0
+          },
+          "expect": {
+            "result": {
+              "value": "0"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.integer.negative",
+      "description": "format_value(-1) → invalid_value",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": -1
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.decimal",
+      "description": "format_value({\"$decimal\":\"1500.50\"}) → \"1500.50\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": {
+              "$decimal": "1500.50"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "1500.50"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.decimal.integer",
+      "description": "format_value({\"$decimal\":\"2000000\"}) → \"2000000\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": {
+              "$decimal": "2000000"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "2000000"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.decimal.exponent",
+      "description": "format_value({\"$decimal\":\"1E+3\"}) → \"1000\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": {
+              "$decimal": "1E+3"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "1000"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "languages": [
+        "python",
+        "java",
+        "dotnet"
+      ],
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.decimal.negative",
+      "description": "format_value({\"$decimal\":\"-1.50\"}) → invalid_value",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": {
+              "$decimal": "-1.50"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.bigint",
+      "description": "format_value({\"$bigint\":\"9007199254740993\"}) → \"9007199254740993\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": {
+              "$bigint": "9007199254740993"
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "9007199254740993"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "languages": [
+        "node",
+        "python",
+        "java",
+        "php"
+      ],
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.float.node",
+      "description": "format_value({\"$float\":1500.5}) → \"1500.5\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": {
+              "$float": 1500.5
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "1500.5"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": [
+          "inexact_number"
+        ]
+      },
+      "languages": [
+        "node"
+      ],
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.float.node.tenth",
+      "description": "format_value({\"$float\":0.1}) → \"0.1\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": {
+              "$float": 0.1
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "0.1"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": [
+          "inexact_number"
+        ]
+      },
+      "languages": [
+        "node"
+      ],
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.float.node.large",
+      "description": "format_value({\"$float\":1e+21}) → \"1000000000000000000000\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": {
+              "$float": 1e+21
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "1000000000000000000000"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": [
+          "inexact_number"
+        ]
+      },
+      "languages": [
+        "node"
+      ],
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.float.node.tiny",
+      "description": "format_value({\"$float\":1e-7}) → \"0.0000001\"",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": {
+              "$float": 1e-7
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "0.0000001"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": [
+          "inexact_number"
+        ]
+      },
+      "languages": [
+        "node"
+      ],
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.float.node.nan",
+      "description": "format_value({\"$float\":\"NaN\"}) → invalid_value",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": {
+              "$float": "NaN"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "languages": [
+        "node"
+      ],
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.float.node.infinity",
+      "description": "format_value({\"$float\":\"Infinity\"}) → invalid_value",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": {
+              "$float": "Infinity"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "languages": [
+        "node"
+      ],
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.format.float.python",
+      "description": "format_value({\"$float\":1500.5}) → TypeError",
+      "steps": [
+        {
+          "call": "money.format",
+          "args": {
+            "value": {
+              "$float": 1500.5
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "TypeError"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [],
+        "warnings": []
+      },
+      "languages": [
+        "python"
+      ],
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.wire.string",
+      "description": "A string value is sent as a JSON string",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "ORD-1",
+            "value": "1500.50",
+            "currency": "NGN"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "order_paid",
+              "reference": "ORD-1",
+              "value": "1500.50",
+              "currency": "NGN"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.wire.integer",
+      "description": "An integer value is sent as a JSON string, never a number",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "value": 2000000
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-1",
+              "value": "2000000"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.wire.decimal",
+      "description": "A decimal value keeps its scale",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "ORD-2",
+            "value": {
+              "$decimal": "99.90"
+            },
+            "currency": "USD"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "order_paid",
+              "reference": "ORD-2",
+              "value": "99.90",
+              "currency": "USD"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.wire.absent",
+      "description": "No value: no value key (and currency only when given)",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "signup",
+            "reference": "SU-1"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "signup",
+              "reference": "SU-1"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.wire.invalid_no_request",
+      "description": "An invalid value is refused locally; nothing is sent",
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "ORD-3",
+            "value": "1,500"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_value",
+              "param": "value",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.wire.response_string",
+      "description": "Response values stay decimal strings",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "1500.50",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "ORD-4",
+            "value": "1500.50"
+          },
+          "expect": {
+            "result": {
+              "value": "1500.50"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {}
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.wire.conversion",
+      "description": "conversions.create formats value too",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "conversion",
+            "id": "cnv_2"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-5",
+              "goal": "order_paid",
+              "value": 2000
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/conversions",
+            "json": {
+              "external_id": "ORD-5",
+              "goal": "order_paid",
+              "value": "2000"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.wire.reverse",
+      "description": "goals.reverse formats a partial value",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": "500.25",
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.reverse",
+          "args": {
+            "key": "order_paid",
+            "reference": "ORD-6",
+            "value": "500.25",
+            "reason": "partial refund"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/reverse",
+            "json": {
+              "goal": "order_paid",
+              "reference": "ORD-6",
+              "value": "500.25",
+              "reason": "partial refund"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "money.wire.float_warns",
+      "description": "Node: a float value is sent as a string and warns inexact_number",
+      "languages": [
+        "node"
+      ],
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "ORD-7",
+            "value": {
+              "$float": 19.99
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "json": {
+              "goal": "order_paid",
+              "reference": "ORD-7",
+              "value": "19.99"
+            }
+          }
+        ],
+        "warnings": [
+          "inexact_number"
+        ]
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

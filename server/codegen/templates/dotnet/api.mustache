@@ -1,0 +1,45 @@
+{{#operations}}
+CLASS_START {{classname}}
+/// <summary>{{baseName}}: generated from openapi.json. See https://clikgate.com/docs/api.</summary>
+public sealed class {{classname}}
+{
+    private readonly Requester _r;
+
+    internal {{classname}}(Requester r) => _r = r;
+{{#operation}}
+
+    /// <summary>{{summary}} (<c>{{httpMethod}} {{{path}}}</c>).{{#hasQueryParams}} Query parameters: {{#queryParams}}<c>{{baseName}}</c>{{^-last}}, {{/-last}}{{/queryParams}}.{{/hasQueryParams}}</summary>
+    /// <example><code>DOTNET_EXAMPLE {{{vendorExtensions.x-cg-example}}}</code></example>
+{{#pathParams}}
+    /// <param name="{{paramName}}"><c>{{baseName}}</c>.</param>
+{{/pathParams}}
+{{#bodyParam}}
+    /// <param name="body">{{baseType}} (wire field names): a dictionary, a JsonNode or any JSON-serialisable value.</param>
+{{/bodyParam}}
+{{#hasQueryParams}}
+    /// <param name="query">Query parameters by wire name.</param>
+{{/hasQueryParams}}
+    /// <param name="options">Per-call options.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>{{#vendorExtensions.x-cg-binary}}The bytes and content type.{{/vendorExtensions.x-cg-binary}}{{^vendorExtensions.x-cg-binary}}The decoded JSON ({{#returnType}}{{{returnBaseType}}}{{/returnType}}{{^returnType}}any{{/returnType}}).{{/vendorExtensions.x-cg-binary}}</returns>
+    public async Task<{{#vendorExtensions.x-cg-binary}}BinaryResponse{{/vendorExtensions.x-cg-binary}}{{^vendorExtensions.x-cg-binary}}JsonNode?{{/vendorExtensions.x-cg-binary}}> {{nickname}}Async({{#pathParams}}string {{paramName}}, {{/pathParams}}{{#bodyParam}}object? body{{^required}} = null{{/required}}, {{/bodyParam}}{{#hasQueryParams}}IDictionary<string, object?>? query = null, {{/hasQueryParams}}RequestOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        var req = new ApiRequest("{{httpMethod}}", Requester.Path("{{{path}}}"{{#pathParams}}, ("{{baseName}}", {{paramName}}){{/pathParams}}){{#hasQueryParams}}, query{{/hasQueryParams}}).With(options);
+{{#bodyParam}}
+        if (body is not null)
+        {
+            req.WithBody(body);
+        }
+{{/bodyParam}}
+{{#vendorExtensions.x-cg-binary}}
+        var res = await _r.SendAsync(req, cancellationToken).ConfigureAwait(false);
+        return new BinaryResponse(res.Headers.TryGetValue("content-type", out var t) ? t : "application/octet-stream", res.Body);
+{{/vendorExtensions.x-cg-binary}}
+{{^vendorExtensions.x-cg-binary}}
+        return (await _r.RequestAsync(req, cancellationToken).ConfigureAwait(false)).Data;
+{{/vendorExtensions.x-cg-binary}}
+    }
+{{/operation}}
+}
+CLASS_END
+{{/operations}}

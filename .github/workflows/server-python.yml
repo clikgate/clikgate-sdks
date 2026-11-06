@@ -1,0 +1,74 @@
+# Server SDK for Python (server/python): lint, types, unit tests and the cross-language conformance
+# suite (sync and async clients) on every supported Python plus the minimum (3.9), on Linux and Windows.
+# Python versions checked 2026-10-26 (docs/DECISIONS.md): 3.11-3.15 are supported; 3.9 (EOL 2025-10)
+# and 3.10 (EOL 2026-10) stay tested because S.9 makes 3.9 the documented minimum.
+name: server-python
+
+on:
+  push:
+    branches: [main]
+    paths: ["server/python/**", "server/conformance/**", "server/scripts/**", "server/SPEC.md", ".github/workflows/server-python.yml"]
+  pull_request:
+    paths: ["server/python/**", "server/conformance/**", "server/scripts/**", "server/SPEC.md", ".github/workflows/server-python.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-python-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: lint, types, package
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server/python
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: server/python/requirements-dev.txt
+      # the release scan (server/scripts/scan-package.mjs) needs Node 18+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: pip install -r requirements-dev.txt -e .
+      - run: python scripts/check_version.py
+      - run: ruff check src tests scripts examples
+      - run: ruff format --check src tests scripts examples
+      - run: mypy
+      - run: python -m build
+      - run: python scripts/check_package.py
+      - name: Release scan (no internal comments, notes, debug code, internal or staff URLs)
+        run: node ../scripts/scan-package.mjs dist/*.whl dist/*.tar.gz
+
+  test:
+    name: test (python ${{ matrix.python }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
+    defaults:
+      run:
+        working-directory: server/python
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: server/python/requirements-dev.txt
+      # the conformance mock server needs Node 18+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: pip install -r requirements-dev.txt -e .
+      - name: Unit tests and conformance suite (Clikgate and AsyncClikgate)
+        run: python scripts/run_tests.py

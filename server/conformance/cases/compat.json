@@ -1,0 +1,865 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "compat",
+  "description": "Forward compatibility: older SDK versions ignore unknown fields and enum values (change 12 S.3)",
+  "cases": [
+    {
+      "id": "compat.goal_event.unknown_fields",
+      "description": "A goal_event with fields this SDK does not know is returned as usual, unknown fields kept",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null,
+            "future_field": {
+              "nested": [
+                1,
+                "two",
+                null
+              ],
+              "flag": true
+            },
+            "future_list": [
+              "a"
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "status": "counted",
+              "counted": true,
+              "goal_kind": "standard",
+              "future_field": {
+                "nested": [
+                  1,
+                  "two",
+                  null
+                ],
+                "flag": true
+              },
+              "future_list": [
+                "a"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "compat.goal_event.unknown_enum_values",
+      "description": "A GoalStatus, GoalKind or Provider this SDK does not know is kept as its string, not an error",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "deferred",
+            "reason": "future_reason",
+            "goal_kind": "subscription",
+            "counted": false,
+            "value_ignored": false,
+            "event_status": "future_state",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": {
+              "confirmation_id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+              "match_status": "future_match",
+              "report_id": null,
+              "provider": "acme_pay"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "status": "deferred",
+              "reason": "future_reason",
+              "goal_kind": "subscription",
+              "counted": false,
+              "event_status": "future_state",
+              "payment": {
+                "provider": "acme_pay",
+                "match_status": "future_match"
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "compat.goal_event.missing_new_fields",
+      "description": "A goal_event from an older API (no goal_kind, value_ignored, event_status or payment) still works",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "counted": true,
+            "reason": null,
+            "attributed_to": null,
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "status": "counted",
+              "counted": true,
+              "goal": "account_opened"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "compat.batch.unknown_fields",
+      "description": "Batch responses and items with unknown fields are returned as usual",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "future_field": {
+              "nested": [
+                1,
+                "two",
+                null
+              ],
+              "flag": true
+            },
+            "future_list": [
+              "a"
+            ],
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "future_item": "x",
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "deferred",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null,
+                  "future_field": {
+                    "nested": [
+                      1,
+                      "two",
+                      null
+                    ],
+                    "flag": true
+                  },
+                  "future_list": [
+                    "a"
+                  ]
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send_batch",
+          "args": {
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "R-0"
+              }
+            ]
+          },
+          "expect": {
+            "result": {
+              "object": "list",
+              "future_field": {
+                "nested": [
+                  1,
+                  "two",
+                  null
+                ],
+                "flag": true
+              },
+              "data": [
+                {
+                  "index": 0,
+                  "ok": true,
+                  "future_item": "x",
+                  "goal_event": {
+                    "status": "deferred",
+                    "future_list": [
+                      "a"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "compat.background.unknown_fields",
+      "description": "Background sending ignores unknown fields and status values in batch results: no on_error",
+      "client": {
+        "send_mode": "background"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "future_field": {
+              "nested": [
+                1,
+                "two",
+                null
+              ],
+              "flag": true
+            },
+            "future_list": [
+              "a"
+            ],
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "deferred",
+                  "reason": null,
+                  "goal_kind": "subscription",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null,
+                  "future_field": {
+                    "nested": [
+                      1,
+                      "two",
+                      null
+                    ],
+                    "flag": true
+                  },
+                  "future_list": [
+                    "a"
+                  ]
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-0"
+          }
+        },
+        {
+          "call": "flush",
+          "expect": {
+            "result": {
+              "value": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch"
+          }
+        ],
+        "on_error": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "compat.config.unknown_fields",
+      "description": "A server SDK config with unknown fields (also on goals) is used as usual: warnings and guard unchanged",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": false,
+            "click_id_param": "cgid",
+            "goals": [
+              {
+                "key": "order_paid",
+                "value_mode": "required",
+                "default_currency": "NGN",
+                "kind": "payment",
+                "future_field": 1
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            },
+            "future_field": {
+              "nested": [
+                1,
+                "two",
+                null
+              ],
+              "flag": true
+            },
+            "future_list": [
+              "a"
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "order_paid",
+            "reference": "T-1",
+            "provider": "paystack"
+          },
+          "expect": {
+            "result": {
+              "status": "counted"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "order_paid",
+              "reference": "T-1",
+              "provider": "paystack"
+            }
+          }
+        ],
+        "warnings": [
+          "value_required"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "compat.payment_confirmation.unknown_fields",
+      "description": "A payment_confirmation with unknown fields and a newer provider value is returned as usual",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "payment_confirmation",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "provider": "acme_pay",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "amount_minor": 750000,
+            "currency": "NGN",
+            "occurred_at": "2026-10-28T10:00:00Z",
+            "route": "server_verified",
+            "connection_id": null,
+            "match_status": "future_match",
+            "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+            "goal_event_id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "source_plugin": null,
+            "order_id": null,
+            "test": true,
+            "received_at": "2026-10-28T10:00:01Z",
+            "duplicate": false,
+            "future_field": {
+              "nested": [
+                1,
+                "two",
+                null
+              ],
+              "flag": true
+            },
+            "future_list": [
+              "a"
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "payments.confirm",
+          "args": {
+            "provider": "acme_pay",
+            "reference": "T_ref_001",
+            "status": "success",
+            "amount": "7500",
+            "currency": "NGN"
+          },
+          "expect": {
+            "result": {
+              "provider": "acme_pay",
+              "match_status": "future_match",
+              "future_field": {
+                "nested": [
+                  1,
+                  "two",
+                  null
+                ],
+                "flag": true
+              },
+              "future_list": [
+                "a"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/payments/confirmations"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "compat.link.unknown_fields",
+      "description": "A link with unknown fields is returned as usual",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false,
+            "future_field": {
+              "nested": [
+                1,
+                "two",
+                null
+              ],
+              "flag": true
+            },
+            "future_list": [
+              "a"
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.get",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA"
+          },
+          "expect": {
+            "result": {
+              "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "future_field": {
+                "nested": [
+                  1,
+                  "two",
+                  null
+                ],
+                "flag": true
+              },
+              "future_list": [
+                "a"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/links/lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "compat.error.unknown_keys",
+      "description": "An error envelope with unknown keys maps by status and code as usual",
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "future_error_code",
+              "message": "Something new.",
+              "param": "future_param",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ",
+              "future_field": {
+                "a": 1
+              },
+              "missing": [
+                "provider"
+              ]
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "future_error_code",
+              "param": "future_param",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "compat.error.unknown_type",
+      "description": "An error envelope with an unknown type maps by status (403 → PermissionError)",
+      "responses": [
+        {
+          "status": 403,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "future_type",
+              "code": "future_gate",
+              "message": "Something new.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "error": {
+              "class": "PermissionError",
+              "code": "future_gate",
+              "http_status": 403
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "compat.webhook.unknown_fields",
+      "description": "A signed webhook event of an unknown type with unknown fields verifies and is returned with them",
+      "steps": [
+        {
+          "call": "webhooks.verify",
+          "args": {
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.future_event\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_1\",\"goal\":\"account_opened\",\"value\":\"2000000\",\"currency\":\"NGN\",\"status\":\"deferred\",\"goal_kind\":\"subscription\",\"future_field\":true},\"previous_attributes\":null},\"future_field\":1}",
+            "header": "t=1793016000,v1=9baaecf01603a4bc2a2a0297ea8f64ddac4c4b30d8d7d7fd5c39e59de0ba5dbc",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b",
+            "tolerance": 300,
+            "now": 1793016000
+          },
+          "expect": {
+            "result": {
+              "type": "goal.future_event",
+              "future_field": 1,
+              "data": {
+                "object": {
+                  "status": "deferred",
+                  "goal_kind": "subscription",
+                  "future_field": true
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

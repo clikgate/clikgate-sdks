@@ -1,0 +1,80 @@
+{
+    "name": "clikgate/clikgate-php",
+    "description": "The official Clikgate server SDK for PHP: send goals in three lines, keep the click ID, verify webhooks, with private mode built in.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "clikgate",
+        "attribution",
+        "goals",
+        "conversions",
+        "deep-linking",
+        "webhooks",
+        "psr-18",
+        "psr-15"
+    ],
+    "homepage": "https://clikgate.com/docs/sdks/php",
+    "support": {
+        "issues": "https://github.com/clikgate/clikgate-sdks/issues",
+        "source": "https://github.com/clikgate/clikgate-php",
+        "docs": "https://clikgate.com/docs/sdks/php",
+        "security": "https://clikgate.com/trust"
+    },
+    "authors": [
+        {
+            "name": "Clikgate",
+            "email": "sdk@clikgate.com",
+            "homepage": "https://clikgate.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "php-http/discovery": "^1.19",
+        "psr/http-client": "^1.0",
+        "psr/http-factory": "^1.0",
+        "psr/http-message": "^1.1 || ^2.0",
+        "psr/log": "^2.0 || ^3.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "nyholm/psr7": "^1.8",
+        "phpstan/phpstan": "^2.3",
+        "phpunit/phpunit": "^10.5 || ^11.5 || ^12.4 || ^13.4",
+        "psr/http-server-middleware": "^1.0",
+        "cyclonedx/cyclonedx-php-composer": "^6.2"
+    },
+    "suggest": {
+        "ext-curl": "The built-in transport (timeouts, proxies). Without it, any PSR-18 client found by php-http/discovery is used.",
+        "psr/http-server-middleware": "For Clikgate\\Psr15\\ClikgateMiddleware and the /cg/keep handler (clickIds->keepRoute()).",
+        "clikgate/clikgate-laravel": "Laravel integration: service provider, facade, middleware and queued sending."
+    },
+    "autoload": {
+        "psr-4": {
+            "Clikgate\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Clikgate\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": false,
+            "cyclonedx/cyclonedx-php-composer": true
+        }
+    },
+    "scripts": {
+        "test": [
+            "@test:unit",
+            "@test:conformance"
+        ],
+        "test:unit": "phpunit",
+        "test:conformance": "php tests/Conformance/runner.php",
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "lint": "php-cs-fixer fix --dry-run --diff",
+        "check:version": "php scripts/check-version.php",
+        "sbom": "@composer CycloneDX:make-sbom --omit=dev --spec-version=1.6 --output-reproducible --output-format=JSON --output-file=sbom.cdx.json"
+    }
+}

@@ -1,0 +1,83 @@
+# Server SDK for Java (server/java and server/java-spring-boot-starter): compile with -Werror (core and
+# Servlet filters at --release 8, the starter at 17), javadoc, unit tests and the cross-language conformance
+# suite, then the Java 8-compatible artifacts' tests on every LTS (8, 11, 17, 21, 25) and the current JDK (27),
+# on Linux and Windows. JDK support checked 2026-10-26 (docs/DECISIONS.md).
+name: server-java
+
+on:
+  push:
+    branches: [main]
+    paths: ["server/java/**", "server/java-spring-boot-starter/**", "server/conformance/**", "server/SPEC.md", ".github/workflows/server-java.yml"]
+  pull_request:
+    paths: ["server/java/**", "server/java-spring-boot-starter/**", "server/conformance/**", "server/SPEC.md", ".github/workflows/server-java.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-java-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build, javadoc, conformance (JDK 17)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server/java
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: scripts/check-version.sh
+      - name: Compile (-Werror), unit tests and the conformance suite
+        run: mvn -B -ntp verify -Dconformance=true
+      - name: Javadoc, sources and the SBOM build (no signing)
+        run: mvn -B -ntp -P release,sbom -Dgpg.skip -DskipTests package
+      - name: Release scan (no internal comments, TODO notes, debug code, internal or staff URLs)
+        run: node ../scripts/scan-package.mjs clikgate-java/target/*.jar clikgate-servlet-javax/target/*.jar clikgate-servlet-jakarta/target/*.jar ../java-spring-boot-starter/target/*.jar README.md CHANGELOG.md ../java-spring-boot-starter/README.md
+      - name: The Spring Boot example compiles
+        run: |
+          mvn -B -ntp -q install -DskipTests
+          mvn -B -ntp -q -f examples/spring-boot/pom.xml compile
+
+  runtimes:
+    name: test on java ${{ matrix.java }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        java: ["8", "11", "17", "21", "25", "27"]
+    defaults:
+      run:
+        working-directory: server/java
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # the runtime under test first, then JDK 17 to run Maven and javac (it stays the default JAVA_HOME)
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        id: runtime
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Core and Servlet filters (unit tests and conformance) on the runtime under test
+        run: mvn -B -ntp verify -pl clikgate-java,clikgate-servlet-javax,clikgate-servlet-jakarta -Dconformance=true "-Dsurefire.jvm=${{ steps.runtime.outputs.path }}/bin/java"
+      - name: Spring Boot starter (Java 17+)
+        if: matrix.java != '8' && matrix.java != '11'
+        run: mvn -B -ntp verify "-Dsurefire.jvm=${{ steps.runtime.outputs.path }}/bin/java"

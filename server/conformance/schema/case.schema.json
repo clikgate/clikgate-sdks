@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clikgate.com/schemas/server-sdk-conformance-case.json",
+  "title": "Clikgate server SDK conformance case file",
+  "type": "object",
+  "required": ["suite", "description", "cases"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "suite": { "type": "string" },
+    "description": { "type": "string" },
+    "cases": { "type": "array", "items": { "$ref": "#/$defs/case" } }
+  },
+  "$defs": {
+    "case": {
+      "type": "object",
+      "required": ["id", "description", "steps", "expect"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_.-]+$" },
+        "description": { "type": "string" },
+        "languages": { "type": "array", "items": { "enum": ["node", "python", "php", "java", "dotnet"] } },
+        "client": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "api_key": { "type": ["string", "null"] },
+            "base_url": { "type": "string", "description": "Absent: the mock's URL. May contain {mock}." },
+            "timeout_ms": { "type": "integer" },
+            "max_retries": { "type": "integer" },
+            "send_mode": { "enum": ["sync", "background"] },
+            "private_mode": { "enum": [true, false, "auto"] },
+            "click_id_param": { "type": ["string", "null"] },
+            "batch_size": { "type": "integer" },
+            "flush_interval_ms": { "type": "integer" },
+            "max_queue_size": { "type": "integer" }
+          }
+        },
+        "base_url_suffix": { "type": "string" },
+        "random": { "type": "array", "items": { "type": "number", "minimum": 0, "exclusiveMaximum": 1 } },
+        "now_ms": { "type": "integer" },
+        "skip_default_header_checks": { "type": "boolean" },
+        "responses": { "type": "array", "items": { "$ref": "#/$defs/response" } },
+        "steps": { "type": "array", "items": { "$ref": "#/$defs/step" } },
+        "expect": { "$ref": "#/$defs/expect" }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": { "type": "integer" },
+        "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+        "json": {},
+        "body_text": { "type": "string" },
+        "body_base64": { "type": "string" },
+        "delay_ms": { "type": "integer" },
+        "action": { "enum": ["reset"] }
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": ["call"],
+      "additionalProperties": false,
+      "properties": {
+        "call": {
+          "enum": [
+            "client.mode", "goal", "goals.send", "goals.send_batch", "goals.reverse", "flush", "close", "advance_clock", "config.get",
+            "conversions.create", "conversions.reverse", "links.create", "links.get", "links.update", "links.list", "links.list_page", "links.qr",
+            "clicks.get", "webhooks.verify", "webhooks.verify_any", "click_ids.is_valid", "click_ids.from_request", "click_ids.cookie_header",
+            "click_ids.persist", "click_ids.keep", "click_ids.context", "click_ids.from_payment_metadata", "money.format",
+            "payments.confirm", "payments.from", "payments.build", "identify_user", "hash_for_ads"
+          ]
+        },
+        "args": { "type": "object" },
+        "expect": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "result": {}, "error": { "type": "object" }, "exact": { "type": "boolean" } }
+        }
+      }
+    },
+    "expect": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requests": { "type": "array", "items": { "$ref": "#/$defs/request" } },
+        "construct_error": { "type": "object" },
+        "sleeps_ms": { "type": "array", "items": { "type": "integer" } },
+        "warnings": { "type": "array", "items": { "type": "string" } },
+        "on_error": { "type": "array", "items": { "type": "object" } },
+        "logs_exclude": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "method": { "enum": ["GET", "POST", "PATCH", "PUT", "DELETE"] },
+        "path": { "type": "string" },
+        "query": { "type": "object" },
+        "headers": { "type": "object" },
+        "absent_headers": { "type": "array", "items": { "type": "string" } },
+        "json": {},
+        "json_subset": {},
+        "no_body": { "type": "boolean" },
+        "idempotency_key_same_as": { "type": "integer" },
+        "idempotency_key_differs_from": { "type": "integer" }
+      }
+    }
+  }
+}

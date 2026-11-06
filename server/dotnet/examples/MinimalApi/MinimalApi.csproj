@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- ASP.NET Core minimal API example: capture → save → send goal → verify webhook.
+       CLIKGATE_API_KEY=cg_test_… CLIKGATE_WEBHOOK_SECRET=whsec_… dotnet run -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Clikgate.AspNetCore/Clikgate.AspNetCore.csproj" />
+  </ItemGroup>
+</Project>

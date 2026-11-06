@@ -1,0 +1,116 @@
+# Release clikgate/clikgate-php and clikgate/clikgate-laravel on tags server-php-v<semver> (S.17).
+# Packagist has no trusted publishing for public packages and needs each package at the root of its own
+# repository, so CI splits server/php and server/php-laravel (git subtree split) into the read-only public
+# repositories, tags them v<semver>, and Packagist updates through its GitHub hook. Each push uses a
+# deploy key with write access to that one repository (docs/SERVER_SDKS.md): secrets PHP_SPLIT_DEPLOY_KEY
+# and LARAVEL_SPLIT_DEPLOY_KEY, in the environment packagist.
+name: server-php-release
+
+on:
+  push:
+    tags: ["server-php-v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-php-release
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: "8.4"
+          extensions: curl, mbstring
+          coverage: none
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Core package
+        working-directory: server/php
+        run: |
+          composer update --no-interaction --no-progress
+          php scripts/check-version.php
+          composer validate --strict
+          vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+          vendor/bin/phpunit
+          php tests/Conformance/runner.php
+          composer run sbom
+      - name: Release scan of the Composer archives (no internal comments, notes, debug code, internal or staff URLs)
+        working-directory: server/php
+        run: |
+          composer archive --format=zip --dir="$RUNNER_TEMP/archives" --file=clikgate-php
+          (cd ../php-laravel && composer archive --format=zip --dir="$RUNNER_TEMP/archives" --file=clikgate-laravel)
+          node ../scripts/scan-package.mjs "$RUNNER_TEMP/archives/clikgate-php.zip" "$RUNNER_TEMP/archives/clikgate-laravel.zip"
+      - name: Laravel package
+        working-directory: server/php-laravel
+        run: |
+          composer config repositories.clikgate-php '{"type":"path","url":"../php","options":{"symlink":false,"versions":{"clikgate/clikgate-php":"1.0.0"}}}'
+          composer update --no-interaction --no-progress
+          vendor/bin/phpunit
+          git checkout -- composer.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom
+          path: server/php/sbom.cdx.json
+          if-no-files-found: error
+
+  split:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: packagist
+    strategy:
+      max-parallel: 1
+      matrix:
+        include:
+          - { prefix: server/php, repo: clikgate/clikgate-php, key: PHP_SPLIT_DEPLOY_KEY }
+          - { prefix: server/php-laravel, repo: clikgate/clikgate-laravel, key: LARAVEL_SPLIT_DEPLOY_KEY }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # subtree split needs the history
+          persist-credentials: false
+      - name: Split ${{ matrix.prefix }} and push it with its tag
+        env:
+          DEPLOY_KEY: ${{ secrets[matrix.key] }}
+          PREFIX: ${{ matrix.prefix }}
+          REPO: ${{ matrix.repo }}
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#server-php-v}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/split_key
+          chmod 600 ~/.ssh/split_key
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/split_key -o IdentitiesOnly=yes"
+          git config user.name "clikgate-release"
+          git config user.email "sdk@clikgate.com"
+          sha="$(git subtree split --prefix="$PREFIX" HEAD)"
+          git push "git@github.com:${REPO}.git" "${sha}:refs/heads/main"
+          git tag -a "v${version}" "$sha" -m "${REPO} ${version} (from clikgate/clikgate-sdks ${GITHUB_SHA})"
+          git push "git@github.com:${REPO}.git" "refs/tags/v${version}"
+          rm -f ~/.ssh/split_key
+
+  release:
+    needs: split
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # attach the SBOM to the GitHub release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sbom
+      - name: GitHub release with the SBOM
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${GITHUB_REF_NAME#server-php-v}"
+          mv sbom.cdx.json "clikgate-php-$v.cdx.json"
+          gh release create "$GITHUB_REF_NAME" --title "clikgate/clikgate-php and clikgate/clikgate-laravel $v" \
+            --notes "See server/php/CHANGELOG.md and server/php-laravel/CHANGELOG.md. Split to clikgate/clikgate-php and clikgate/clikgate-laravel as v$v from ${GITHUB_SHA}; Packagist updates from those tags." \
+            "clikgate-php-$v.cdx.json"

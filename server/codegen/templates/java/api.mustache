@@ -1,0 +1,52 @@
+{{#operations}}
+CLASS_START {{classname}}
+/** {{baseName}}: generated from openapi.json. See https://clikgate.com/docs/api. */
+public final class {{classname}} {
+  private final Requester r;
+
+  {{classname}}(Requester r) {
+    this.r = r;
+  }
+{{#operation}}
+
+  /**
+   * {{{summary}}}
+   *
+   * <p>{@code {{httpMethod}} {{{path}}}}{{#hasQueryParams}}. Query parameters: {{#queryParams}}{@code {{baseName}}}{{^-last}}, {{/-last}}{{/queryParams}}{{/hasQueryParams}}.
+   *
+   * <pre>{@code
+   * JAVA_EXAMPLE {{{vendorExtensions.x-cg-example}}}
+   * }</pre>
+   *
+{{#bodyParam}}
+   * @param body {{baseType}} (wire field names)
+{{/bodyParam}}
+   * @return {{#vendorExtensions.x-cg-binary}}the bytes and content type{{/vendorExtensions.x-cg-binary}}{{^vendorExtensions.x-cg-binary}}the decoded JSON ({{#returnType}}{{{returnBaseType}}}{{/returnType}}{{^returnType}}any{{/returnType}}) as Maps and Lists{{/vendorExtensions.x-cg-binary}}
+   */
+  public {{#vendorExtensions.x-cg-binary}}QrCode{{/vendorExtensions.x-cg-binary}}{{^vendorExtensions.x-cg-binary}}@Nullable Object{{/vendorExtensions.x-cg-binary}} {{nickname}}({{#pathParams}}String {{paramName}}, {{/pathParams}}{{#bodyParam}}@Nullable Map<String, ?> body, {{/bodyParam}}{{#hasQueryParams}}Map<String, ?> query, {{/hasQueryParams}}RequestOptions options) {
+    Map<String, Object> path = new LinkedHashMap<>();
+{{#pathParams}}
+    path.put("{{baseName}}", {{paramName}});
+{{/pathParams}}
+    ApiRequest req = new ApiRequest("{{httpMethod}}", Requester.path("{{{path}}}", path){{#hasQueryParams}}, query{{/hasQueryParams}}).options(options);
+{{#bodyParam}}
+    if (body != null) {
+      req.body(body);
+    }
+{{/bodyParam}}
+{{#vendorExtensions.x-cg-binary}}
+    return binary(r.send(req));
+{{/vendorExtensions.x-cg-binary}}
+{{^vendorExtensions.x-cg-binary}}
+    return r.request(req).data;
+{{/vendorExtensions.x-cg-binary}}
+  }
+
+  /** {{{summary}}} ({@code {{httpMethod}} {{{path}}}}), without request options. */
+  public {{#vendorExtensions.x-cg-binary}}QrCode{{/vendorExtensions.x-cg-binary}}{{^vendorExtensions.x-cg-binary}}@Nullable Object{{/vendorExtensions.x-cg-binary}} {{nickname}}({{#pathParams}}String {{paramName}}{{^-last}}, {{/-last}}{{/pathParams}}{{#bodyParam}}{{#hasPathParams}}, {{/hasPathParams}}@Nullable Map<String, ?> body{{/bodyParam}}{{#hasQueryParams}}{{#hasPathParams}}, {{/hasPathParams}}{{^hasPathParams}}{{#bodyParam}}, {{/bodyParam}}{{/hasPathParams}}{{#hasPathParams}}{{/hasPathParams}}Map<String, ?> query{{/hasQueryParams}}) {
+    return {{nickname}}({{#pathParams}}{{paramName}}, {{/pathParams}}{{#bodyParam}}body, {{/bodyParam}}{{#hasQueryParams}}query, {{/hasQueryParams}}RequestOptions.NONE);
+  }
+{{/operation}}
+}
+CLASS_END
+{{/operations}}

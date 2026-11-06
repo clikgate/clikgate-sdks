@@ -1,0 +1,2454 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "click_ids",
+  "description": "Keeping the click ID: validation, extraction, cookies, payment metadata (SPEC 13)",
+  "cases": [
+    {
+      "id": "click_ids.is_valid.valid",
+      "description": "is_valid(\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\") is true",
+      "steps": [
+        {
+          "call": "click_ids.is_valid",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          },
+          "expect": {
+            "result": {
+              "value": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.is_valid.lowercase",
+      "description": "is_valid(\"clk_01jck8z9v7q4m2n6p8r0s2t4w6\") is false",
+      "steps": [
+        {
+          "call": "click_ids.is_valid",
+          "args": {
+            "id": "clk_01jck8z9v7q4m2n6p8r0s2t4w6"
+          },
+          "expect": {
+            "result": {
+              "value": false
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.is_valid.wrong_prefix",
+      "description": "is_valid(\"lnk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\") is false",
+      "steps": [
+        {
+          "call": "click_ids.is_valid",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          },
+          "expect": {
+            "result": {
+              "value": false
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.is_valid.short",
+      "description": "is_valid(\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W\") is false",
+      "steps": [
+        {
+          "call": "click_ids.is_valid",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W"
+          },
+          "expect": {
+            "result": {
+              "value": false
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.is_valid.long",
+      "description": "is_valid(\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6X\") is false",
+      "steps": [
+        {
+          "call": "click_ids.is_valid",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6X"
+          },
+          "expect": {
+            "result": {
+              "value": false
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.is_valid.whitespace",
+      "description": "is_valid(\" clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\") is false",
+      "steps": [
+        {
+          "call": "click_ids.is_valid",
+          "args": {
+            "id": " clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          },
+          "expect": {
+            "result": {
+              "value": false
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.is_valid.any_uppercase_letter",
+      "description": "is_valid(\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4WU\") is true",
+      "steps": [
+        {
+          "call": "click_ids.is_valid",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4WU"
+          },
+          "expect": {
+            "result": {
+              "value": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.is_valid.symbol",
+      "description": "is_valid(\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W-\") is false",
+      "steps": [
+        {
+          "call": "click_ids.is_valid",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W-"
+          },
+          "expect": {
+            "result": {
+              "value": false
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.is_valid.number",
+      "description": "is_valid(123) is false",
+      "steps": [
+        {
+          "call": "click_ids.is_valid",
+          "args": {
+            "id": 123
+          },
+          "expect": {
+            "result": {
+              "value": false
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.is_valid.null",
+      "description": "is_valid(null) is false",
+      "steps": [
+        {
+          "call": "click_ids.is_valid",
+          "args": {
+            "id": null
+          },
+          "expect": {
+            "result": {
+              "value": false
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.query",
+      "description": "The query parameter cgid",
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/landing?utm_source=x&cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "headers": {}
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.query_invalid_falls_to_cookie",
+      "description": "An invalid query value is skipped; the cookie is used",
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/?cgid=garbage",
+              "headers": {
+                "cookie": "a=1; _cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7; b=2"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.cookie",
+      "description": "The _cg_cgid cookie",
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/",
+              "headers": {
+                "cookie": "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.cookie_encoded",
+      "description": "Cookie values are URL-decoded",
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/",
+              "headers": {
+                "cookie": "_cg_cgid=clk%5F01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.header",
+      "description": "The Clikgate-Click-Id header",
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://api.example.com/signup",
+              "headers": {
+                "Clikgate-Click-Id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.header_case_and_space",
+      "description": "The header name is case-insensitive and the value trimmed",
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://api.example.com/signup",
+              "headers": {
+                "clikgate-click-id": "  clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6 "
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.precedence",
+      "description": "Query wins over cookie, cookie over header",
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/?cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "headers": {
+                "cookie": "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7",
+                "Clikgate-Click-Id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.cookie_over_header",
+      "description": "Cookie wins over header",
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/",
+              "headers": {
+                "cookie": "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+                "Clikgate-Click-Id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.repeated_query",
+      "description": "The first valid occurrence of a repeated parameter",
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/?cgid=bad&cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7",
+              "headers": {}
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.none",
+      "description": "Nothing present → null",
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/?utm_source=x",
+              "headers": {}
+            }
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.all_invalid",
+      "description": "Only invalid values → null",
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/?cgid=clk_bad",
+              "headers": {
+                "cookie": "_cg_cgid=nope",
+                "Clikgate-Click-Id": "nope"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.path_only",
+      "description": "A path without host is accepted",
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "/landing?cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "headers": {}
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.custom_param",
+      "description": "click_id_param \"ref\": query ref and cookie _cg_ref",
+      "client": {
+        "click_id_param": "ref"
+      },
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/?cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7&ref=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "headers": {}
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.custom_param_cookie",
+      "description": "click_id_param \"ref\" reads _cg_ref, not _cg_cgid",
+      "client": {
+        "click_id_param": "ref"
+      },
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/",
+              "headers": {
+                "cookie": "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7; _cg_ref=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.custom_param_ignores_cgid",
+      "description": "With click_id_param \"ref\", cgid is not read",
+      "client": {
+        "click_id_param": "ref"
+      },
+      "steps": [
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/?cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "headers": {}
+            }
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.from_request.param_from_config",
+      "description": "auto mode: after config loads, its click_id_param is used",
+      "client": {
+        "private_mode": "auto"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "mode": "test",
+            "organization_id": "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR",
+            "private_mode": false,
+            "click_id_param": "dcid",
+            "goals": [
+              {
+                "key": "account_opened",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "signup",
+                "value_mode": "none",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "loan_disbursed",
+                "value_mode": "required",
+                "default_currency": "NGN"
+              },
+              {
+                "key": "order_paid",
+                "value_mode": "optional",
+                "default_currency": "NGN"
+              }
+            ],
+            "minimum_sdk_versions": {
+              "node": "1.0.0",
+              "python": "1.0.0",
+              "php": "1.0.0",
+              "java": "1.0.0",
+              "dotnet": "1.0.0"
+            }
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "config.get"
+        },
+        {
+          "call": "click_ids.from_request",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/?dcid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "headers": {}
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/server-sdk/config",
+            "query": {}
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.cookie_header.default",
+      "description": "Default: 30 days, Secure, SameSite=Lax, not HttpOnly",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.cookie_header",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "secure": true
+          },
+          "expect": {
+            "result": {
+              "value": "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; Path=/; Max-Age=2592000; SameSite=Lax; Secure"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.cookie_header.days_insecure",
+      "description": "7 days over plain HTTP (local development)",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.cookie_header",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "days": 7,
+            "secure": false
+          },
+          "expect": {
+            "result": {
+              "value": "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; Path=/; Max-Age=604800; SameSite=Lax"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.cookie_header.domain",
+      "description": "With a domain",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.cookie_header",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "secure": true,
+            "domain": ".example.com"
+          },
+          "expect": {
+            "result": {
+              "value": "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; Path=/; Max-Age=2592000; Domain=.example.com; SameSite=Lax; Secure"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.cookie_header.custom_param",
+      "description": "The cookie name follows click_id_param",
+      "client": {
+        "click_id_param": "ref"
+      },
+      "steps": [
+        {
+          "call": "click_ids.cookie_header",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "secure": true
+          },
+          "expect": {
+            "result": {
+              "value": "_cg_ref=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; Path=/; Max-Age=2592000; SameSite=Lax; Secure"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.cookie_header.invalid",
+      "description": "An invalid ID is refused",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.cookie_header",
+          "args": {
+            "id": "clk_nope",
+            "secure": true
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_click_id"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.persist.keeps_existing",
+      "description": "persist appends Set-Cookie and keeps existing ones",
+      "steps": [
+        {
+          "call": "click_ids.persist",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "secure": true,
+            "existing_set_cookie": [
+              "session=abc; Path=/; HttpOnly"
+            ]
+          },
+          "expect": {
+            "result": {
+              "set_cookie": [
+                "session=abc; Path=/; HttpOnly",
+                "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; Path=/; Max-Age=2592000; SameSite=Lax; Secure",
+                "_cg_kept=s; Path=/; Max-Age=2592000; SameSite=Lax; Secure"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.persist.marker_days",
+      "description": "persist (change 16): the _cg_kept=s marker follows days, domain and secure",
+      "steps": [
+        {
+          "call": "click_ids.persist",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "days": 90,
+            "secure": false,
+            "domain": ".example.com",
+            "existing_set_cookie": []
+          },
+          "expect": {
+            "result": {
+              "set_cookie": [
+                "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; Path=/; Max-Age=7776000; Domain=.example.com; SameSite=Lax",
+                "_cg_kept=s; Path=/; Max-Age=7776000; Domain=.example.com; SameSite=Lax"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.same_origin",
+      "description": "Sec-Fetch-Site same-origin, matching IDs: 204 with the cookie and the marker",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "same-origin",
+                "content-type": "application/json"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 204,
+              "cache_control": "no-store, private",
+              "set_cookie": [
+                "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; Path=/; Max-Age=2592000; SameSite=Lax; Secure",
+                "_cg_kept=s; Path=/; Max-Age=2592000; SameSite=Lax; Secure"
+              ],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.origin_matches_host",
+      "description": "No Sec-Fetch-Site; an Origin matching Host is accepted",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "origin": "https://shop.example.com",
+                "content-type": "application/json"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 204,
+              "cache_control": "no-store, private",
+              "set_cookie": [
+                "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; Path=/; Max-Age=2592000; SameSite=Lax; Secure",
+                "_cg_kept=s; Path=/; Max-Age=2592000; SameSite=Lax; Secure"
+              ],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.header_case",
+      "description": "Header names in any case",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "Sec-Fetch-Site": "same-origin",
+                "Content-Type": "application/json"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 204,
+              "cache_control": "no-store, private",
+              "set_cookie": [
+                "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; Path=/; Max-Age=2592000; SameSite=Lax; Secure",
+                "_cg_kept=s; Path=/; Max-Age=2592000; SameSite=Lax; Secure"
+              ],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.cross_site",
+      "description": "Sec-Fetch-Site cross-site is refused (403), nothing set",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "cross-site",
+                "origin": "https://evil.example.net"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 403,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.same_site_subdomain",
+      "description": "Sec-Fetch-Site same-site (another subdomain) is refused",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "same-site",
+                "origin": "https://blog.example.com"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 403,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.cross_site_even_with_matching_origin",
+      "description": "A Sec-Fetch-Site other than same-origin wins over the Origin",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "cross-site",
+                "origin": "https://shop.example.com"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 403,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.origin_mismatch",
+      "description": "An Origin for another host is refused",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "origin": "https://evil.example.net"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 403,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.origin_other_port",
+      "description": "An Origin with another port is refused",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "origin": "https://shop.example.com:8443"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 403,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.no_origin",
+      "description": "Neither Sec-Fetch-Site nor Origin: refused",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "content-type": "application/json"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 403,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.origin_null",
+      "description": "Origin \"null\" is refused",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "origin": "null"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 403,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.get",
+      "description": "GET is refused (405, Allow: POST); the query is never read",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "GET",
+              "url": "https://shop.example.com/cg/keep?click_id=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6&page_click_id=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "same-origin",
+                "content-type": "application/json"
+              },
+              "body": ""
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 405,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null,
+              "allow": "POST"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.mismatch",
+      "description": "The click ID must equal the page URL click ID (400)",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "same-origin",
+                "content-type": "application/json"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 400,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.page_missing",
+      "description": "Without page_click_id: 400",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "same-origin",
+                "content-type": "application/json"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 400,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.invalid",
+      "description": "An invalid click ID: 400",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "same-origin",
+                "content-type": "application/json"
+              },
+              "body": "{\"click_id\":\"clk_bad\",\"page_click_id\":\"clk_bad\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 400,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.lowercase",
+      "description": "A lowercase click ID: 400",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "same-origin",
+                "content-type": "application/json"
+              },
+              "body": "{\"click_id\":\"clk_01jck8z9v7q4m2n6p8r0s2t4w6\",\"page_click_id\":\"clk_01jck8z9v7q4m2n6p8r0s2t4w6\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 400,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.script_in_value",
+      "description": "Markup in the value is refused and never echoed",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "same-origin",
+                "content-type": "application/json"
+              },
+              "body": "{\"click_id\":\"<script>alert(1)</script>\",\"page_click_id\":\"<script>alert(1)</script>\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 400,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.not_json",
+      "description": "A body that is not JSON: 400",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "same-origin",
+                "content-type": "application/json"
+              },
+              "body": "click_id=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 400,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.array_body",
+      "description": "A JSON array body: 400",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "same-origin",
+                "content-type": "application/json"
+              },
+              "body": "[]"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 400,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.too_large",
+      "description": "A body over 1 KB: 400",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "same-origin",
+                "content-type": "application/json"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"pad\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 400,
+              "cache_control": "no-store, private",
+              "set_cookie": [],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.name_from_config",
+      "description": "A cookie name sent in the request is ignored; the name comes from configuration",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "same-origin",
+                "content-type": "application/json"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"name\":\"session\",\"param\":\"evil\",\"cookie\":\"x\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 204,
+              "cache_control": "no-store, private",
+              "set_cookie": [
+                "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; Path=/; Max-Age=2592000; SameSite=Lax; Secure",
+                "_cg_kept=s; Path=/; Max-Age=2592000; SameSite=Lax; Secure"
+              ],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.custom_param",
+      "description": "click_id_param \"ref\": the cookie is _cg_ref",
+      "client": {
+        "click_id_param": "ref"
+      },
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "same-origin",
+                "content-type": "application/json"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 204,
+              "cache_control": "no-store, private",
+              "set_cookie": [
+                "_cg_ref=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; Path=/; Max-Age=2592000; SameSite=Lax; Secure",
+                "_cg_kept=s; Path=/; Max-Age=2592000; SameSite=Lax; Secure"
+              ],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.keep.days",
+      "description": "days 90: Max-Age 7776000 on both cookies",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.keep",
+          "args": {
+            "request": {
+              "method": "POST",
+              "url": "https://shop.example.com/cg/keep",
+              "headers": {
+                "host": "shop.example.com",
+                "sec-fetch-site": "same-origin",
+                "content-type": "application/json"
+              },
+              "body": "{\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"page_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+            },
+            "days": 90
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "status": 204,
+              "cache_control": "no-store, private",
+              "set_cookie": [
+                "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; Path=/; Max-Age=7776000; SameSite=Lax; Secure",
+                "_cg_kept=s; Path=/; Max-Age=7776000; SameSite=Lax; Secure"
+              ],
+              "body": "",
+              "location": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.context.server_cookie",
+      "description": "Cookie plus the _cg_kept=s marker: server_cookie; iPhone Chrome is webkit_ios",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.context",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/checkout",
+              "headers": {
+                "cookie": "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; _cg_kept=s",
+                "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/124.0.6367.88 Mobile/15E148 Safari/604.1"
+              }
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "kept_by": "server_cookie",
+              "browser_engine": "webkit_ios",
+              "platform": "ios"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.context.script_cookie",
+      "description": "Cookie without the marker: script_cookie; Mac Safari",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.context",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/checkout",
+              "headers": {
+                "cookie": "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+                "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15"
+              }
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "kept_by": "script_cookie",
+              "browser_engine": "safari_mac",
+              "platform": "macos"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.context.marker_other_value",
+      "description": "A marker other than \"s\" does not count",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.context",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/checkout",
+              "headers": {
+                "cookie": "_cg_cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; _cg_kept=x",
+                "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+              }
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "kept_by": "script_cookie",
+              "browser_engine": "chromium",
+              "platform": "macos"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.context.header_is_form",
+      "description": "The Clikgate-Click-Id header (a form or app field): form",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.context",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/checkout",
+              "headers": {
+                "clikgate-click-id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0"
+              }
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "kept_by": "form",
+              "browser_engine": "gecko",
+              "platform": "windows"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.context.query_not_kept",
+      "description": "From the URL: not kept yet (kept_by null)",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.context",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/?cgid=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "headers": {
+                "user-agent": "Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/24.0 Chrome/117.0.0.0 Mobile Safari/537.36"
+              }
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "kept_by": null,
+              "browser_engine": "chromium",
+              "platform": "android"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.context.none",
+      "description": "No click ID: nulls; iPad Safari",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.context",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/checkout",
+              "headers": {
+                "user-agent": "Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1"
+              }
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "click_id": null,
+              "kept_by": null,
+              "browser_engine": "webkit_ios",
+              "platform": "ios"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.context.edge_windows",
+      "description": "Edge on Windows: chromium",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.context",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/checkout",
+              "headers": {
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Edg/124.0.0.0"
+              }
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "click_id": null,
+              "kept_by": null,
+              "browser_engine": "chromium",
+              "platform": "windows"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.context.linux_firefox",
+      "description": "Firefox on Linux: gecko",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.context",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/checkout",
+              "headers": {
+                "user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0"
+              }
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "click_id": null,
+              "kept_by": null,
+              "browser_engine": "gecko",
+              "platform": "linux"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.context.no_user_agent",
+      "description": "No User-Agent: other/other",
+      "client": {},
+      "steps": [
+        {
+          "call": "click_ids.context",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/checkout",
+              "headers": {}
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "click_id": null,
+              "kept_by": null,
+              "browser_engine": "other",
+              "platform": "other"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.context.custom_param",
+      "description": "click_id_param \"ref\": _cg_ref and the marker",
+      "client": {
+        "click_id_param": "ref"
+      },
+      "steps": [
+        {
+          "call": "click_ids.context",
+          "args": {
+            "request": {
+              "url": "https://shop.example.com/checkout",
+              "headers": {
+                "cookie": "_cg_ref=clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6; _cg_kept=s",
+                "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15"
+              }
+            }
+          },
+          "expect": {
+            "exact": true,
+            "result": {
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "kept_by": "server_cookie",
+              "browser_engine": "safari_mac",
+              "platform": "macos"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.paystack_object",
+      "description": "Paystack charge.success: data.metadata object",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "event": "charge.success",
+              "data": {
+                "reference": "T1",
+                "metadata": {
+                  "cg_click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+                }
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.paystack_string",
+      "description": "Paystack metadata as a JSON string",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "event": "charge.success",
+              "data": {
+                "reference": "T1",
+                "metadata": "{\"cg_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.paystack_custom_fields",
+      "description": "Paystack custom_fields (variable_name/value)",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "data": {
+                "metadata": {
+                  "custom_fields": [
+                    {
+                      "display_name": "Ref",
+                      "variable_name": "cg_click_id",
+                      "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.paystack_transaction_object",
+      "description": "A Paystack transaction object (no envelope)",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "reference": "T1",
+              "metadata": {
+                "cg_click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.flutterwave_meta",
+      "description": "Flutterwave charge.completed: data.meta",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "event": "charge.completed",
+              "data": {
+                "tx_ref": "F1",
+                "meta": {
+                  "cg_click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+                }
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.flutterwave_meta_data",
+      "description": "Flutterwave meta_data",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "data": {
+                "tx_ref": "F1",
+                "meta_data": {
+                  "cgid": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+                }
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.shopify_note_attributes",
+      "description": "Shopify note_attributes (name/value)",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "id": 5512093,
+              "note_attributes": [
+                {
+                  "name": "gift",
+                  "value": "no"
+                },
+                {
+                  "name": "cg_click_id",
+                  "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+                }
+              ]
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.shopify_custom_attributes",
+      "description": "Shopify GraphQL customAttributes (key/value)",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "customAttributes": [
+                {
+                  "key": "cg_click_id",
+                  "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+                }
+              ]
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.woocommerce_meta_data",
+      "description": "WooCommerce order meta_data (key/value)",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "id": 77,
+              "meta_data": [
+                {
+                  "id": 1,
+                  "key": "_billing_x",
+                  "value": "y"
+                },
+                {
+                  "id": 2,
+                  "key": "cg_click_id",
+                  "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+                }
+              ]
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.top_level",
+      "description": "A custom webhook with cg_click_id at the top level",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "cg_click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "amount": 1000
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.clikgate_click_id",
+      "description": "The clikgate_click_id key",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "metadata": {
+                "clikgate_click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.key_precedence",
+      "description": "cg_click_id wins over cgid in the same container",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "metadata": {
+                "cgid": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7",
+                "cg_click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.candidate_precedence",
+      "description": "The payload is checked before payload.data",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "cg_click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "data": {
+                "metadata": {
+                  "cg_click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7"
+                }
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.invalid_skipped",
+      "description": "An invalid value is skipped for the next valid one",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "metadata": {
+                "cg_click_id": "clk_bad",
+                "cgid": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.json_string_payload",
+      "description": "The payload itself as a JSON string",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": "{\"data\":{\"metadata\":{\"cg_click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}}}"
+          },
+          "expect": {
+            "result": {
+              "value": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.not_json",
+      "description": "A non-JSON string → null",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": "not json"
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "click_ids.payment_metadata.nothing",
+      "description": "No click ID → null",
+      "steps": [
+        {
+          "call": "click_ids.from_payment_metadata",
+          "args": {
+            "payload": {
+              "data": {
+                "metadata": {
+                  "order": 1
+                }
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

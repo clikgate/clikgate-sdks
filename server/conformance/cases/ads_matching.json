@@ -1,0 +1,525 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "ads_matching",
+  "description": "Hashed email and phone for ad network matching: hash_for_ads and the goal options (SPEC 25; backend change 19 B.5, R.5)",
+  "cases": [
+    {
+      "id": "ads_matching.hash_for_ads.vectors",
+      "description": "hash_for_ads trims and lowercases the email and hashes the phone with and without the +; 00 works like +",
+      "steps": [
+        {
+          "call": "hash_for_ads",
+          "args": {
+            "email": "  Ada.Obi@Example.com ",
+            "phone": "+234 803 123 4567"
+          },
+          "expect": {
+            "result": {
+              "hashed_email": "0f096d5de5ccb3a1e50f34246aab7d9c539de7bd63498d5fae420ecfba31aaed",
+              "hashed_phone_e164": "6b39248188406864f30420963a3e793bf8571e2fa733f767889f9fa882b5d14c",
+              "hashed_phone_digits": "fe144b034b54f22ea55473f479fe83b2ccbc55af8cdb280ef65ef280bcd4bf17"
+            }
+          }
+        },
+        {
+          "call": "hash_for_ads",
+          "args": {
+            "phone": "00234 (803) 123-4567"
+          },
+          "expect": {
+            "result": {
+              "hashed_phone_e164": "6b39248188406864f30420963a3e793bf8571e2fa733f767889f9fa882b5d14c",
+              "hashed_phone_digits": "fe144b034b54f22ea55473f479fe83b2ccbc55af8cdb280ef65ef280bcd4bf17"
+            }
+          }
+        },
+        {
+          "call": "hash_for_ads",
+          "args": {
+            "email": "ada.obi@example.com"
+          },
+          "expect": {
+            "result": {
+              "hashed_email": "0f096d5de5ccb3a1e50f34246aab7d9c539de7bd63498d5fae420ecfba31aaed"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "ads_matching.hash_for_ads.refused",
+      "description": "A phone without its country code, a too short phone or an email without @ is invalid_argument; the input is never echoed",
+      "steps": [
+        {
+          "call": "hash_for_ads",
+          "args": {
+            "phone": "0803 123 4567"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_argument",
+              "param": "phone",
+              "http_status": null,
+              "message_excludes": [
+                "0803 123 4567"
+              ]
+            }
+          }
+        },
+        {
+          "call": "hash_for_ads",
+          "args": {
+            "phone": "+12345"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_argument",
+              "param": "phone",
+              "http_status": null,
+              "message_excludes": [
+                "+12345"
+              ]
+            }
+          }
+        },
+        {
+          "call": "hash_for_ads",
+          "args": {
+            "phone": "+0803 123 4567"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_argument",
+              "param": "phone",
+              "http_status": null,
+              "message_excludes": [
+                "+0803 123 4567"
+              ]
+            }
+          }
+        },
+        {
+          "call": "hash_for_ads",
+          "args": {
+            "email": "ada.obi.example.com"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_argument",
+              "param": "email",
+              "http_status": null,
+              "message_excludes": [
+                "ada.obi.example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "ads_matching.goal.hashed_fields",
+      "description": "goals.send carries hashed_email, hashed_phone_e164 and hashed_phone_digits on the wire",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "hashed_email": "0f096d5de5ccb3a1e50f34246aab7d9c539de7bd63498d5fae420ecfba31aaed",
+            "hashed_phone_e164": "6b39248188406864f30420963a3e793bf8571e2fa733f767889f9fa882b5d14c",
+            "hashed_phone_digits": "fe144b034b54f22ea55473f479fe83b2ccbc55af8cdb280ef65ef280bcd4bf17"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-1",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "hashed_email": "0f096d5de5ccb3a1e50f34246aab7d9c539de7bd63498d5fae420ecfba31aaed",
+              "hashed_phone_e164": "6b39248188406864f30420963a3e793bf8571e2fa733f767889f9fa882b5d14c",
+              "hashed_phone_digits": "fe144b034b54f22ea55473f479fe83b2ccbc55af8cdb280ef65ef280bcd4bf17"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "ads_matching.goal.invalid_hash",
+      "description": "A value that is not 64 lowercase hex characters is refused locally (invalid_hashed_identifier); nothing is sent",
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "hashed_email": "0F096D5DE5CCB3A1E50F34246AAB7D9C539DE7BD63498D5FAE420ECFBA31AAED"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_hashed_identifier",
+              "param": "hashed_email",
+              "http_status": null
+            }
+          }
+        },
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "hashed_phone_e164": "+2348031234567"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_hashed_identifier",
+              "param": "hashed_phone_e164",
+              "http_status": null,
+              "message_excludes": [
+                "+2348031234567"
+              ]
+            }
+          }
+        },
+        {
+          "call": "goals.send_batch",
+          "args": {
+            "events": [
+              {
+                "goal": "account_opened",
+                "reference": "APP-1"
+              },
+              {
+                "goal": "account_opened",
+                "reference": "APP-2",
+                "hashed_phone_digits": "abc"
+              }
+            ]
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_hashed_identifier",
+              "param": "hashed_phone_digits",
+              "http_status": null,
+              "index": 1
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "ads_matching.private_mode.goal_and_batch_allowed",
+      "description": "The private-mode guard allows the three hashed fields on goals and batch events (the API decides the rest)",
+      "client": {
+        "private_mode": true
+      },
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "APP-55231",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                }
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "hashed_email": "0f096d5de5ccb3a1e50f34246aab7d9c539de7bd63498d5fae420ecfba31aaed"
+          }
+        },
+        {
+          "call": "goals.send_batch",
+          "args": {
+            "events": [
+              {
+                "goal": "account_opened",
+                "reference": "APP-2",
+                "hashed_phone_e164": "6b39248188406864f30420963a3e793bf8571e2fa733f767889f9fa882b5d14c",
+                "hashed_phone_digits": "fe144b034b54f22ea55473f479fe83b2ccbc55af8cdb280ef65ef280bcd4bf17"
+              }
+            ]
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-1",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "hashed_email": "0f096d5de5ccb3a1e50f34246aab7d9c539de7bd63498d5fae420ecfba31aaed"
+            }
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "account_opened",
+                  "reference": "APP-2",
+                  "hashed_phone_e164": "6b39248188406864f30420963a3e793bf8571e2fa733f767889f9fa882b5d14c",
+                  "hashed_phone_digits": "fe144b034b54f22ea55473f479fe83b2ccbc55af8cdb280ef65ef280bcd4bf17"
+                }
+              ]
+            }
+          }
+        ],
+        "logs_exclude": [
+          "0f096d5de5ccb3a1e50f34246aab7d9c539de7bd63498d5fae420ecfba31aaed",
+          "6b39248188406864f30420963a3e793bf8571e2fa733f767889f9fa882b5d14c",
+          "fe144b034b54f22ea55473f479fe83b2ccbc55af8cdb280ef65ef280bcd4bf17"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "ads_matching.private_mode.conversion_allowed",
+      "description": "conversions.create passes the hashed fields in private mode; raw customer details stay refused",
+      "client": {
+        "private_mode": true
+      },
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "conversion",
+            "id": "cnv_5"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-1",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "goal": "order_paid",
+              "hashed_email": "0f096d5de5ccb3a1e50f34246aab7d9c539de7bd63498d5fae420ecfba31aaed",
+              "hashed_phone_e164": "6b39248188406864f30420963a3e793bf8571e2fa733f767889f9fa882b5d14c",
+              "hashed_phone_digits": "fe144b034b54f22ea55473f479fe83b2ccbc55af8cdb280ef65ef280bcd4bf17"
+            }
+          }
+        },
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-2",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "customer": {
+                "email": "secret@example.com"
+              }
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "customer",
+              "param": "customer",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/conversions",
+            "json": {
+              "external_id": "ORD-1",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "goal": "order_paid",
+              "hashed_email": "0f096d5de5ccb3a1e50f34246aab7d9c539de7bd63498d5fae420ecfba31aaed",
+              "hashed_phone_e164": "6b39248188406864f30420963a3e793bf8571e2fa733f767889f9fa882b5d14c",
+              "hashed_phone_digits": "fe144b034b54f22ea55473f479fe83b2ccbc55af8cdb280ef65ef280bcd4bf17"
+            }
+          }
+        ],
+        "logs_exclude": [
+          "secret@example.com"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "ads_matching.conversion.invalid_hash",
+      "description": "conversions.create refuses a malformed hashed field locally (invalid_hashed_identifier)",
+      "steps": [
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-1",
+              "hashed_email": "ada.obi@example.com"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_hashed_identifier",
+              "param": "hashed_email",
+              "http_status": null,
+              "message_excludes": [
+                "ada.obi@example.com"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

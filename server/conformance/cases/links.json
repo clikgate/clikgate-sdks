@@ -1,0 +1,1707 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "links",
+  "description": "Links: create, get, update (202 change requests, 409 locked), list, QR; clicks (SPEC 11)",
+  "cases": [
+    {
+      "id": "links.create",
+      "description": "create posts the params and returns the link with its warnings",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [
+              {
+                "code": "no_preview",
+                "message": "Add a preview title and image. In WhatsApp and social apps, people look at the preview more than the link.",
+                "param": null
+              }
+            ],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.create",
+          "args": {
+            "params": {
+              "destination_url": "https://example.com/spring",
+              "slug": "spring",
+              "tags": [
+                "promo"
+              ]
+            }
+          },
+          "expect": {
+            "result": {
+              "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "warnings": [
+                {
+                  "code": "no_preview"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/links",
+            "query": {},
+            "json": {
+              "destination_url": "https://example.com/spring",
+              "slug": "spring",
+              "tags": [
+                "promo"
+              ]
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.create.test_page_shorthand",
+      "description": "Test links: the clikgate-test:<page> shorthand is sent unchanged; the server stores dev.ciz.to and caps expires_at at 30 days",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://dev.ciz.to/_t/checkout",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false,
+            "domain_badge": null,
+            "expires_at": "2026-11-25T12:00:00Z"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.create",
+          "args": {
+            "params": {
+              "destination_url": "clikgate-test:checkout",
+              "expires_at": "2027-06-01T00:00:00Z"
+            }
+          },
+          "expect": {
+            "result": {
+              "domain": "dev.ciz.to",
+              "domain_badge": null,
+              "expires_at": "2026-11-25T12:00:00Z"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/links",
+            "json": {
+              "destination_url": "clikgate-test:checkout",
+              "expires_at": "2027-06-01T00:00:00Z"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.create.test_page_inspect",
+      "description": "clikgate-test:inspect is passed through (no local destination validation)",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://dev.ciz.to/_t/inspect",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false,
+            "domain_badge": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.create",
+          "args": {
+            "params": {
+              "destination_url": "clikgate-test:inspect"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/links",
+            "json": {
+              "destination_url": "clikgate-test:inspect"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.create.test_page_app-open",
+      "description": "clikgate-test:app-open is passed through (no local destination validation)",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://dev.ciz.to/_t/app-open",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false,
+            "domain_badge": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.create",
+          "args": {
+            "params": {
+              "destination_url": "clikgate-test:app-open"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/links",
+            "json": {
+              "destination_url": "clikgate-test:app-open"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.create.test_page_store",
+      "description": "clikgate-test:store is passed through (no local destination validation)",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://dev.ciz.to/_t/store",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false,
+            "domain_badge": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.create",
+          "args": {
+            "params": {
+              "destination_url": "clikgate-test:store"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/links",
+            "json": {
+              "destination_url": "clikgate-test:store"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.create.premium_badge",
+      "description": "A paid ciz.to link carries domain_badge \"premium\"",
+      "client": {
+        "api_key": "cg_live_conformance0000000000"
+      },
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://ciz.to/spring",
+            "domain": "ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": true,
+            "domain_badge": "premium"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.create",
+          "args": {
+            "params": {
+              "destination_url": "https://example.com/spring"
+            }
+          },
+          "expect": {
+            "result": {
+              "domain": "ciz.to",
+              "domain_badge": "premium"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/links"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.get",
+      "description": "get fetches one link",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.get",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA"
+          },
+          "expect": {
+            "result": {
+              "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "object": "link"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/links/lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "no_body": true
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.update.applied",
+      "description": "200: applied true with the link",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Summer",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.update",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "params": {
+              "title": "Summer"
+            }
+          },
+          "expect": {
+            "result": {
+              "applied": true,
+              "link": {
+                "title": "Summer"
+              },
+              "change_request": null,
+              "warnings": []
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "PATCH",
+            "path": "/v1/links/lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "json": {
+              "title": "Summer"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.update.warnings",
+      "description": "200 with warnings: the result's warnings are the link's",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [
+              {
+                "code": "no_preview",
+                "message": "Add a preview title and image. In WhatsApp and social apps, people look at the preview more than the link.",
+                "param": null
+              }
+            ],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.update",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "params": {
+              "og_title": null
+            }
+          },
+          "expect": {
+            "result": {
+              "applied": true,
+              "warnings": [
+                {
+                  "code": "no_preview",
+                  "message": {
+                    "$any": true
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "PATCH",
+            "json": {
+              "og_title": null
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.update.change_request",
+      "description": "202: the destination change awaits a second person; applied false with change_request",
+      "responses": [
+        {
+          "status": 202,
+          "json": {
+            "object": "link_change_request",
+            "id": "lcr_01JCK8Z9V7Q4M2N6P8R0S2T4CR",
+            "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "status": "pending",
+            "from_url": "https://example.com/spring",
+            "to_url": "https://example.com/summer",
+            "requested_by": "key_01JCK8Z9V7Q4M2N6P8R0S2T4KY",
+            "requested_by_type": "api_key",
+            "decided_by": null,
+            "decided_at": null,
+            "decision_note": null,
+            "expires_at": "2026-11-02T12:00:00Z",
+            "created_at": "2026-10-26T12:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.update",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "params": {
+              "destination_url": "https://example.com/summer"
+            }
+          },
+          "expect": {
+            "result": {
+              "applied": false,
+              "link": null,
+              "change_request": {
+                "object": "link_change_request",
+                "id": "lcr_01JCK8Z9V7Q4M2N6P8R0S2T4CR",
+                "status": "pending",
+                "from_url": "https://example.com/spring",
+                "to_url": "https://example.com/summer",
+                "requested_by_type": "api_key",
+                "decision_note": null
+              },
+              "warnings": []
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "PATCH",
+            "json": {
+              "destination_url": "https://example.com/summer"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.update.locked",
+      "description": "409 link_locked → LinkLockedError, one request",
+      "responses": [
+        {
+          "status": 409,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "conflict",
+              "code": "link_locked",
+              "message": "This link is locked. Unlock it in the dashboard first.",
+              "param": "destination_url",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.update",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "params": {
+              "destination_url": "https://example.com/x"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "LinkLockedError",
+              "code": "link_locked",
+              "param": "destination_url"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "PATCH"
+          }
+        ],
+        "sleeps_ms": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.update.null_clears",
+      "description": "An explicit null in params is sent (PATCH clears the field)",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.update",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "params": {
+              "fallback_url": null,
+              "expires_at": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "PATCH",
+            "json": {
+              "fallback_url": null,
+              "expires_at": null
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.list.paginates",
+      "description": "list follows next_cursor with starting_after, keeping the other params",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "object": "link",
+                "id": "lnk_1",
+                "short_url": "https://dev.ciz.to/spring",
+                "domain": "dev.ciz.to",
+                "slug": "spring",
+                "status": "active",
+                "destination_url": "https://example.com/spring",
+                "fallback_url": null,
+                "title": "Spring sale",
+                "og_title": null,
+                "og_image_url": null,
+                "tags": [],
+                "metadata": {},
+                "warnings": [],
+                "created_at": "2026-10-26T11:00:00Z",
+                "updated_at": "2026-10-26T11:00:00Z",
+                "livemode": false
+              },
+              {
+                "object": "link",
+                "id": "lnk_2",
+                "short_url": "https://dev.ciz.to/spring",
+                "domain": "dev.ciz.to",
+                "slug": "spring",
+                "status": "active",
+                "destination_url": "https://example.com/spring",
+                "fallback_url": null,
+                "title": "Spring sale",
+                "og_title": null,
+                "og_image_url": null,
+                "tags": [],
+                "metadata": {},
+                "warnings": [],
+                "created_at": "2026-10-26T11:00:00Z",
+                "updated_at": "2026-10-26T11:00:00Z",
+                "livemode": false
+              }
+            ],
+            "has_more": true,
+            "next_cursor": "lnk_2"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "object": "link",
+                "id": "lnk_3",
+                "short_url": "https://dev.ciz.to/spring",
+                "domain": "dev.ciz.to",
+                "slug": "spring",
+                "status": "active",
+                "destination_url": "https://example.com/spring",
+                "fallback_url": null,
+                "title": "Spring sale",
+                "og_title": null,
+                "og_image_url": null,
+                "tags": [],
+                "metadata": {},
+                "warnings": [],
+                "created_at": "2026-10-26T11:00:00Z",
+                "updated_at": "2026-10-26T11:00:00Z",
+                "livemode": false
+              }
+            ],
+            "has_more": false,
+            "next_cursor": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.list",
+          "args": {
+            "params": {
+              "limit": 2,
+              "status": "active"
+            }
+          },
+          "expect": {
+            "result": {
+              "items": [
+                {
+                  "id": "lnk_1"
+                },
+                {
+                  "id": "lnk_2"
+                },
+                {
+                  "id": "lnk_3"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/links",
+            "query": {
+              "limit": "2",
+              "status": "active"
+            }
+          },
+          {
+            "method": "GET",
+            "path": "/v1/links",
+            "query": {
+              "limit": "2",
+              "status": "active",
+              "starting_after": "lnk_2"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.list.metadata_filter",
+      "description": "A metadata map is sent as metadata[<key>]=<value> query parameters (change 10, SPEC section 21)",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "object": "link",
+                "id": "lnk_1",
+                "short_url": "https://dev.ciz.to/spring",
+                "domain": "dev.ciz.to",
+                "slug": "spring",
+                "status": "active",
+                "destination_url": "https://example.com/spring",
+                "fallback_url": null,
+                "title": "Spring sale",
+                "og_title": null,
+                "og_image_url": null,
+                "tags": [],
+                "metadata": {
+                  "seller_id": "sel_ada"
+                },
+                "warnings": [],
+                "created_at": "2026-10-26T11:00:00Z",
+                "updated_at": "2026-10-26T11:00:00Z",
+                "livemode": false
+              }
+            ],
+            "has_more": false,
+            "next_cursor": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.list",
+          "args": {
+            "params": {
+              "status": "active",
+              "metadata": {
+                "seller_id": "sel_ada",
+                "product_id": "prd_ankara_6y"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "items": [
+                {
+                  "id": "lnk_1",
+                  "metadata": {
+                    "seller_id": "sel_ada"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/links",
+            "query": {
+              "status": "active",
+              "metadata[seller_id]": "sel_ada",
+              "metadata[product_id]": "prd_ankara_6y"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.list.null_cursor_stops",
+      "description": "has_more true with a null next_cursor stops",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "object": "link",
+                "id": "lnk_1",
+                "short_url": "https://dev.ciz.to/spring",
+                "domain": "dev.ciz.to",
+                "slug": "spring",
+                "status": "active",
+                "destination_url": "https://example.com/spring",
+                "fallback_url": null,
+                "title": "Spring sale",
+                "og_title": null,
+                "og_image_url": null,
+                "tags": [],
+                "metadata": {},
+                "warnings": [],
+                "created_at": "2026-10-26T11:00:00Z",
+                "updated_at": "2026-10-26T11:00:00Z",
+                "livemode": false
+              }
+            ],
+            "has_more": true,
+            "next_cursor": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.list",
+          "args": {},
+          "expect": {
+            "result": {
+              "items": [
+                {
+                  "id": "lnk_1"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/links",
+            "query": {}
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.list.lazy",
+      "description": "Pages are fetched lazily: taking 1 item makes 1 request",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "object": "link",
+                "id": "lnk_1",
+                "short_url": "https://dev.ciz.to/spring",
+                "domain": "dev.ciz.to",
+                "slug": "spring",
+                "status": "active",
+                "destination_url": "https://example.com/spring",
+                "fallback_url": null,
+                "title": "Spring sale",
+                "og_title": null,
+                "og_image_url": null,
+                "tags": [],
+                "metadata": {},
+                "warnings": [],
+                "created_at": "2026-10-26T11:00:00Z",
+                "updated_at": "2026-10-26T11:00:00Z",
+                "livemode": false
+              },
+              {
+                "object": "link",
+                "id": "lnk_2",
+                "short_url": "https://dev.ciz.to/spring",
+                "domain": "dev.ciz.to",
+                "slug": "spring",
+                "status": "active",
+                "destination_url": "https://example.com/spring",
+                "fallback_url": null,
+                "title": "Spring sale",
+                "og_title": null,
+                "og_image_url": null,
+                "tags": [],
+                "metadata": {},
+                "warnings": [],
+                "created_at": "2026-10-26T11:00:00Z",
+                "updated_at": "2026-10-26T11:00:00Z",
+                "livemode": false
+              }
+            ],
+            "has_more": true,
+            "next_cursor": "lnk_2"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.list",
+          "args": {
+            "params": {
+              "limit": 2
+            },
+            "max_items": 1
+          },
+          "expect": {
+            "result": {
+              "items": [
+                {
+                  "id": "lnk_1"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/links",
+            "query": {
+              "limit": "2"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.list_page",
+      "description": "list_page returns one page as is",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "object": "link",
+                "id": "lnk_1",
+                "short_url": "https://dev.ciz.to/spring",
+                "domain": "dev.ciz.to",
+                "slug": "spring",
+                "status": "active",
+                "destination_url": "https://example.com/spring",
+                "fallback_url": null,
+                "title": "Spring sale",
+                "og_title": null,
+                "og_image_url": null,
+                "tags": [],
+                "metadata": {},
+                "warnings": [],
+                "created_at": "2026-10-26T11:00:00Z",
+                "updated_at": "2026-10-26T11:00:00Z",
+                "livemode": false
+              }
+            ],
+            "has_more": true,
+            "next_cursor": "lnk_1"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.list_page",
+          "args": {
+            "params": {
+              "tag": "promo",
+              "limit": 1
+            }
+          },
+          "expect": {
+            "result": {
+              "object": "list",
+              "has_more": true,
+              "next_cursor": "lnk_1",
+              "data": [
+                {
+                  "id": "lnk_1"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/links",
+            "query": {
+              "tag": "promo",
+              "limit": "1"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.qr.svg",
+      "description": "qr returns bytes and the content type",
+      "responses": [
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "image/svg+xml"
+          },
+          "body_text": "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>"
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.qr",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "format": "svg",
+            "size": 512
+          },
+          "expect": {
+            "result": {
+              "content_type": "image/svg+xml",
+              "bytes_length": 46
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/links/lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA/qr",
+            "query": {
+              "format": "svg",
+              "size": "512"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.qr.png",
+      "description": "Binary bodies are returned unchanged",
+      "responses": [
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "image/png"
+          },
+          "body_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.qr",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "format": "png"
+          },
+          "expect": {
+            "result": {
+              "content_type": "image/png",
+              "bytes_length": 70
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/links/lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA/qr",
+            "query": {
+              "format": "png"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "clicks.get",
+      "description": "clicks.get fetches one click",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "click",
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "pending": false,
+            "occurred_at": "2026-10-22T18:01:12Z",
+            "link": {
+              "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA"
+            },
+            "campaign": null,
+            "country": "NG",
+            "device_type": "mobile",
+            "is_suspected_bot": false,
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "clicks.get",
+          "args": {
+            "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          },
+          "expect": {
+            "result": {
+              "id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "country": "NG",
+              "is_suspected_bot": false
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/clicks/clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "conversions.create",
+      "description": "conversions.create posts the wire params",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "conversion",
+            "id": "cnv_4",
+            "status": "attributed"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "shopify:5512093",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "type": "purchase",
+              "amount_minor": 5000000,
+              "currency": "NGN"
+            }
+          },
+          "expect": {
+            "result": {
+              "id": "cnv_4"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/conversions",
+            "json": {
+              "external_id": "shopify:5512093",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "type": "purchase",
+              "amount_minor": 5000000,
+              "currency": "NGN"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "conversions.reverse",
+      "description": "conversions.reverse posts to /reverse",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "conversion",
+            "id": "cnv_4",
+            "status": "reversed"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "conversions.reverse",
+          "args": {
+            "id": "cnv_4",
+            "params": {
+              "amount_minor": 2000000,
+              "reason": "partial refund"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/conversions/cnv_4/reverse",
+            "json": {
+              "amount_minor": 2000000,
+              "reason": "partial refund"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "conversions.create.payment_goal",
+      "description": "Change 12 (B2.5): conversions.create on a Payment goal sends provider and answers with the goal event (object goal_event), returned as is",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "payment",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "order_paid",
+            "reference": "ORD-77",
+            "value": "7500",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": {
+              "confirmation_id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+              "match_status": "matched",
+              "report_id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+              "provider": "paystack"
+            },
+            "value_minor": 750000
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-77",
+              "goal": "order_paid",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "value": "7500",
+              "currency": "NGN",
+              "provider": "paystack"
+            }
+          },
+          "expect": {
+            "result": {
+              "object": "goal_event",
+              "status": "counted",
+              "goal_kind": "payment",
+              "counted": true,
+              "payment": {
+                "provider": "paystack",
+                "match_status": "matched"
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/conversions",
+            "json": {
+              "external_id": "ORD-77",
+              "goal": "order_paid",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "value": "7500",
+              "currency": "NGN",
+              "provider": "paystack"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "conversions.create.payment_goal_waiting",
+      "description": "Change 12 (B2.5): without a click ID the Payment goal conversion waits for its report (status waiting, the confirmation id)",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+            "status": "waiting",
+            "reason": "waiting_for_confirmation",
+            "goal_kind": "payment",
+            "counted": false,
+            "value_ignored": false,
+            "event_status": null,
+            "goal": "order_paid",
+            "reference": "ORD-78",
+            "value": "7500",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": null,
+            "is_first": null,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": null,
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": {
+              "confirmation_id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+              "match_status": "waiting_for_report",
+              "report_id": null,
+              "provider": "paystack"
+            },
+            "value_minor": 750000
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-78",
+              "goal": "order_paid",
+              "amount_minor": 750000,
+              "currency": "NGN",
+              "provider": "paystack"
+            }
+          },
+          "expect": {
+            "result": {
+              "object": "goal_event",
+              "id": "pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC",
+              "status": "waiting",
+              "reason": "waiting_for_confirmation"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/conversions",
+            "json": {
+              "external_id": "ORD-78",
+              "goal": "order_paid",
+              "amount_minor": 750000,
+              "currency": "NGN",
+              "provider": "paystack"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "conversions.create.payment_goal_missing_provider",
+      "description": "Change 12 (B2.5): a Payment goal conversion without provider → 422 payment_goal_needs_confirmation (not retried)",
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "payment_goal_needs_confirmation",
+              "message": "order_paid is a Payment goal: send provider and reference so your payment provider or server can confirm it.",
+              "param": "provider",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ",
+              "missing": [
+                "provider"
+              ]
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-79",
+              "goal": "order_paid",
+              "value": "10"
+            }
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "payment_goal_needs_confirmation",
+              "param": "provider",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/conversions"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "conversions.create.standard_unchanged",
+      "description": "Change 12: a conversion for a Standard goal still answers with the conversion object",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "conversion",
+            "id": "cnv_6",
+            "status": "attributed"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "conversions.create",
+          "args": {
+            "params": {
+              "external_id": "ORD-80",
+              "goal": "account_opened",
+              "provider": "paystack"
+            }
+          },
+          "expect": {
+            "result": {
+              "object": "conversion",
+              "id": "cnv_6"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/conversions",
+            "json": {
+              "external_id": "ORD-80",
+              "goal": "account_opened",
+              "provider": "paystack"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "conversions.reverse.no_params",
+      "description": "Without params the body is {}",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "conversion",
+            "id": "cnv_4",
+            "status": "reversed"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "conversions.reverse",
+          "args": {
+            "id": "cnv_4"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/conversions/cnv_4/reverse",
+            "json": {}
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

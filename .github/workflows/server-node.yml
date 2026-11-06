@@ -1,0 +1,91 @@
+# Server SDK for Node.js (server/node): lint, types, unit tests and the cross-language conformance
+# suite on every supported Node line plus the minimum (Node 18), on Linux and Windows.
+# Node release lines checked 2026-10-26 (docs/DECISIONS.md): 22 and 24 are LTS, 26 becomes LTS on
+# 2026-10-28; 18 and 20 are end-of-life but 18 stays the documented minimum (S.9).
+name: server-node
+
+on:
+  push:
+    branches: [main]
+    paths: ["server/node/**", "server/conformance/**", "server/scripts/**", "server/SPEC.md", ".github/workflows/server-node.yml"]
+  pull_request:
+    paths: ["server/node/**", "server/conformance/**", "server/scripts/**", "server/SPEC.md", ".github/workflows/server-node.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-node-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: lint, types, examples
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server/node
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: server/node/package-lock.json
+      - run: npm ci
+      - run: npm run check:version
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run typecheck:examples
+      - name: Conformance cases are up to date
+        run: node ../conformance/tools/build-cases.mjs --check
+      - name: Release scan rules work (self-test)
+        run: node ../scripts/scan-package.mjs --self-test
+
+  test:
+    name: test (node ${{ matrix.node }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18, 22, 24, 26]
+    defaults:
+      run:
+        working-directory: server/node
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: server/node/package-lock.json
+      # devDependencies include tools that need newer Node (ESLint 10, Next 16); on Node 18 they are
+      # installed but unused, and the Fastify/Next add-on tests skip themselves below Node 20
+      - run: npm ci --engine-strict=false
+      - name: Unit tests and conformance suite
+        run: npm test
+      - run: npm run build
+      - run: npm run check:package
+
+  conformance:
+    name: conformance (all cases, mock server)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server/node
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: server/node/package-lock.json
+      - run: npm ci
+      - run: npm run test:conformance
+      - name: Release scan of the npm tarball (no internal comments, TODO/FIXME, debug code, internal or staff URLs)
+        run: |
+          npm run build
+          npm pack --pack-destination "$RUNNER_TEMP"
+          node ../scripts/scan-package.mjs "$RUNNER_TEMP"/clikgate-node-*.tgz

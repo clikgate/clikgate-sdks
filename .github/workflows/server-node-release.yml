@@ -1,0 +1,96 @@
+# Publish @clikgate/node on tags server-node-v<semver> (S.17), with npm trusted publishing (OIDC, no
+# token) and provenance, plus a CycloneDX SBOM attached to the GitHub release.
+# npm side (docs/SERVER_SDKS.md): package @clikgate/node → Settings → Trusted publishing →
+# GitHub Actions, repository clikgate/clikgate-sdks, workflow server-node-release.yml, environment npm.
+name: server-node-release
+
+on:
+  push:
+    tags: ["server-node-v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-node-release
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server/node
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: server/node/package-lock.json
+      - run: npm ci
+      - run: npm run check:version
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run check:package
+      - name: Release scan of the npm tarball (fails the release on internal comments, TODO/FIXME, debug code, internal or staff URLs)
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          node ../scripts/scan-package.mjs "$RUNNER_TEMP"/clikgate-node-*.tgz
+      - name: CycloneDX SBOM (runtime dependencies only)
+        run: npm run sbom
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom
+          path: server/node/sbom.cdx.json
+          if-no-files-found: error
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest # trusted publishing needs a GitHub-hosted runner
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # OIDC token for npm trusted publishing and provenance
+    defaults:
+      run:
+        working-directory: server/node
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: npm must support trusted publishing (>= 11.5.1)
+        run: |
+          node -e "const [a,b,c]=process.argv[1].split('.').map(Number); if (a<11||(a===11&&(b<5||(b===5&&c<1)))) { console.error('npm '+process.argv[1]+' is too old for trusted publishing'); process.exit(1) }" "$(npm --version)"
+      - run: npm ci
+      - run: npm run build
+      - name: Release scan of exactly what is published
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          node ../scripts/scan-package.mjs "$RUNNER_TEMP"/clikgate-node-*.tgz
+      # Provenance is automatic with trusted publishing; --provenance keeps it explicit
+      - run: npm publish --access public --provenance
+
+  release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # attach the SBOM to the GitHub release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sbom
+      - name: GitHub release with the SBOM
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mv sbom.cdx.json "clikgate-node-${GITHUB_REF_NAME#server-node-v}.cdx.json"
+          gh release create "$GITHUB_REF_NAME" --title "@clikgate/node ${GITHUB_REF_NAME#server-node-v}" \
+            --notes "See server/node/CHANGELOG.md. Published to npm with provenance." \
+            "clikgate-node-${GITHUB_REF_NAME#server-node-v}.cdx.json"

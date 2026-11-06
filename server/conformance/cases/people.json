@@ -1,0 +1,324 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "people",
+  "description": "identifyUser() and goal labels (SPEC 24; backend change 14 B.5)",
+  "cases": [
+    {
+      "id": "people.identify.click_customer_label",
+      "description": "A click, a customer ID and a label map to the wire; the person is returned",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "person_identified",
+            "person_id": "per_01JCK8Z9V7Q4M2N6P8R0S2T4PE",
+            "label_ignored": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "identify_user",
+          "args": {
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "customer_id": "user_42",
+            "label": "Ada (VIP)"
+          },
+          "expect": {
+            "result": {
+              "object": "person_identified",
+              "person_id": "per_01JCK8Z9V7Q4M2N6P8R0S2T4PE",
+              "label_ignored": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/people/identify",
+            "json": {
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "customer_id": "user_42",
+              "label": "Ada (VIP)"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "people.identify.installation_plan",
+      "description": "An app installation (both IDs) with a label; label_ignored \"plan\" is returned as is",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "person_identified",
+            "person_id": "per_01JCK8Z9V7Q4M2N6P8R0S2T4PE",
+            "label_ignored": "plan"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "identify_user",
+          "args": {
+            "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP",
+            "installation_id": "6a1f0c2e-0000-4000-8000-000000000001",
+            "label": "Ada"
+          },
+          "expect": {
+            "result": {
+              "label_ignored": "plan"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/people/identify",
+            "json": {
+              "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP",
+              "installation_id": "6a1f0c2e-0000-4000-8000-000000000001",
+              "label": "Ada"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "people.identify.needs_a_reference",
+      "description": "Without a click, an installation or a customer ID nothing is sent (local invalid_request)",
+      "steps": [
+        {
+          "call": "identify_user",
+          "args": {
+            "label": "Ada"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_request",
+              "param": "click_id",
+              "http_status": null
+            }
+          }
+        },
+        {
+          "call": "identify_user",
+          "args": {
+            "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_request",
+              "param": "installation_id",
+              "http_status": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "people.identify.private_mode_customer_refused",
+      "description": "In private mode the customer ID is refused by the guard; a label is allowed (the API checks the switch)",
+      "client": {
+        "private_mode": true
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "person_identified",
+            "person_id": "per_01JCK8Z9V7Q4M2N6P8R0S2T4PE",
+            "label_ignored": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "identify_user",
+          "args": {
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "customer_id": "secret@example.com"
+          },
+          "expect": {
+            "error": {
+              "class": "PrivateModeFieldRejectedError",
+              "code": "private_mode_field_rejected",
+              "field": "customer_id",
+              "param": "customer_id",
+              "http_status": null,
+              "message_excludes": [
+                "secret@example.com"
+              ]
+            }
+          }
+        },
+        {
+          "call": "identify_user",
+          "args": {
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "label": "Ada"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/people/identify",
+            "json": {
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "label": "Ada"
+            }
+          }
+        ],
+        "logs_exclude": [
+          "secret@example.com"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "people.goal.label_and_is_first",
+      "description": "goals.send carries label and is_first; label is allowed by the private-mode guard",
+      "client": {
+        "private_mode": true
+      },
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-1",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "is_first": true,
+            "label": "Ada"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "account_opened",
+              "reference": "APP-1",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "is_first": true,
+              "label": "Ada"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "people.identify.labels_off_in_private_mode",
+      "description": "The API error labels_off_in_private_mode (422) is an InvalidRequestError",
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "labels_off_in_private_mode",
+              "message": "Labels are off in private mode.",
+              "param": null,
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "identify_user",
+          "args": {
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "label": "Ada"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "labels_off_in_private_mode",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/people/identify",
+            "json": {
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "label": "Ada"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

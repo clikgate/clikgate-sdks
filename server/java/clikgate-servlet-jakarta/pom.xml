@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.clikgate</groupId>
+    <artifactId>clikgate-java-parent</artifactId>
+    <version>1.1.0</version>
+  </parent>
+
+  <artifactId>clikgate-servlet-jakarta</artifactId>
+  <name>Clikgate Servlet filter (jakarta.servlet)</name>
+  <description>ClikgateFilter for jakarta.servlet containers (Java 8+): keeps the Clikgate click ID and exposes it as the request attribute clikgate.click_id.</description>
+  <url>https://clikgate.com/docs/sdks/java#servlet</url>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.clikgate</groupId>
+      <artifactId>clikgate-java</artifactId>
+    </dependency>
+    <!-- the container provides the Servlet API (compiled against 5.0.0, works with later versions) -->
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>5.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jspecify</groupId>
+      <artifactId>jspecify</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>com.clikgate.servlet.jakarta</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -1,0 +1,37 @@
+{{#models}}
+{{#model}}
+{{#isEnum}}
+{{classname}} = Literal[{{#allowableValues}}{{#enumVars}}{{{value}}}{{^-last}}, {{/-last}}{{/enumVars}}{{/allowableValues}}]
+{{/isEnum}}
+{{^isEnum}}
+{{#oneOf}}
+{{#-first}}
+{{classname}} = Union[{{#oneOf}}"{{{.}}}"{{^-last}}, {{/-last}}{{/oneOf}}]
+{{/-first}}
+{{/oneOf}}
+{{^oneOf}}
+{{#anyOf}}
+{{#-first}}
+{{classname}} = Union[{{#anyOf}}"{{{.}}}"{{^-last}}, {{/-last}}{{/anyOf}}]
+{{/-first}}
+{{/anyOf}}
+{{^anyOf}}
+{{#hasVars}}
+{{classname}} = TypedDict(
+    "{{classname}}",
+    {
+{{#vars}}
+        "{{baseName}}": "{{#isNullable}}Optional[{{/isNullable}}{{#isEnum}}Literal[{{#allowableValues}}{{#enumVars}}{{{value}}}{{^-last}}, {{/-last}}{{/enumVars}}{{/allowableValues}}]{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{#isNullable}}]{{/isNullable}}",
+{{/vars}}
+    },
+    total=False,
+)
+{{/hasVars}}
+{{^hasVars}}
+{{classname}} = Dict[str, Any]
+{{/hasVars}}
+{{/anyOf}}
+{{/oneOf}}
+{{/isEnum}}
+{{/model}}
+{{/models}}

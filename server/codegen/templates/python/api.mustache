@@ -1,0 +1,52 @@
+{{#operations}}
+class {{classname}}:
+    """{{baseName}}: generated from openapi.json. See https://clikgate.com/docs/api."""
+
+    def __init__(self, r: Requester) -> None:
+        self._r = r
+{{#operation}}
+
+    def {{nickname}}(self, {{#pathParams}}{{paramName}}: str, {{/pathParams}}{{#bodyParam}}body: {{^required}}Optional[{{/required}}"{{{dataType}}}"{{^required}}] = None{{/required}}, {{/bodyParam}}*, {{#queryParams}}{{paramName}}: "Optional[{{{dataType}}}]" = None, {{/queryParams}}request_options: Optional[RequestOptions] = None) -> {{#vendorExtensions.x-cg-binary}}BinaryResponse{{/vendorExtensions.x-cg-binary}}{{^vendorExtensions.x-cg-binary}}"{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}Any{{/returnType}}"{{/vendorExtensions.x-cg-binary}}:
+        r"""{{{summary}}}
+
+        ``{{httpMethod}} {{{path}}}``
+
+        Example::
+
+            SYNC_EXAMPLE {{{vendorExtensions.x-cg-example}}}
+        """
+        req = ApiRequest("{{httpMethod}}", build_path("{{{path}}}", { {{#pathParams}}"{{baseName}}": {{paramName}}, {{/pathParams}}}), query={ {{#queryParams}}"{{baseName}}": {{paramName}}, {{/queryParams}}}{{#bodyParam}}, body=_body(body){{/bodyParam}}).with_options(request_options)
+{{#vendorExtensions.x-cg-binary}}
+        return _binary(self._r.send(req))
+{{/vendorExtensions.x-cg-binary}}
+{{^vendorExtensions.x-cg-binary}}
+        return cast("{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}Any{{/returnType}}", self._r.request(req)[1])
+{{/vendorExtensions.x-cg-binary}}
+{{/operation}}
+
+
+class Async{{classname}}:
+    """{{baseName}} (async): generated from openapi.json. See https://clikgate.com/docs/api."""
+
+    def __init__(self, r: AsyncRequester) -> None:
+        self._r = r
+{{#operation}}
+
+    async def {{nickname}}(self, {{#pathParams}}{{paramName}}: str, {{/pathParams}}{{#bodyParam}}body: {{^required}}Optional[{{/required}}"{{{dataType}}}"{{^required}}] = None{{/required}}, {{/bodyParam}}*, {{#queryParams}}{{paramName}}: "Optional[{{{dataType}}}]" = None, {{/queryParams}}request_options: Optional[RequestOptions] = None) -> {{#vendorExtensions.x-cg-binary}}BinaryResponse{{/vendorExtensions.x-cg-binary}}{{^vendorExtensions.x-cg-binary}}"{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}Any{{/returnType}}"{{/vendorExtensions.x-cg-binary}}:
+        r"""{{{summary}}}
+
+        ``{{httpMethod}} {{{path}}}``
+
+        Example::
+
+            ASYNC_EXAMPLE {{{vendorExtensions.x-cg-example}}}
+        """
+        req = ApiRequest("{{httpMethod}}", build_path("{{{path}}}", { {{#pathParams}}"{{baseName}}": {{paramName}}, {{/pathParams}}}), query={ {{#queryParams}}"{{baseName}}": {{paramName}}, {{/queryParams}}}{{#bodyParam}}, body=_body(body){{/bodyParam}}).with_options(request_options)
+{{#vendorExtensions.x-cg-binary}}
+        return _binary(await self._r.send(req))
+{{/vendorExtensions.x-cg-binary}}
+{{^vendorExtensions.x-cg-binary}}
+        return cast("{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}Any{{/returnType}}", (await self._r.request(req))[1])
+{{/vendorExtensions.x-cg-binary}}
+{{/operation}}
+{{/operations}}

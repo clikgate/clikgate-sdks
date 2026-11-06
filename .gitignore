@@ -1,0 +1,41 @@
+# Shared
+.DS_Store
+node_modules/
+
+# server/ (server SDKs)
+server/node/dist/
+server/node/.test-dist/
+server/node/sbom.cdx.json
+server/node/*.tgz
+server/node/examples/nextjs/.next/
+server/node/examples/nextjs/next-env.d.ts
+server/codegen/.cache/
+server/python/.venv/
+server/python/dist/
+server/python/sbom.cdx.json
+server/python/.mypy_cache/
+server/python/.pytest_cache/
+server/python/.ruff_cache/
+**/__pycache__/
+server/php/vendor/
+server/php/composer.lock
+server/php/.php-cs-fixer.cache
+server/php/.phpstan-cache/
+server/php/.phpunit.cache/
+server/php/sbom.cdx.json
+server/php-laravel/vendor/
+server/php-laravel/composer.lock
+server/php-laravel/.phpunit.cache/
+server/java/**/target/
+server/java/sbom.cdx.json
+
+# ai-guides/ (AI guides)
+ai-guides/dist/
+ai-guides/clikgate-setup/references/api-surface.md.new
+ai-guides/.blocks/
+server/dotnet/**/bin/
+server/dotnet/**/obj/
+server/dotnet/artifacts/
+server/java-spring-boot-starter/target/
+server/php-laravel/.phpstan-cache/
+server/php-laravel/.php-cs-fixer.cache

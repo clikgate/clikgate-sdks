@@ -1,0 +1,96 @@
+{
+  "openapi_generator": {
+    "version": "7.26.0",
+    "url": "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.26.0/openapi-generator-cli-7.26.0.jar",
+    "sha256": "1760050094997b9cc790cc1350be095f15da8c08a996b184d3eadc4ccda5e35e",
+    "max_heap": "1g"
+  },
+  "languages": {
+    "node": {
+      "generator": "typescript-fetch",
+      "templates": "templates/node",
+      "output": "../node/src/generated",
+      "type_mappings": {
+        "DateTime": "string",
+        "Date": "string",
+        "date": "string",
+        "AnyType": "any"
+      },
+      "additional_properties": {
+        "modelPropertyNaming": "original",
+        "enumPropertyNaming": "original",
+        "paramNaming": "camelCase",
+        "supportsES6": "true",
+        "withInterfaces": "false",
+        "useSingleRequestParameter": "false"
+      }
+    },
+    "python": {
+      "generator": "python",
+      "templates": "templates/python",
+      "output": "../python/src/clikgate",
+      "global_property": "apis,models,apiDocs=false,modelDocs=false,apiTests=false,modelTests=false",
+      "type_mappings": {
+        "DateTime": "str",
+        "Date": "str",
+        "date": "str",
+        "AnyType": "Any",
+        "object": "Any"
+      },
+      "additional_properties": {
+        "packageName": "clikgate_gen"
+      }
+    },
+    "php": {
+      "generator": "php",
+      "templates": "templates/php",
+      "output": "../php/src/Generated",
+      "global_property": "apis,apiDocs=false,apiTests=false",
+      "type_mappings": {
+        "DateTime": "string",
+        "Date": "string",
+        "date": "string"
+      },
+      "additional_properties": {
+        "invokerPackage": "ClikgateGen",
+        "apiPackage": "Api",
+        "variableNamingConvention": "camelCase"
+      }
+    },
+    "java": {
+      "generator": "java",
+      "templates": "templates/java",
+      "output": "../java/clikgate-java/src/main/java/com/clikgate/api",
+      "global_property": "apis,apiDocs=false,apiTests=false",
+      "type_mappings": {
+        "DateTime": "String",
+        "Date": "String",
+        "date": "String"
+      },
+      "additional_properties": {
+        "library": "native",
+        "apiPackage": "com.clikgate.gen",
+        "invokerPackage": "com.clikgate.gen",
+        "modelPackage": "com.clikgate.gen.model",
+        "dateLibrary": "java8"
+      }
+    },
+    "dotnet": {
+      "generator": "csharp",
+      "templates": "templates/dotnet",
+      "output": "../dotnet/src/Clikgate/Api",
+      "global_property": "apis,apiDocs=false,apiTests=false",
+      "type_mappings": {
+        "DateTime": "string",
+        "Date": "string",
+        "date": "string"
+      },
+      "additional_properties": {
+        "packageName": "ClikgateGen",
+        "library": "httpclient",
+        "targetFramework": "net8.0",
+        "nullableReferenceTypes": "true"
+      }
+    }
+  }
+}
