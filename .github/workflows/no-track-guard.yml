@@ -1,0 +1,31 @@
+# Change 22 (S, R.44): one method, goal(). Fails if the removed app-event API (the patterns are listed in
+# scripts/check_no_track.mjs) comes back anywhere in the repository (docs/spec/, third-party code, the vendored backend
+# OpenAPI document, the codegen removal list and CHANGELOG removal entries are allowed), and if a server SDK reference
+# page stops linking to https://clikgate.com/docs/identify-users. Runs on every push and pull request.
+name: no-track-guard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: The guard's own patterns
+        run: node scripts/check_no_track.mjs --self-test
+      - name: No removed app-event API; identify-users links present
+        run: node scripts/check_no_track.mjs
+      - name: Identity-token vectors match the backend signer's output
+        # The vectors are committed; the builder needs the backend checkout, so CI only checks the file parses and
+        # every server SDK's unit tests run it (server-*.yml).
+        run: node -e "const v=require('./server/conformance/vectors/identity-token-vectors.json'); if(!(v.vectors.length>=10 && v.invalid_customer_ids.length>=2)) process.exit(1)"

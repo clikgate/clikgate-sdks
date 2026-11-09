@@ -17,6 +17,9 @@ export interface ErrorContext {
 /** Called for failures that can't be thrown (background sends and every `goal()` call). */
 export type OnError = (error: ClikgateError, context: ErrorContext) => void;
 
+/** @internal The API's reason (and error code) for a goal name that isn't set up, in strict mode. */
+export const UNKNOWN_GOAL = 'unknown_goal';
+
 /** @internal State shared by the resources of one client. */
 export class Core {
   private warned = new Set<string>();
@@ -60,6 +63,20 @@ export class Core {
   shownReference(reference: unknown): string {
     if (this.mayBePrivate()) return REDACTED;
     return typeof reference === 'string' ? reference : String(reference ?? '');
+  }
+
+  /**
+   * A goal the API refused because the organisation accepts only goals it has set up (`unknown_goal`): one line at
+   * debug level, only when the logger has `debug`. The goal name only: never the reference, customer ID, values or
+   * labels. The SDK never checks names itself and never remembers the refusal. Never throws.
+   */
+  noteRefusedGoal(goal: unknown, codeOrReason: unknown): void {
+    if (codeOrReason !== UNKNOWN_GOAL || typeof goal !== 'string' || !this.logger.debug) return;
+    try {
+      this.logger.debug(`Goal \`${goal}\` isn't set up in Clikgate`, { code: UNKNOWN_GOAL });
+    } catch {
+      // a broken logger must not break the caller
+    }
   }
 
   /** Report a failure that can't be thrown: log at error level and call onError. Never throws. */

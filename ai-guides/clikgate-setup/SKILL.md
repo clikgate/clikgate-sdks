@@ -23,7 +23,9 @@ Clikgate tracks every click on a link through to the app install, the app open a
 8. **Money is exact.** Send values in normal units (₦2,000,000 is `2000000`, never kobo) as `Decimal` / `BigDecimal` / `decimal` / strings, never floating point.
 9. **Use only the APIs in [references/api-surface.md](references/api-surface.md).** If a method isn't listed there, it doesn't exist. Don't invent methods, options or flags.
 10. **Never remove existing deep-link handling** (routers, other SDKs' link handlers, intent filters, entitlements). Add Clikgate alongside them.
-11. **Test links** may point only to Clikgate's test pages, the organisation's verified websites, `localhost` or the local network, or verified tunnels ([references/test-links.md](references/test-links.md)).
+11. **`goal()` is the only method for anything that happens in an app, website or server.** Clikgate has no separate event method. Use the snake_case name the team defined (or will tick) in the dashboard.
+12. **The identity secret stays on the server.** Never put `CLIKGATE_IDENTITY_SECRET` (or any `cgis_…` value) in app code, web pages or the repository; it goes in the server's environment, like the API key.
+13. **Test links** may point only to Clikgate's test pages, the organisation's verified websites, `localhost` or the local network, or verified tunnels ([references/test-links.md](references/test-links.md)).
 
 ## Step 1: What is being set up?
 
@@ -60,11 +62,13 @@ If a project still lists a shared domain (from an older setup), doctor warns "re
 
 If the app has no confirmed link subdomain yet, the user confirms it in the dashboard (Apps › the app › Link subdomain) before running the setup.
 
-### Deep links on every plan; attribution needs Growth
+### Deep links, attribution and goals on every plan
 
 - **Free and Starter include deep links into the app:** direct links (App Links, Universal Links, the URI scheme) without a limit, and deferred deep links (someone installs the app from a link and lands on the right screen) up to 1,000 a month on Free and 10,000 on Starter. Growth and up: unlimited. One app on Free and Starter (an iOS and Android pair counts as one).
 - **The app subdomain depends on the plan.** Free: `acme.clk.ng` in release builds. Starter and up: `acme.ciz.to`. Debug builds: `acme.dev.ciz.to` on every plan. `acme.clk.ng` is the app's own subdomain, **not** the shared domain `clk.ng`, so it goes in release builds like `acme.ciz.to`. Signed in, the setup command reads the right hosts for the plan; offline, pass the host the dashboard shows (`--domain acme.clk.ng`). Doctor accepts both.
-- **Install attribution, in-app events and goals need Growth** (which link, campaign or creator brought each install). On Free and Starter the app SDKs' `goal()` and `track()` log one "needs Growth" warning and do nothing: no error, nothing sent, and attribution reads `organic`. Set the SDK up the same way on every plan: when the organisation upgrades, attribution starts with no code change. Don't add workarounds or remove the goal calls.
+- **Events and goals work on every plan, up to the plan's allowance. Growth and up add re-engagement, Apple Ads, install fraud scoring, and uninstall tracking on Pro.** Set the SDK up the same way on every plan.
+- **The dashboard chooses what counts.** Every name sent with `goal()` appears in "Seen from your app and website". It counts (reports, ad networks, usage) only once the team ticks "Count this as a goal"; until then the call answers `status: received` (`not_counted_yet`), which is a success, not an error. Goals created on the Goals page are counted from the start. Tell the user to tick new names; don't add workarounds.
+- **Or the server refuses unknown names.** If the organisation turned off "Allow unknown goal names" (Settings › Goals; on by default, live keys only), a live call with a name that has no goal or alias behind it is refused: `422` with code and reason `unknown_goal` (`status: refused`, `counted: false`, `goal_kind: null`); an archived goal's name is refused with `goal_archived`. App SDKs return `REFUSED` with that reason, the web script `{status: "refused", reason: "unknown_goal"}`, server SDKs raise their invalid-request error with that code. It is final: never retry it, queue it or check names on the device. Test keys always answer `received`. The fix is in the dashboard: set the goal up (or add the name as an alias), or turn the setting back on.
 - **At the monthly deferred deep link allowance** new installs open the app's home screen: the SDK gets its normal "no deferred link" result, never an error. Direct deep links keep working.
 
 ## Step 3 (apps): Run the setup (offline mode)
@@ -130,6 +134,7 @@ Release builds need the live SDK key. The setup summary prints the file and line
 
 - **Website:** one script tag with the publishable web key (`data-web-key`), then `Clikgate.goal(…)` for goals that allow browser goals, and `Clikgate.clickId()`. See [references/web.md](references/web.md).
 - **Sharing links from an app** (only when the user asks for share buttons, and only for apps without their own backend): the optional Engage add-on (`com.clikgate:clikgate-engage`, pod `Clikgate/Engage` or the `ClikgateEngage` Swift package product, `clikgate_engage`, `@clikgate/react-native-engage`) has `share.link(url, …)` and `share.referralLink(link, …)`. They open the phone's share menu, give each app its own version of the link and record the share. Never build or guess the link versions yourself; pass the link as it is, or the API's `share_urls`. React Native apps must be rebuilt after adding the package.
+- **Identify users** (only when the user asks for sign-in identification, labels, or referrals and leaderboards that need a verified user): the app calls `identifyUser(label, customerId, identityToken)` after sign-in and at app open when signed in, and clears it on sign-out. **Path A (default):** the server adds one field to its sign-in and "current user" responses, made by `createIdentityToken(user.id)` (Node; the formula for other languages is in [references/server-sdks.md](references/server-sdks.md)) with `CLIKGATE_IDENTITY_SECRET` from the server's environment. **Path B** (no secret or token): the app sends `getInstallationId()` with its sign-in request and the server calls `identifyUser({ appId, installationId, customerId })`. See [references/goals.md](references/goals.md) and https://clikgate.com/docs/identify-users.
 - **Server:** `@clikgate/node` is available now. The Python, PHP, Java and .NET SDKs are **not available yet**. Use the HTTP API for those, as [references/server-sdks.md](references/server-sdks.md) shows. Don't invent package names or install lines.
 
 ## Reference files

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Clikgate;
 
 use Clikgate\Enum\Provider;
+use Clikgate\Exception\ClikgateException;
 use Clikgate\Exception\ErrorMapper;
 use Clikgate\Exception\InvalidRequestException;
 use Clikgate\Http\ApiRequest;
@@ -162,6 +163,28 @@ final class Goals
     }
 
     /**
+     * @internal `POST /v1/goals/events` for one checked wire event; notes an `unknown_goal` refusal (debug line).
+     *
+     * @param array<string, mixed> $wire
+     * @param array<string, mixed> $requestOptions
+     *
+     * @return array{0: int, 1: mixed, 2: array<string, string>}
+     */
+    public function sendWire(array $wire, array $requestOptions = []): array
+    {
+        try {
+            $answer = $this->core->requester->request(self::sendRequest($wire, $requestOptions));
+        } catch (ClikgateException $e) {
+            $this->core->noteRefusedGoal($wire['goal'] ?? null, $e->getErrorCode());
+
+            throw $e;
+        }
+        $this->core->noteRefusedGoal($wire['goal'] ?? null, \is_array($answer[1]) ? ($answer[1]['reason'] ?? null) : null);
+
+        return $answer;
+    }
+
+    /**
      * @internal
      *
      * @param array<string, mixed> $wire
@@ -199,7 +222,7 @@ final class Goals
     {
         $wire = self::wire($key, $options);
         self::checkBeforeSend($this->core, $this->core->guardState(), $wire);
-        [, $data] = $this->core->requester->request(self::sendRequest($wire, $requestOptions));
+        [, $data] = $this->sendWire($wire, $requestOptions);
 
         return self::arr($data);
     }
@@ -247,6 +270,7 @@ final class Goals
             }
         }
         [, $data] = $this->core->requester->request((new ApiRequest('POST', '/v1/goals/events/batch'))->withBody(['events' => $wires])->withOptions($requestOptions));
+        $this->core->noteRefusedItems($wires, $data);
 
         return self::arr($data);
     }

@@ -18,6 +18,9 @@ final class Core
     public const CONFIG_TTL_MS = 600_000;
     public const CONFIG_RETRY_MS = 60_000;
 
+    /** The API's reason (and error code) for a goal name that isn't set up, while only set-up goals are accepted. */
+    public const UNKNOWN_GOAL = 'unknown_goal';
+
     /** @var array<string, true> */
     private array $warned = [];
     /** @var array<string, mixed>|null */
@@ -139,6 +142,45 @@ final class Core
         }
 
         return \is_scalar($reference) ? (string) $reference : '';
+    }
+
+    /**
+     * A goal the API refused because the organisation accepts only goals it has set up (`unknown_goal`): one line at
+     * debug level (the PSR-3 logger decides whether debug is on). The goal name only: never the reference, customer
+     * ID, values or labels. The SDK never checks names itself and never remembers the refusal. Never throws.
+     */
+    public function noteRefusedGoal(mixed $goal, mixed $codeOrReason): void
+    {
+        if (self::UNKNOWN_GOAL !== $codeOrReason || !\is_string($goal)) {
+            return;
+        }
+        try {
+            $this->logger->debug("Goal `{$goal}` isn't set up in Clikgate", ['clikgate_code' => self::UNKNOWN_GOAL]);
+        } catch (\Throwable) {
+            // a broken logger must not break the caller
+        }
+    }
+
+    /**
+     * `noteRefusedGoal` for each item of a batch result (`$wires[$i]` is the event sent at index `$i`).
+     *
+     * @param list<array<string, mixed>> $wires
+     */
+    public function noteRefusedItems(array $wires, mixed $data): void
+    {
+        foreach (\is_array($data) && \is_array($data['data'] ?? null) ? $data['data'] : [] as $item) {
+            if (!\is_array($item)) {
+                continue;
+            }
+            $index = $item['index'] ?? null;
+            if (!\is_int($index) || !isset($wires[$index])) {
+                continue;
+            }
+            $reason = true === ($item['ok'] ?? false)
+                ? (\is_array($item['goal_event'] ?? null) ? ($item['goal_event']['reason'] ?? null) : null)
+                : (\is_array($item['error'] ?? null) ? ($item['error']['code'] ?? null) : null);
+            $this->noteRefusedGoal($wires[$index]['goal'] ?? null, $reason);
+        }
     }
 
     /** Log at error level and call `onError`. Never throws. */

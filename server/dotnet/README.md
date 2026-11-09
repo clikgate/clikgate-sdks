@@ -25,7 +25,7 @@ Create one client and reuse it. It is thread-safe.
 
 - **`Goal()`** never throws. It queues the event, and a background worker sends it in batches with safe retries.
 - **`GoalAsync()`** sends at once and awaits, and still never throws.
-- **`Goals.SendAsync()`** awaits the API and returns the `GoalEvent`: `Status` is `GoalStatus.COUNTED`, `WAITING` or `REFUSED` (with `Reason`), plus `GoalKind` (`GoalKind.STANDARD` or `GoalKind.PAYMENT`), `EventStatus`, `AttributedTo`, …. `WAITING` and `REFUSED` are results, not exceptions.
+- **`Goals.SendAsync()`** awaits the API and returns the `GoalEvent`: `Status` is `GoalStatus.COUNTED`, `WAITING`, `RECEIVED` or `REFUSED` (with `Reason`), plus `GoalKind` (`GoalKind.STANDARD` or `GoalKind.PAYMENT`), `EventStatus`, `AttributedTo`, …. `received` means the name isn't ticked as a goal in the dashboard yet (or the goal is archived): it is stored, not counted, and shows in "Seen from your app and website". Every status is a result, never an error, and none is retried. Goals work on every plan, up to the plan's allowance.
 
 `Goal()` is the only goal method: there is no separate payment method. The goal's kind (Standard or Payment) is set in the goal's settings in the dashboard, never in the call.
 
@@ -40,6 +40,26 @@ clikgate.Goal("account_opened", new GoalOptions { ClickId = clickId, Reference =
 ```
 
 In private mode, hash on your own server: Clikgate never hashes for you there. The hashes are never written to the SDK's logs or `OnError` context.
+
+## Identify your users
+
+Two ways to tell Clikgate which of your users is using the app. Full guide: https://clikgate.com/docs/identify-users. The customer ID is your own user ID from your database, never an email, phone number or ID number. Anonymous users don't need either path.
+
+**Path A (default): identity token.** Create the identity secret in Apps › your app › Identity secret and store it as `CLIKGATE_IDENTITY_SECRET` on your server only. `IdentityTokens.Create(customerId, appId)` (also `clikgate.CreateIdentityToken()`, with `ClikgateOptions.IdentitySecret` / `IdentitySecrets`; ASP.NET Core: `Clikgate:IdentitySecret`, `Clikgate:IdentitySecrets:<appId>`) signs a token with no network call; return it in the responses the app already calls, and the app passes it to the mobile SDK's `identifyUser()`. Tokens last 30 days by default and are never force-refreshed. Throws `ClikgateServerOnlyException` under MAUI or Xamarin and in browser (WebAssembly) builds.
+
+```csharp
+// sign-in and "current user" responses: one extra field
+return Results.Ok(new { user, clikgateIdentityToken = IdentityTokens.Create(user.Id) });   // reads CLIKGATE_IDENTITY_SECRET
+IdentityTokens.Create(user.Id, appId: "app_…");                                            // several apps: CLIKGATE_IDENTITY_SECRETS
+```
+
+**Path B: installation ID, no secret or token.** The app reads `getInstallationId()` and includes it in its sign-in request; your server calls `identifyUser` with the app ID, installation ID and customer ID, after sign-in and at every signed-in app open. Clikgate accepts installations active in the last 7 days.
+
+```csharp
+// The app sends Clikgate.getInstallationId() with its sign-in request (null when tracking is off: skip)
+if (installationId is not null)
+    await clikgate.IdentifyUserAsync(new IdentifyUserParams { AppId = "app_…", InstallationId = installationId, CustomerId = user.Id });
+```
 
 ## People: identify a user and label them
 

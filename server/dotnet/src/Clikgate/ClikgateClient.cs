@@ -42,6 +42,12 @@ public interface IClikgateClient : IAsyncDisposable, IDisposable
     /// <summary>Sends a goal and waits (sync-mode semantics). Never throws.</summary>
     Task GoalAsync(string key, GoalOptions options, CancellationToken cancellationToken = default);
 
+    /// <summary>Creates an identity token for the signed-in user (no network call). See https://clikgate.com/docs/identify-users.</summary>
+    string CreateIdentityToken(string customerId, string? appId = null);
+
+    /// <summary>Tells Clikgate who a person is (<c>POST /v1/people/identify</c>).</summary>
+    Task<PersonIdentified> IdentifyUserAsync(IdentifyUserParams parameters, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default);
+
     /// <summary>The organisation's server SDK config, or null.</summary>
     Task<ServerSdkConfig?> ConfigAsync(CancellationToken cancellationToken = default);
 
@@ -72,6 +78,8 @@ public sealed class ClikgateClient : IClikgateClient
     private readonly IClikgateClock _clock;
     private readonly HttpClient? _ownHttp;
     private readonly EventHandler? _exitHandler;
+    private readonly string? _identitySecret;
+    private readonly IReadOnlyDictionary<string, string>? _identitySecrets;
     private int _closed;
 
     /// <summary>Creates a client from the environment (<c>CLIKGATE_API_KEY</c>, <c>CLIKGATE_BASE_URL</c>).</summary>
@@ -143,6 +151,8 @@ public sealed class ClikgateClient : IClikgateClient
         var requester = new Requester(apiKey!, baseUrl, options.Timeout, options.MaxRetries, UserAgent.Current(), http, _clock, random);
         _core = new Core(requester, options.Logger ?? TraceLogger.Instance, options.PrivateMode, options.OnError);
         _sendMode = options.SendMode;
+        _identitySecret = options.IdentitySecret;
+        _identitySecrets = options.IdentitySecrets is null ? null : new Dictionary<string, string>(options.IdentitySecrets, StringComparer.Ordinal);
         _sender = new GoalSender(_core, options.BatchSize, options.MaxQueueSize, options.FlushInterval);
         Goals = new Goals(_core);
         Conversions = new Conversions(_core);
@@ -253,7 +263,7 @@ public sealed class ClikgateClient : IClikgateClient
         try
         {
             Clikgate.Goals.CheckBeforeSend(_core, await _core.GuardStateAsync(ct).ConfigureAwait(false), wire);
-            await _core.Requester.RequestAsync(Clikgate.Goals.SendRequest(wire, null), ct).ConfigureAwait(false);
+            await Clikgate.Goals.SendWireAsync(_core, wire, null, ct).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -262,14 +272,36 @@ public sealed class ClikgateClient : IClikgateClient
     }
 
     /// <summary>
+    /// Creates an identity token for the signed-in user (path A of https://clikgate.com/docs/identify-users).
+    /// Return it in your sign-in and "current user" responses; the app passes it to the mobile SDK's <c>identifyUser()</c>.
+    /// Uses <see cref="ClikgateOptions.IdentitySecret"/> / <see cref="ClikgateOptions.IdentitySecrets"/>, else
+    /// <c>CLIKGATE_IDENTITY_SECRET</c> / <c>CLIKGATE_IDENTITY_SECRETS</c>. No network call. Throws
+    /// <see cref="ClikgateServerOnlyException"/> in a MAUI, Xamarin or browser build.
+    /// </summary>
+    /// <example><code>return Results.Ok(new { user, clikgateIdentityToken = clikgate.CreateIdentityToken(user.Id) });</code></example>
+    public string CreateIdentityToken(string customerId, string? appId = null) =>
+        IdentityTokens.CreateWith(IdentityTokens.ClientPlatform, _identitySecret, _identitySecrets, Environment.GetEnvironmentVariable, customerId, appId, null, null);
+
+    /// <summary>
     /// Tells Clikgate who a person is (<c>POST /v1/people/identify</c>): a click, an app installation (<c>AppId</c> +
     /// <c>InstallationId</c>) or your <c>CustomerId</c>, at least one. With a click or installation, <c>CustomerId</c>
     /// links it to that customer. <c>Label</c> is what your team sees instead of the click ID (1-80 characters, <c>""</c>
     /// clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
     /// <c>require_identity_token</c>. In private mode <c>CustomerId</c> is refused locally and <c>Label</c> needs
     /// "Allow labels in private mode".
+    /// <para>
+    /// Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
+    /// <c>getInstallationId()</c> and sends it in its sign-in request; your server calls this with <c>AppId</c>,
+    /// <c>InstallationId</c>, <c>CustomerId</c> and optionally <c>Label</c>, after sign-in and at every signed-in app
+    /// open. When the app sends no installation ID (tracking is off), skip the call. Clikgate accepts installations
+    /// active in the last 7 days.
+    /// </para>
     /// </summary>
-    /// <example><code>await clikgate.IdentifyUserAsync(new IdentifyUserParams { ClickId = clickId, CustomerId = "user_42", Label = "Ada (VIP)" });</code></example>
+    /// <example><code>
+    /// await clikgate.IdentifyUserAsync(new IdentifyUserParams { ClickId = clickId, CustomerId = "user_42", Label = "Ada (VIP)" });
+    /// if (installationId is not null)
+    ///     await clikgate.IdentifyUserAsync(new IdentifyUserParams { AppId = "app_…", InstallationId = installationId, CustomerId = user.Id });
+    /// </code></example>
     public async Task<PersonIdentified> IdentifyUserAsync(IdentifyUserParams parameters, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
     {
         var p = parameters ?? throw new ArgumentNullException(nameof(parameters));

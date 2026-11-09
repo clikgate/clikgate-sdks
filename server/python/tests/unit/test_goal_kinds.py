@@ -17,7 +17,7 @@ def client(rec: Recorder, **kw: Any) -> Clikgate:
 
 def test_enum_values() -> None:
     assert [k.value for k in GoalKind] == ["standard", "payment"]
-    assert [s.value for s in GoalStatus] == ["counted", "waiting", "refused"]
+    assert [s.value for s in GoalStatus] == ["counted", "waiting", "refused", "received"]
     assert GoalKind("payment") is GoalKind.PAYMENT
     assert isinstance(GoalKind.PAYMENT, str)
     assert str(GoalStatus.WAITING) == "waiting"

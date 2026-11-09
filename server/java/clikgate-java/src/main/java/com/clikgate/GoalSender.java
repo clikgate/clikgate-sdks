@@ -230,6 +230,7 @@ final class GoalSender {
         core.report(ErrorMapper.fromBatchItem(status, item.get("error")), new ErrorContext("goal", Collections.singletonList(shown(sendable.get(((Number) index).intValue()).wire)), true));
       }
     }
+    core.noteRefusedItems(wires, data);
     return Collections.emptyList();
   }
 
@@ -239,6 +240,9 @@ final class GoalSender {
 
   private List<Queued> failed(ClikgateException error, List<Queued> sendable) {
     if (!Requester.isRetryable(error)) {
+      for (Queued q : sendable) {
+        core.noteRefusedGoal(q.wire.get("goal"), error.getCode());
+      }
       core.report(error, new ErrorContext("goals.batch", shownAll(sendable), true));
       return Collections.emptyList();
     }

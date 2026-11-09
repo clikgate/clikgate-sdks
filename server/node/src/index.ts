@@ -33,6 +33,7 @@ export {
   type KeepResult,
 } from './click-ids.js';
 export { webhooks, type VerifyOptions, type RawBody } from './webhooks.js';
+export { createIdentityToken, IDENTITY_SECRET_ENV, IDENTITY_SECRETS_ENV, type IdentityTokenOptions } from './identity.js';
 export { formatValue, type MoneyInput } from './money.js';
 export { hashForAds, type HashForAdsInput, type HashedIdentifiers } from './ads-hashing.js';
 export { GoalKind, GoalStatus, Provider } from './enums.js';
@@ -89,6 +90,7 @@ export {
   NetworkError,
   TimeoutError,
   SignatureVerificationError,
+  ClikgateServerOnlyError,
   type KnownErrorCode,
 } from './errors.js';
 export { VERSION } from './version.js';

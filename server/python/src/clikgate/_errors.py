@@ -184,6 +184,13 @@ class SignatureVerificationError(ClikgateError):
     """
 
 
+class ClikgateServerOnlyError(ClikgateError):
+    """``create_identity_token()`` ran in a browser or mobile build of Python: Pyodide or another
+    Emscripten/WASI build, or CPython on iOS or Android. Identity tokens are signed with your identity secret, which
+    must stay on your server. ``code`` is ``server_only``.
+    """
+
+
 _SNIPPET = 200
 _CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 _DIGITS = re.compile(r"[0-9]+")
@@ -218,16 +225,19 @@ def error_from_response(status: int, headers: Mapping[str, str], body: bytes, no
     """Map an HTTP response to a typed error (SPEC 5, rules 3-13). Header names are lowercase."""
     text = body.decode("utf-8", errors="replace")
     envelope: Optional[Mapping[str, Any]] = None
+    refusal: Optional[Mapping[str, Any]] = None
     try:
         parsed = json.loads(text)
         if isinstance(parsed, dict) and isinstance(parsed.get("error"), dict):
             envelope = parsed["error"]
+        elif _is_refusal_body(parsed):
+            refusal = parsed
     except ValueError:
         envelope = None
     env: Mapping[str, Any] = envelope or {}
     request_id = _str(env.get("request_id")) or headers.get("x-request-id")
     redirect = 300 <= status < 400
-    body_code = _str(env.get("code"))
+    body_code = _str(env.get("code")) or (_str(refusal.get("reason")) if refusal else None)
     code = "unexpected_status" if redirect else (body_code or f"http_{status}")
     message = _str(env.get("message"))
     if message is None:
@@ -238,7 +248,7 @@ def error_from_response(status: int, headers: Mapping[str, str], body: bytes, no
         "request_id": request_id,
         "param": _str(env.get("param")),
         "type": _str(env.get("type")),
-        "raw": envelope,
+        "raw": envelope if envelope is not None else refusal,
     }
     if status == 429:
         kw["code"] = body_code or "rate_limit_exceeded"
@@ -262,6 +272,11 @@ def error_from_response(status: int, headers: Mapping[str, str], body: bytes, no
     if status >= 400:
         return InvalidRequestError(message, **kw)
     return ServerError(message, **kw)
+
+
+def _is_refusal_body(v: Any) -> bool:
+    """A goal refusal answered as a result body (``422 {"status": "refused", "reason": "unknown_goal", ...}``)."""
+    return isinstance(v, dict) and v.get("status") == "refused" and isinstance(v.get("reason"), str) and v["reason"] != ""
 
 
 def error_from_batch_item(status: int, error: Any) -> ClikgateError:

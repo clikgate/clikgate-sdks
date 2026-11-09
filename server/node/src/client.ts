@@ -2,6 +2,7 @@ import { ClickIds } from './click-ids.js';
 import { ConfigCache } from './config.js';
 import { Core, type OnError } from './core.js';
 import { ConfigurationError, localError } from './errors.js';
+import { createIdentityTokenWith, type IdentitySecretSource, type IdentityTokenOptions } from './identity.js';
 import { guardPayload } from './guard.js';
 import type { RequestOptions } from './http.js';
 import { ApiClient } from './generated/index.js';
@@ -69,6 +70,10 @@ export interface ClikgateOptions {
   maxQueueSize?: number;
   /** Flush on `beforeExit`, `SIGTERM` and `SIGINT` (default true). */
   shutdownHooks?: boolean;
+  /** The identity secret for `createIdentityToken()`. Default: `process.env.CLIKGATE_IDENTITY_SECRET`. */
+  identitySecret?: string;
+  /** Several apps' identity secrets, by app ID. Default: `process.env.CLIKGATE_IDENTITY_SECRETS` (a JSON object). */
+  identitySecrets?: Record<string, string>;
   /** Advanced (tests): replace the clock and sleep. */
   clock?: Clock;
   /** Advanced (tests): the random source for backoff jitter, in [0, 1). */
@@ -126,6 +131,7 @@ export class Clikgate {
   private readonly core: Core;
   private readonly queue: GoalQueue;
   private readonly sendMode: 'background' | 'sync';
+  private readonly identitySource: IdentitySecretSource;
   private closed = false;
   private readonly shutdownEntry: { busy(): boolean; flush(ms: number): Promise<boolean> } | null;
 
@@ -166,6 +172,7 @@ export class Clikgate {
     const configCache = new ConfigCache(requester, clock, logger, timeoutMs);
     this.core = new Core(requester, logger, clock, privateMode, configCache, options.onError);
     this.sendMode = sendMode;
+    this.identitySource = { identitySecret: options.identitySecret ?? null, identitySecrets: options.identitySecrets ? { ...options.identitySecrets } : null };
     this.queue = new GoalQueue(this.core, { batchSize, flushIntervalMs, maxQueueSize });
 
     this.goals = new Goals(this.core);
@@ -224,7 +231,21 @@ export class Clikgate {
         this.core.report(asClikgateError(err), { operation: 'goal', events: [shown()], dropped: true });
       }
     })();
-    this.queue.track(p);
+    this.queue.holdSend(p);
+  }
+
+  /**
+   * Create an identity token for the signed-in user (path A of https://clikgate.com/docs/identify-users).
+   * Return it in your sign-in and "current user" responses; the app passes it to the mobile SDK's `identifyUser()`.
+   * Uses `identitySecret` / `identitySecrets` from the options, else `CLIKGATE_IDENTITY_SECRET` /
+   * `CLIKGATE_IDENTITY_SECRETS`. No network call. Throws `ClikgateServerOnlyError` in a browser or React Native.
+   *
+   * @example
+   * res.json({ user, clikgateIdentityToken: clikgate.createIdentityToken(user.id) });
+   * clikgate.createIdentityToken(user.id, { appId: 'app_…' });   // several apps
+   */
+  createIdentityToken(customerId: string, options: IdentityTokenOptions = {}): string {
+    return createIdentityTokenWith(this.identitySource, customerId, options);
   }
 
   /**
@@ -234,8 +255,14 @@ export class Clikgate {
    * up). Always verified (your server), so it also satisfies a referral program's `require_identity_token`.
    * In private mode `customerId` is refused locally (the guard) and `label` needs "Allow labels in private mode".
    *
+   * Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
+   * `getInstallationId()` and sends it in its sign-in request; your server calls this with
+   * `{ appId, installationId, customerId, label? }` after sign-in and at every signed-in app open. When the app sends
+   * no installation ID (tracking is off), skip the call. Clikgate accepts installations active in the last 7 days.
+   *
    * @example
    * await clikgate.identifyUser({ clickId: order.clickId, customerId: 'user_42', label: 'Ada (VIP)' });
+   * if (body.installationId) await clikgate.identifyUser({ appId: 'app_…', installationId: body.installationId, customerId: user.id });
    */
   async identifyUser(params: IdentifyUserParams, requestOptions: RequestOptions = {}): Promise<PersonIdentified> {
     const p = (params ?? {}) as IdentifyUserParams;

@@ -31,6 +31,7 @@ from ._enums import GoalKind, GoalStatus, Provider
 from ._errors import (
     AuthenticationError,
     ClikgateError,
+    ClikgateServerOnlyError,
     ConfigurationError,
     ConflictError,
     IdempotencyError,
@@ -47,6 +48,7 @@ from ._errors import (
 )
 from ._goals import AsyncGoals, GoalBatchEvent, Goals
 from ._http import Clock, RequestOptions
+from ._identity import IDENTITY_SECRET_ENV, IDENTITY_SECRETS_ENV, create_identity_token
 from ._money import MoneyInput, format_value
 from ._payments import AsyncPayments, Payments, build_from_flutterwave, build_from_monnify, build_from_paystack, build_from_stripe
 from ._resources import AsyncClicks, AsyncConversions, AsyncLinks, Clicks, Conversions, Links
@@ -155,6 +157,10 @@ __all__ = [
     "ServerError",
     "ServerSdkConfig",
     "SignatureVerificationError",
+    "ClikgateServerOnlyError",
+    "create_identity_token",
+    "IDENTITY_SECRET_ENV",
+    "IDENTITY_SECRETS_ENV",
     "TimeoutError",
     "WebhookEvent",
     "__version__",

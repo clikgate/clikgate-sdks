@@ -5,6 +5,18 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Strict goal names
+- With the organisation's "Allow unknown goal names" off, the API refuses a goal name that isn't set up with `422 unknown_goal`, and an archived goal with `422 goal_archived`. Both are `InvalidRequestError` (`getErrorCode()` is the reason) and final: never retried, never re-queued; background `goal()` passes them to `onError` as dropped. The SDK never checks names itself and never remembers the refusal.
+- A `422` answered with the refusal body `{"status": "refused", "reason": ...}` (no error envelope) now maps to that reason instead of `http_422`; the body is the error's raw object.
+- With debug logging on (the PSR-3 logger's `debug()`), each refusal logs "Goal `{name}` isn't set up in Clikgate" with the goal name only.
+
+### Identity tokens, one goal() method
+
+- **Added:** `\Clikgate\IdentityToken::create($customerId, ['appId' => …, 'secret' => …, 'issuedAt' => …])` (no API key needed) and `$clikgate->createIdentityToken($customerId, ['appId' => …])`: `base64url_nopad(HMAC_SHA256(secret, customerId . "." . issuedAt)) . "." . issuedAt`, the signer Clikgate verifies with, with no network call. The secret comes from `secret`, else (with `appId`) that app's entry in the `identitySecrets` option / `CLIKGATE_IDENTITY_SECRETS` (a JSON object), else the `identitySecret` option / `CLIKGATE_IDENTITY_SECRET`. Errors: `ConfigurationException` (`missing_identity_secret`, `invalid_identity_secrets`) and `InvalidRequestException` (`invalid_customer_id`: 1-255 characters of UTF-8; never echoed). PHP has no browser or mobile build, so there is no server-only check. Tested against the shared vectors in `server/conformance/vectors/identity-token-vectors.json`. Guide: https://clikgate.com/docs/identify-users.
+- **Docs:** `identifyUser()` documents path B (no secret or token): your server calls `identifyUser(['appId' => …, 'installationId' => …, 'customerId' => …, 'label' => …])` with the installation ID the app sends at sign-in and at every signed-in app open, and skips the call when there is none.
+- **Added:** `GoalStatus::Received` `received`: `goal()` / `goals.send` with a name that isn't ticked as a goal yet (or an archived goal) answers `200` with `status: "received"` and `reason` `not_counted_yet` (or `goal_archived`). It is a result, like `waiting` and `refused`: never an error and never retried.
+- **Removed (generated API):** the app events resource (`$clikgate->api->appEvents` and `AppEventsApi`): List App Events (`GET /v1/app-events`), Report App Events (`POST /v1/apps/{app_id}/events`) and the Event rules operations (`/v1/apps/{app_id}/event-rules`). Clikgate has one method for anything that happens in an app, website or server, `goal()`; names not ticked as goals yet show in the dashboard's "Seen from your app and website". No released version ever had them (the generator drops them through `server/codegen/removed.mjs` until the backend's public document no longer lists them).
+
 ### Hashed email and phone for ad network matching (change 19)
 
 - **Added:** `Clikgate\HashForAds::hash(?string $email = null, ?string $phone = null)` → the goal options `hashedEmail`, `hashedPhoneE164`, `hashedPhoneDigits` (only those given), to merge into a goal's options. Pure and offline: the email is trimmed and lowercased (must contain `@`); the phone must start with `+` or `00` and be 7-15 digits starting with 1-9 (E.164). Bad input is a local `invalid_argument` (`param` `email` / `phone`, never echoed).

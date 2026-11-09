@@ -8,6 +8,7 @@ use Clikgate\ClickIds;
 use Clikgate\Clicks;
 use Clikgate\Clikgate as Client;
 use Clikgate\Conversions;
+use Clikgate\Exception\ConfigurationException;
 use Clikgate\Generated\ApiClient;
 use Clikgate\Goals;
 use Clikgate\Laravel\Jobs\SendGoal;
@@ -119,6 +120,51 @@ final class ClikgateManager
     public function flush(float $timeout = 10.0): bool
     {
         return $this->client()->flush($timeout);
+    }
+
+    /**
+     * Create an identity token for the signed-in user (path A of
+     * https://clikgate.com/docs/identify-users): return it in your sign-in and "current user" responses, and the app
+     * passes it to the mobile SDK's `identifyUser()`. Uses `clikgate.identity_secret` (`CLIKGATE_IDENTITY_SECRET`), or
+     * with `appId` that app's secret from `clikgate.identity_secrets` (`CLIKGATE_IDENTITY_SECRETS`). No network call.
+     *
+     * ```php
+     * return response()->json(['user' => $user, 'clikgateIdentityToken' => Clikgate::createIdentityToken((string) $user->id)]);
+     * ```
+     *
+     * @param array{appId?: ?string, issuedAt?: ?int} $options
+     */
+    public function createIdentityToken(string $customerId, array $options = []): string
+    {
+        $raw = $this->setting('clikgate.identity_secrets');
+        if (null !== $raw && '' !== $raw && null === ClikgateServiceProvider::identitySecrets($raw)) {
+            // Never echo the value: it holds secrets.
+            throw new ConfigurationException('clikgate.identity_secrets (CLIKGATE_IDENTITY_SECRETS) must be a JSON object of app IDs to identity secrets, e.g. {"app_…": "cgis_…"}.', 'invalid_identity_secrets', param: 'identity_secrets');
+        }
+
+        return $this->client()->createIdentityToken($customerId, $options);
+    }
+
+    /**
+     * Tell Clikgate who a person is (see {@see Client::identifyUser()}). Path B of
+     * https://clikgate.com/docs/identify-users needs no identity secret or token: the app sends its installation ID
+     * (`getInstallationId()`) with the sign-in request, and you call this after sign-in and at every signed-in app
+     * open. Skip it when the app sends no installation ID (tracking is off).
+     *
+     * ```php
+     * if ($request->filled('installation_id')) {
+     *     Clikgate::identifyUser(['appId' => 'app_…', 'installationId' => $request->string('installation_id')->toString(), 'customerId' => (string) $user->id]);
+     * }
+     * ```
+     *
+     * @param array{clickId?: ?string, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string} $params
+     * @param array<string, mixed>                                                                                    $requestOptions
+     *
+     * @return array<string, mixed>
+     */
+    public function identifyUser(array $params, array $requestOptions = []): array
+    {
+        return $this->client()->identifyUser($params, $requestOptions);
     }
 
     /**

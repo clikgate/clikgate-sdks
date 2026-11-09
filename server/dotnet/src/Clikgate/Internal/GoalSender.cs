@@ -277,6 +277,7 @@ internal sealed class GoalSender : IDisposable
                 _core.Report(Errors.FromBatchItem(Json.Int(item["status"]) ?? 0, item["error"]), new ErrorContext("goal", [Shown(sendable[index.Value].Wire)], true));
             }
         }
+        _core.NoteRefusedItems(sendable.Select(q => q.Wire).ToList(), data);
         return [];
     }
 
@@ -284,6 +285,10 @@ internal sealed class GoalSender : IDisposable
     {
         if (!Requester.IsRetryable(error))
         {
+            foreach (var q in sendable)
+            {
+                _core.NoteRefusedGoal(Json.Str(q.Wire["goal"]), error.Code);
+            }
             _core.Report(error, new ErrorContext("goals.batch", sendable.Select(q => Shown(q.Wire)).ToList(), true));
             return [];
         }

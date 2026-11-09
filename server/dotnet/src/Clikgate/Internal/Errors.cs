@@ -20,21 +20,30 @@ internal static class Errors
     {
         var text = Encoding.UTF8.GetString(body);
         JsonObject? env = null;
+        string? refusalReason = null;
         try
         {
-            if (Json.Parse(body) is JsonObject root && root["error"] is JsonObject e)
+            var parsed = Json.Parse(body);
+            if (parsed is JsonObject root && root["error"] is JsonObject e)
             {
                 env = (JsonObject)e.DeepClone();
+            }
+            else if (parsed is JsonObject refusal && IsRefusalBody(refusal))
+            {
+                // A goal refusal answered as a result body (`422 {"status": "refused", "reason": "unknown_goal", ...}`):
+                // the reason is the error code, and the body is kept as the raw object.
+                refusalReason = Json.Str(refusal["reason"]);
+                env = (JsonObject)refusal.DeepClone();
             }
         }
         catch (Exception ex) when (ex is System.Text.Json.JsonException or FormatException or InvalidOperationException)
         {
             env = null;
         }
-        string? S(string k) => env is not null ? Json.Str(env[k]) : null;
+        string? S(string k) => env is not null && refusalReason is null ? Json.Str(env[k]) : null;
         var requestId = S("request_id") ?? (headers.TryGetValue("x-request-id", out var rid) ? rid : null);
         var redirect = status >= 300 && status < 400;
-        var bodyCode = S("code");
+        var bodyCode = S("code") ?? refusalReason;
         var code = redirect ? "unexpected_status" : bodyCode ?? "http_" + status.ToString(CultureInfo.InvariantCulture);
         var message = S("message") ?? "HTTP " + status.ToString(CultureInfo.InvariantCulture) + (text.Length == 0 ? string.Empty : ": " + Control.Replace(text.Length > Snippet ? text.Substring(0, Snippet) : text, " "));
         var param = S("param");
@@ -63,6 +72,9 @@ internal static class Errors
             _ => new ServerException(message, code, status, requestId, param, type, env, null),
         };
     }
+
+    private static bool IsRefusalBody(JsonObject o) =>
+        Json.Str(o["status"]) == "refused" && Json.Str(o["reason"]) is { Length: > 0 };
 
     public static ClikgateException FromBatchItem(int status, JsonNode? error)
     {

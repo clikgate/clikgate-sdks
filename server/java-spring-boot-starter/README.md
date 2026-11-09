@@ -30,6 +30,25 @@ void verified(@RequestBody String paystackVerifyBody) {   // the body your serve
 }
 ```
 
+## Identify your users
+
+Full guide: https://clikgate.com/docs/identify-users. **Path A (default):** the bean signs identity tokens with no network call; return one in your sign-in and "current user" responses, and the app passes it to the mobile SDK's `identifyUser()`. The secret stays on the server:
+
+```properties
+clikgate.identity-secret=${CLIKGATE_IDENTITY_SECRET}
+# several apps, by app ID:
+# clikgate.identity-secrets.app_shop=${SHOP_IDENTITY_SECRET}
+```
+
+```java
+@GetMapping("/me")
+Map<String, Object> me(@AuthenticationPrincipal AppUser user) {
+  return Map.of("user", user, "clikgateIdentityToken", clikgate.createIdentityToken(user.getId()));
+}
+```
+
+**Path B (no secret or token):** the app sends `getInstallationId()` with its sign-in request, and your server calls `clikgate.identifyUser(...)` with `appId`, `installationId` and `customerId` after sign-in and at every signed-in app open (skip it when there's no installation ID). See the [Java SDK](../java/README.md#identify-your-users).
+
 ## Keep the click ID longer (Safari)
 
 Safari, and every browser on iPhone, keeps a click ID saved by a script for up to 7 days (sometimes less). When your server saves it, it lasts as long as you choose, up to the browser's limit.

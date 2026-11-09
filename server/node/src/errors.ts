@@ -52,12 +52,17 @@ export type KnownErrorCode =
   | 'unknown_provider'
   | 'code_not_supported'
   | 'payment_goal_needs_confirmation'
+  | 'unknown_goal'
   | 'cli_scope'
   | 'missing_signature'
   | 'malformed_signature'
   | 'timestamp_outside_tolerance'
   | 'no_matching_signature'
-  | 'invalid_payload';
+  | 'invalid_payload'
+  | 'server_only'
+  | 'invalid_customer_id'
+  | 'missing_identity_secret'
+  | 'invalid_identity_secrets';
 
 /** Fields every Clikgate error carries. */
 export interface ClikgateErrorInit {
@@ -176,6 +181,11 @@ export class NetworkError extends ClikgateError {}
 export class TimeoutError extends ClikgateError {}
 /** A webhook signature didn't verify. `code`: `missing_signature`, `malformed_signature`, `timestamp_outside_tolerance`, `no_matching_signature` or `invalid_payload`. */
 export class SignatureVerificationError extends ClikgateError {}
+/**
+ * `createIdentityToken()` ran in a browser or a React Native app. Identity tokens are signed with
+ * your identity secret, which must stay on your server. `code`: `server_only`.
+ */
+export class ClikgateServerOnlyError extends ClikgateError {}
 
 const SNIPPET = 200;
 // eslint-disable-next-line no-control-regex
@@ -217,17 +227,20 @@ const str = (v: unknown): string | null => (typeof v === 'string' ? v : null);
 export function errorFromResponse(status: number, headers: Record<string, string>, body: Uint8Array, nowMs: number): ClikgateError {
   const text = new TextDecoder().decode(body);
   let envelope: Envelope | null = null;
+  let refusal: Record<string, unknown> | null = null;
   try {
     const parsed: unknown = JSON.parse(text);
     if (parsed && typeof parsed === 'object' && 'error' in parsed) {
       const e = (parsed as { error: unknown }).error;
       if (e && typeof e === 'object') envelope = e as Envelope;
+    } else if (isRefusalBody(parsed)) {
+      refusal = parsed;
     }
   } catch {
     envelope = null;
   }
   const requestId = str(envelope?.request_id) ?? headers['x-request-id'] ?? null;
-  const code = str(envelope?.code) ?? (status >= 300 && status < 400 ? 'unexpected_status' : `http_${status}`);
+  const code = str(envelope?.code) ?? str(refusal?.reason) ?? (status >= 300 && status < 400 ? 'unexpected_status' : `http_${status}`);
   const message = str(envelope?.message) ?? `HTTP ${status}${text ? `: ${stripControl(text.slice(0, SNIPPET))}` : ''}`;
   const init: ClikgateErrorInit = {
     message,
@@ -236,7 +249,7 @@ export function errorFromResponse(status: number, headers: Record<string, string
     requestId,
     param: str(envelope?.param),
     type: str(envelope?.type),
-    raw: envelope,
+    raw: envelope ?? refusal,
   };
   const retryAfter = retryAfterSeconds(headers, nowMs);
   if (status === 429) return new RateLimitError({ ...init, code: str(envelope?.code) ?? 'rate_limit_exceeded', retryAfter });
@@ -250,6 +263,16 @@ export function errorFromResponse(status: number, headers: Record<string, string
   if (status === 409) return new ConflictError(init);
   if (status >= 400) return new InvalidRequestError(init);
   return new ServerError({ ...init, retryAfter: null });
+}
+
+/**
+ * A goal refusal answered as a result body instead of an error envelope (`422 {status: "refused", reason:
+ * "unknown_goal", ...}`): the reason is the error code.
+ */
+function isRefusalBody(v: unknown): v is Record<string, unknown> {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+  const o = v as Record<string, unknown>;
+  return o.status === 'refused' && typeof o.reason === 'string' && o.reason !== '';
 }
 
 /** @internal Map a batch item's `{status, error}` to a typed error. */

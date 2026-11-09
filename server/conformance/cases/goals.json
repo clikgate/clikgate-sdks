@@ -822,6 +822,155 @@
       "now_ms": 1793016000000
     },
     {
+      "id": "goals.send.status.received_not_counted_yet",
+      "description": "Change 22 R.9: a name not ticked as a goal yet is stored (200): status received, reason not_counted_yet; a success, sent once, never retried",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "received",
+            "reason": "not_counted_yet",
+            "goal_kind": "standard",
+            "counted": false,
+            "value_ignored": false,
+            "event_status": "unattributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": null,
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2000000"
+          },
+          "expect": {
+            "result": {
+              "status": "received",
+              "reason": "not_counted_yet",
+              "counted": false
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.received_not_counted_yet",
+      "description": "Change 22 R.9: background goal() answered with status received (ok item) is a success: one batch, nothing re-queued, on_error stays empty",
+      "client": {
+        "send_mode": "background"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 200,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "received",
+                  "reason": "not_counted_yet",
+                  "goal_kind": "standard",
+                  "counted": false,
+                  "value_ignored": false,
+                  "event_status": "unattributed",
+                  "goal": "account_opened",
+                  "reference": "APP-55231",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": null,
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "account_opened",
+            "reference": "APP-55231",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          }
+        },
+        {
+          "call": "flush",
+          "expect": {
+            "result": {
+              "value": true
+            }
+          }
+        },
+        {
+          "call": "flush",
+          "expect": {
+            "result": {
+              "value": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch"
+          }
+        ],
+        "on_error": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
       "id": "goals.send.provider",
       "description": "Change 12: provider is a wire field of every goal call (a standard goal checks it and otherwise ignores it)",
       "responses": [
@@ -2184,6 +2333,653 @@
                 "reference": "T-1"
               }
             ]
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.refused.unknown_goal",
+      "description": "Change 23 R.1: strict mode refuses a name that is not set up: 422 unknown_goal is an InvalidRequestError (param goal), sent once, never retried; the reference and value are never logged",
+      "client": {
+        "max_retries": 3
+      },
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "unknown_goal",
+              "message": "This goal isn't set up in Clikgate.",
+              "param": "goal",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ",
+              "status": "refused",
+              "reason": "unknown_goal",
+              "counted": false,
+              "goal_kind": null
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "level_complete",
+            "reference": "APP-77120",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2500"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "unknown_goal",
+              "param": "goal",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "level_complete",
+              "reference": "APP-77120",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "value": "2500"
+            }
+          }
+        ],
+        "logs_exclude": [
+          "APP-77120",
+          "2500"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.refused.unknown_goal_refusal_body",
+      "description": "Change 23 R.1: a 422 answered with the refusal body {status: refused, reason: unknown_goal} and no error envelope maps to code unknown_goal (the reason), not http_422; never retried",
+      "client": {
+        "max_retries": 3
+      },
+      "responses": [
+        {
+          "status": 422,
+          "json": {
+            "status": "refused",
+            "reason": "unknown_goal",
+            "counted": false,
+            "goal_kind": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "level_complete",
+            "reference": "APP-77120",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2500"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "unknown_goal",
+              "param": null,
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ],
+        "logs_exclude": [
+          "APP-77120",
+          "2500"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.refused.goal_archived",
+      "description": "Change 23 R.1: in strict mode an archived goal is 422 goal_archived (never 410): an InvalidRequestError, never retried",
+      "client": {
+        "max_retries": 3
+      },
+      "responses": [
+        {
+          "status": 422,
+          "json": {
+            "status": "refused",
+            "reason": "goal_archived"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "old_signup",
+            "reference": "APP-77121"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "goal_archived",
+              "http_status": 422
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.send.refused.not_remembered",
+      "description": "Change 23 R.9: the SDK never checks names or caches the setting: after an unknown_goal refusal the same name is sent again (the goal may have been set up since)",
+      "responses": [
+        {
+          "status": 422,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "invalid_request",
+              "code": "unknown_goal",
+              "message": "This goal isn't set up in Clikgate.",
+              "param": "goal",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ",
+              "status": "refused",
+              "reason": "unknown_goal",
+              "counted": false,
+              "goal_kind": null
+            }
+          }
+        },
+        {
+          "status": 201,
+          "json": {
+            "object": "goal_event",
+            "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+            "status": "counted",
+            "reason": null,
+            "goal_kind": "standard",
+            "counted": true,
+            "value_ignored": false,
+            "event_status": "attributed",
+            "goal": "account_opened",
+            "reference": "APP-55231",
+            "value": "2000000",
+            "currency": "NGN",
+            "reversed_value": null,
+            "first_for_click": true,
+            "is_first": true,
+            "unattributed_reason": null,
+            "duplicate_of_id": null,
+            "attributed_to": {
+              "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+              "clicked_at": "2026-10-22T18:01:12Z"
+            },
+            "occurred_at": "2026-10-23T09:12:00Z",
+            "received_at": "2026-10-23T09:12:01Z",
+            "livemode": false,
+            "payment": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "level_complete",
+            "reference": "APP-77120",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+            "value": "2500"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "unknown_goal",
+              "http_status": 422
+            }
+          }
+        },
+        {
+          "call": "goals.send",
+          "args": {
+            "key": "level_complete",
+            "reference": "APP-77122"
+          },
+          "expect": {
+            "result": {
+              "status": "counted"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "level_complete",
+              "reference": "APP-77120",
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6",
+              "value": "2500"
+            }
+          },
+          {
+            "method": "POST",
+            "path": "/v1/goals/events",
+            "json": {
+              "goal": "level_complete",
+              "reference": "APP-77122"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.refused.unknown_goal_item",
+      "description": "Change 23 R.1: a background batch item refused with 422 unknown_goal goes to on_error and is dropped, never re-queued: a second flush sends nothing",
+      "client": {
+        "send_mode": "background"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": false,
+                "status": 422,
+                "goal_event": null,
+                "error": {
+                  "type": "invalid_request",
+                  "code": "unknown_goal",
+                  "message": "This goal isn't set up in Clikgate.",
+                  "param": "goal"
+                }
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "level_complete",
+            "reference": "APP-77120",
+            "value": "2500"
+          }
+        },
+        {
+          "call": "flush",
+          "expect": {
+            "result": {
+              "value": true
+            }
+          }
+        },
+        {
+          "call": "flush",
+          "expect": {
+            "result": {
+              "value": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch",
+            "json": {
+              "events": [
+                {
+                  "goal": "level_complete",
+                  "reference": "APP-77120",
+                  "value": "2500"
+                }
+              ]
+            }
+          }
+        ],
+        "on_error": [
+          {
+            "class": "InvalidRequestError",
+            "code": "unknown_goal",
+            "http_status": 422,
+            "dropped": true,
+            "events": [
+              {
+                "goal": "level_complete",
+                "reference": "APP-77120"
+              }
+            ]
+          }
+        ],
+        "logs_exclude": [
+          "2500"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.refused.goal_archived_item",
+      "description": "Change 23 R.1: a background batch item refused with 422 goal_archived goes to on_error and is dropped; the other item is a success",
+      "client": {
+        "send_mode": "background"
+      },
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              },
+              {
+                "index": 1,
+                "ok": false,
+                "status": 422,
+                "goal_event": null,
+                "error": {
+                  "type": "invalid_request",
+                  "code": "goal_archived",
+                  "message": "This goal is archived.",
+                  "param": "goal"
+                }
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "order_paid",
+            "reference": "R-0"
+          }
+        },
+        {
+          "call": "goal",
+          "args": {
+            "key": "old_signup",
+            "reference": "APP-77121"
+          }
+        },
+        {
+          "call": "flush"
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch"
+          }
+        ],
+        "on_error": [
+          {
+            "class": "InvalidRequestError",
+            "code": "goal_archived",
+            "http_status": 422,
+            "dropped": true,
+            "events": [
+              {
+                "goal": "old_signup",
+                "reference": "APP-77121"
+              }
+            ]
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.background.refused.whole_batch_refusal_body",
+      "description": "Change 23 R.1: a whole batch answered 422 with the refusal body is not retried: the events are dropped and on_error gets code unknown_goal once",
+      "client": {
+        "send_mode": "background",
+        "max_retries": 3
+      },
+      "responses": [
+        {
+          "status": 422,
+          "json": {
+            "status": "refused",
+            "reason": "unknown_goal",
+            "counted": false,
+            "goal_kind": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goal",
+          "args": {
+            "key": "level_complete",
+            "reference": "APP-77120"
+          }
+        },
+        {
+          "call": "flush"
+        },
+        {
+          "call": "flush"
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch"
+          }
+        ],
+        "on_error": [
+          {
+            "class": "InvalidRequestError",
+            "code": "unknown_goal",
+            "http_status": 422,
+            "dropped": true,
+            "events": [
+              {
+                "goal": "level_complete",
+                "reference": "APP-77120"
+              }
+            ]
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "goals.batch.refused.unknown_goal_item",
+      "description": "Change 23 R.1: goals.sendBatch returns an unknown_goal item as a per-item failure (not thrown) next to a counted one",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "list",
+            "data": [
+              {
+                "index": 0,
+                "ok": true,
+                "status": 201,
+                "goal_event": {
+                  "object": "goal_event",
+                  "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+                  "status": "counted",
+                  "reason": null,
+                  "goal_kind": "standard",
+                  "counted": true,
+                  "value_ignored": false,
+                  "event_status": "attributed",
+                  "goal": "account_opened",
+                  "reference": "R-0",
+                  "value": "2000000",
+                  "currency": "NGN",
+                  "reversed_value": null,
+                  "first_for_click": true,
+                  "is_first": true,
+                  "unattributed_reason": null,
+                  "duplicate_of_id": null,
+                  "attributed_to": {
+                    "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+                    "campaign_id": "cmp_01JCK8Z9V7Q4M2N6P8R0S2T4CP",
+                    "clicked_at": "2026-10-22T18:01:12Z"
+                  },
+                  "occurred_at": "2026-10-23T09:12:00Z",
+                  "received_at": "2026-10-23T09:12:01Z",
+                  "livemode": false,
+                  "payment": null
+                },
+                "error": null
+              },
+              {
+                "index": 1,
+                "ok": false,
+                "status": 422,
+                "goal_event": null,
+                "error": {
+                  "type": "invalid_request",
+                  "code": "unknown_goal",
+                  "message": "This goal isn't set up in Clikgate.",
+                  "param": "goal"
+                }
+              }
+            ]
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "goals.send_batch",
+          "args": {
+            "events": [
+              {
+                "goal": "order_paid",
+                "reference": "R-0"
+              },
+              {
+                "goal": "level_complete",
+                "reference": "APP-77120"
+              }
+            ]
+          },
+          "expect": {
+            "result": {
+              "object": "list",
+              "data": [
+                {
+                  "index": 0,
+                  "ok": true
+                },
+                {
+                  "index": 1,
+                  "ok": false,
+                  "status": 422,
+                  "error": {
+                    "code": "unknown_goal"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/goals/events/batch"
           }
         ]
       },

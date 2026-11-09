@@ -25,7 +25,8 @@ const CLICK = 'clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6';
 const CLICK2 = 'clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7';
 const LINK = 'lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA';
 
-// Change 12 (backend C12 B2.3): `status` is the GoalStatus (counted | waiting | refused); the conversion state that
+// Change 12 (backend C12 B2.3): `status` is the GoalStatus (counted | waiting | refused, and received since change 22
+// R.9); the conversion state that
 // was in `status` is `event_status`; plus goal_kind, value_ignored and payment.
 const goalEvent = (over = {}) => ({
   object: 'goal_event',
@@ -672,6 +673,21 @@ const C12_GOAL_CASES = [
     expect: { requests: [GOAL_POST] },
   },
   {
+    id: 'goals.send.status.received_not_counted_yet',
+    description: 'Change 22 R.9: a name not ticked as a goal yet is stored (200): status received, reason not_counted_yet; a success, sent once, never retried',
+    responses: [ok(goalEvent({ status: 'received', reason: 'not_counted_yet', counted: false, event_status: 'unattributed', attributed_to: null }), 200)],
+    steps: [{ ...send, expect: { result: { status: 'received', reason: 'not_counted_yet', counted: false } } }],
+    expect: { requests: [GOAL_POST] },
+  },
+  {
+    id: 'goals.background.received_not_counted_yet',
+    description: 'Change 22 R.9: background goal() answered with status received (ok item) is a success: one batch, nothing re-queued, on_error stays empty',
+    client: { send_mode: 'background' },
+    responses: [ok({ object: 'list', data: [{ index: 0, ok: true, status: 200, goal_event: goalEvent({ status: 'received', reason: 'not_counted_yet', counted: false, event_status: 'unattributed', attributed_to: null }), error: null }] })],
+    steps: [{ call: 'goal', args: { key: 'account_opened', reference: 'APP-55231', click_id: CLICK } }, { call: 'flush', expect: { result: { value: true } } }, { call: 'flush', expect: { result: { value: true } } }],
+    expect: { requests: [BATCH_POST], on_error: [] },
+  },
+  {
     id: 'goals.send.provider',
     description: 'Change 12: provider is a wire field of every goal call (a standard goal checks it and otherwise ignores it)',
     responses: [created],
@@ -861,6 +877,93 @@ const C12_GOAL_CASES = [
     expect: { requests: [], on_error: [{ class: 'InvalidRequestError', code: 'invalid_provider', events: [{ goal: 'order_paid', reference: 'T-1' }] }] },
   },
 ];
+// Change 23 (R.1, R.9): "Allow unknown goal names" off. The API refuses a name with no goal behind it with
+// `422 unknown_goal` (an archived goal with `422 goal_archived`), as an error envelope like
+// payment_goal_needs_confirmation or as the refusal body {status: "refused", reason, counted: false, goal_kind: null}.
+// Final: never retried, never re-queued, and the SDK never checks names or remembers the refusal.
+const UNKNOWN_MSG = "This goal isn't set up in Clikgate.";
+const unknownGoalErr = () => goalErr(422, 'invalid_request', 'unknown_goal', UNKNOWN_MSG, 'goal', { status: 'refused', reason: 'unknown_goal', counted: false, goal_kind: null });
+const refusalBody = (reason, over = {}) => ok({ status: 'refused', reason, ...over }, 422);
+const strictSend = { call: 'goals.send', args: { key: 'level_complete', reference: 'APP-77120', click_id: CLICK, value: '2500' } };
+const STRICT_WIRE = { goal: 'level_complete', reference: 'APP-77120', click_id: CLICK, value: '2500' };
+const STRICT_HIDDEN = ['APP-77120', '2500'];
+const STRICT_GOAL_CASES = [
+  {
+    id: 'goals.send.refused.unknown_goal',
+    description: 'Change 23 R.1: strict mode refuses a name that is not set up: 422 unknown_goal is an InvalidRequestError (param goal), sent once, never retried; the reference and value are never logged',
+    client: { max_retries: 3 },
+    responses: [unknownGoalErr()],
+    steps: [{ ...strictSend, expect: { error: { class: 'InvalidRequestError', code: 'unknown_goal', param: 'goal', http_status: 422 } } }],
+    expect: { requests: [{ ...GOAL_POST, json: STRICT_WIRE }], logs_exclude: STRICT_HIDDEN },
+  },
+  {
+    id: 'goals.send.refused.unknown_goal_refusal_body',
+    description: 'Change 23 R.1: a 422 answered with the refusal body {status: refused, reason: unknown_goal} and no error envelope maps to code unknown_goal (the reason), not http_422; never retried',
+    client: { max_retries: 3 },
+    responses: [refusalBody('unknown_goal', { counted: false, goal_kind: null })],
+    steps: [{ ...strictSend, expect: { error: { class: 'InvalidRequestError', code: 'unknown_goal', param: null, http_status: 422 } } }],
+    expect: { requests: [GOAL_POST], logs_exclude: STRICT_HIDDEN },
+  },
+  {
+    id: 'goals.send.refused.goal_archived',
+    description: 'Change 23 R.1: in strict mode an archived goal is 422 goal_archived (never 410): an InvalidRequestError, never retried',
+    client: { max_retries: 3 },
+    responses: [refusalBody('goal_archived')],
+    steps: [{ call: 'goals.send', args: { key: 'old_signup', reference: 'APP-77121' }, expect: { error: { class: 'InvalidRequestError', code: 'goal_archived', http_status: 422 } } }],
+    expect: { requests: [GOAL_POST] },
+  },
+  {
+    id: 'goals.send.refused.not_remembered',
+    description: 'Change 23 R.9: the SDK never checks names or caches the setting: after an unknown_goal refusal the same name is sent again (the goal may have been set up since)',
+    responses: [unknownGoalErr(), created],
+    steps: [
+      { ...strictSend, expect: { error: { class: 'InvalidRequestError', code: 'unknown_goal', http_status: 422 } } },
+      { call: 'goals.send', args: { key: 'level_complete', reference: 'APP-77122' }, expect: { result: { status: 'counted' } } },
+    ],
+    expect: { requests: [{ ...GOAL_POST, json: STRICT_WIRE }, { ...GOAL_POST, json: { goal: 'level_complete', reference: 'APP-77122' } }] },
+  },
+  {
+    id: 'goals.background.refused.unknown_goal_item',
+    description: 'Change 23 R.1: a background batch item refused with 422 unknown_goal goes to on_error and is dropped, never re-queued: a second flush sends nothing',
+    client: { send_mode: 'background' },
+    responses: [ok({ object: 'list', data: [{ index: 0, ok: false, status: 422, goal_event: null, error: { type: 'invalid_request', code: 'unknown_goal', message: UNKNOWN_MSG, param: 'goal' } }] })],
+    steps: [{ call: 'goal', args: { key: 'level_complete', reference: 'APP-77120', value: '2500' } }, { call: 'flush', expect: { result: { value: true } } }, { call: 'flush', expect: { result: { value: true } } }],
+    expect: {
+      requests: [{ ...BATCH_POST, json: { events: [{ goal: 'level_complete', reference: 'APP-77120', value: '2500' }] } }],
+      on_error: [{ class: 'InvalidRequestError', code: 'unknown_goal', http_status: 422, dropped: true, events: [{ goal: 'level_complete', reference: 'APP-77120' }] }],
+      logs_exclude: ['2500'],
+    },
+  },
+  {
+    id: 'goals.background.refused.goal_archived_item',
+    description: 'Change 23 R.1: a background batch item refused with 422 goal_archived goes to on_error and is dropped; the other item is a success',
+    client: { send_mode: 'background' },
+    responses: [ok({ object: 'list', data: [{ index: 0, ok: true, status: 201, goal_event: goalEvent({ reference: 'R-0' }), error: null }, { index: 1, ok: false, status: 422, goal_event: null, error: { type: 'invalid_request', code: 'goal_archived', message: 'This goal is archived.', param: 'goal' } }] })],
+    steps: [{ call: 'goal', args: { key: 'order_paid', reference: 'R-0' } }, { call: 'goal', args: { key: 'old_signup', reference: 'APP-77121' } }, { call: 'flush' }, { call: 'flush' }],
+    expect: { requests: [BATCH_POST], on_error: [{ class: 'InvalidRequestError', code: 'goal_archived', http_status: 422, dropped: true, events: [{ goal: 'old_signup', reference: 'APP-77121' }] }] },
+  },
+  {
+    id: 'goals.background.refused.whole_batch_refusal_body',
+    description: 'Change 23 R.1: a whole batch answered 422 with the refusal body is not retried: the events are dropped and on_error gets code unknown_goal once',
+    client: { send_mode: 'background', max_retries: 3 },
+    responses: [refusalBody('unknown_goal', { counted: false, goal_kind: null })],
+    steps: [{ call: 'goal', args: { key: 'level_complete', reference: 'APP-77120' } }, { call: 'flush' }, { call: 'flush' }],
+    expect: { requests: [BATCH_POST], on_error: [{ class: 'InvalidRequestError', code: 'unknown_goal', http_status: 422, dropped: true, events: [{ goal: 'level_complete', reference: 'APP-77120' }] }] },
+  },
+  {
+    id: 'goals.batch.refused.unknown_goal_item',
+    description: 'Change 23 R.1: goals.sendBatch returns an unknown_goal item as a per-item failure (not thrown) next to a counted one',
+    responses: [ok({ object: 'list', data: [{ index: 0, ok: true, status: 201, goal_event: goalEvent({ reference: 'R-0' }), error: null }, { index: 1, ok: false, status: 422, goal_event: null, error: { type: 'invalid_request', code: 'unknown_goal', message: UNKNOWN_MSG, param: 'goal' } }] })],
+    steps: [
+      {
+        call: 'goals.send_batch',
+        args: { events: [ev(0), { goal: 'level_complete', reference: 'APP-77120' }] },
+        expect: { result: { object: 'list', data: [{ index: 0, ok: true }, { index: 1, ok: false, status: 422, error: { code: 'unknown_goal' } }] } },
+      },
+    ],
+    expect: { requests: [BATCH_POST] },
+  },
+];
 add('goals', 'Goals: send, batch, reverse, background queueing and flush (SPEC 9)', [
   {
     id: 'goals.send.full',
@@ -925,6 +1028,7 @@ add('goals', 'Goals: send, batch, reverse, background queueing and flush (SPEC 9
     expect: { requests: [{}] },
   },
   ...C12_GOAL_CASES,
+  ...STRICT_GOAL_CASES,
   {
     id: 'goals.send.value_minor',
     description: 'The result keeps value as a decimal string and value_minor as an integer (change 09 X.E10)',

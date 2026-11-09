@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import threading
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Literal, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Set, Union
 
 from ._config import AsyncConfigCache, ConfigCache, LoggerLike
 from ._errors import ClikgateError
@@ -16,6 +16,9 @@ from ._types import ServerSdkConfig
 __all__ = ["ErrorContext", "OnError"]
 
 PrivateMode = Union[Literal["auto"], bool]
+
+#: The API's reason (and error code) for a goal name that isn't set up, while only set-up goals are accepted.
+UNKNOWN_GOAL = "unknown_goal"
 
 
 @dataclass(frozen=True)
@@ -60,6 +63,34 @@ class _CoreBase:
                     return
                 self._warned.add(k)
         self.logger.warning(message, extra={"clikgate_code": code})
+
+    def note_refused_goal(self, goal: Any, code_or_reason: Any) -> None:
+        """A goal the API refused because the organisation accepts only goals it has set up (``unknown_goal``).
+
+        One line at debug level, so it shows only when debug logging is on. The goal name only: never the
+        reference, customer ID, values or labels. The SDK never checks names itself and never remembers the refusal.
+        """
+        if code_or_reason != UNKNOWN_GOAL or not isinstance(goal, str):
+            return
+        with contextlib.suppress(Exception):  # a broken logger must not break the caller
+            self.logger.debug(f"Goal `{goal}` isn't set up in Clikgate", extra={"clikgate_code": UNKNOWN_GOAL})
+
+    def note_refused_items(self, wires: Sequence[Any], data: Any) -> None:
+        """``note_refused_goal`` for each item of a batch result (``wires[i]`` is the event sent at index ``i``)."""
+        items = data.get("data") if isinstance(data, dict) else None
+        for item in items or []:
+            if not isinstance(item, dict):
+                continue
+            index = item.get("index")
+            if not isinstance(index, int) or not 0 <= index < len(wires) or not isinstance(wires[index], dict):
+                continue
+            if item.get("ok"):
+                event = item.get("goal_event")
+                reason = event.get("reason") if isinstance(event, dict) else None
+            else:
+                error = item.get("error")
+                reason = error.get("code") if isinstance(error, dict) else None
+            self.note_refused_goal(wires[index].get("goal"), reason)
 
     def may_be_private(self) -> bool:
         """Whether the guard is (or may be) on right now, without fetching: used for redaction."""

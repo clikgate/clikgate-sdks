@@ -1,6 +1,8 @@
 package com.clikgate.spring;
 
 import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -14,6 +16,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * clikgate.timeout=10s
  * clikgate.cookie.days=30
  * clikgate.keep-route.enabled=true     # POST /cg/keep (off by default)
+ * clikgate.identity-secret=${CLIKGATE_IDENTITY_SECRET}        # createIdentityToken(), server only
+ * clikgate.identity-secrets.app_shop=${SHOP_IDENTITY_SECRET}  # several apps, by app ID
  * </pre>
  */
 @ConfigurationProperties(prefix = "clikgate")
@@ -42,6 +46,10 @@ public class ClikgateProperties {
   private Duration flushInterval = Duration.ofSeconds(1);
   /** Background queue bound. */
   private int maxQueueSize = 10_000;
+  /** The identity secret for createIdentityToken() (default: the CLIKGATE_IDENTITY_SECRET environment variable). */
+  private @Nullable String identitySecret;
+  /** Several apps' identity secrets, by app ID (default: CLIKGATE_IDENTITY_SECRETS, a JSON object). */
+  private Map<String, String> identitySecrets = new LinkedHashMap<>();
 
   private final Cookie cookie = new Cookie();
   private final Filter filter = new Filter();
@@ -149,6 +157,22 @@ public class ClikgateProperties {
 
   public void setEnabled(boolean enabled) {
     this.enabled = enabled;
+  }
+
+  public @Nullable String getIdentitySecret() {
+    return identitySecret;
+  }
+
+  public void setIdentitySecret(@Nullable String identitySecret) {
+    this.identitySecret = identitySecret;
+  }
+
+  public Map<String, String> getIdentitySecrets() {
+    return identitySecrets;
+  }
+
+  public void setIdentitySecrets(Map<String, String> identitySecrets) {
+    this.identitySecrets = identitySecrets;
   }
 
   public @Nullable String getApiKey() {

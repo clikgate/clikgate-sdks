@@ -31,12 +31,18 @@ public final class ErrorMapper {
   public static ClikgateException fromResponse(int status, Map<String, String> headers, byte[] body, long nowMs) {
     String text = new String(body, StandardCharsets.UTF_8);
     Map<String, Object> envelope = null;
+    Map<String, Object> refusal = null;
     try {
       Object parsed = Json.parse(body);
       if (parsed instanceof Map && ((Map<?, ?>) parsed).get("error") instanceof Map) {
         envelope = new LinkedHashMap<>();
         for (Map.Entry<?, ?> e : ((Map<?, ?>) ((Map<?, ?>) parsed).get("error")).entrySet()) {
           envelope.put(String.valueOf(e.getKey()), e.getValue());
+        }
+      } else if (isRefusalBody(parsed)) {
+        refusal = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> e : ((Map<?, ?>) parsed).entrySet()) {
+          refusal.put(String.valueOf(e.getKey()), e.getValue());
         }
       }
     } catch (Exception e) {
@@ -49,6 +55,10 @@ public final class ErrorMapper {
     }
     boolean redirect = status >= 300 && status < 400;
     String bodyCode = str(env.get("code"));
+    if (bodyCode == null && refusal != null) {
+      bodyCode = str(refusal.get("reason"));
+      envelope = refusal;
+    }
     String code = redirect ? "unexpected_status" : (bodyCode != null ? bodyCode : "http_" + status);
     String message = str(env.get("message"));
     if (message == null) {
@@ -88,6 +98,18 @@ public final class ErrorMapper {
       return new InvalidRequestException(message, code, status, requestId, param, type, envelope);
     }
     return new ServerException(message, code, status, requestId, param, type, envelope, null);
+  }
+
+  /**
+   * A goal refusal answered as a result body instead of an error envelope ({@code 422 {"status": "refused", "reason":
+   * "unknown_goal", ...}}): the reason is the error code.
+   */
+  private static boolean isRefusalBody(@Nullable Object v) {
+    if (!(v instanceof Map)) {
+      return false;
+    }
+    Map<?, ?> m = (Map<?, ?>) v;
+    return "refused".equals(m.get("status")) && m.get("reason") instanceof String && !((String) m.get("reason")).isEmpty();
   }
 
   public static ClikgateException fromBatchItem(int status, @Nullable Object error) {

@@ -151,6 +151,12 @@ public sealed class ClikgateOptions
     /// <summary>Flush on process exit (<c>AppDomain.ProcessExit</c>; default true). ASP.NET Core flushes in <c>IHostedService.StopAsync</c>.</summary>
     public bool ShutdownHooks { get; set; } = true;
 
+    /// <summary>The identity secret for <c>CreateIdentityToken()</c>. Default: the <c>CLIKGATE_IDENTITY_SECRET</c> environment variable.</summary>
+    public string? IdentitySecret { get; set; }
+
+    /// <summary>Several apps' identity secrets, by app ID. Default: <c>CLIKGATE_IDENTITY_SECRETS</c> (a JSON object).</summary>
+    public System.Collections.Generic.IDictionary<string, string>? IdentitySecrets { get; set; }
+
     /// <summary>Advanced (tests): replace the clock and delay.</summary>
     public IClikgateClock? Clock { get; set; }
 

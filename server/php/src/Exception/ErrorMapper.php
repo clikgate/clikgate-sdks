@@ -15,11 +15,15 @@ final class ErrorMapper
     public static function fromResponse(int $status, array $headers, string $body, int $nowMs): ClikgateException
     {
         $envelope = null;
+        $refusal = null;
         try {
             $parsed = json_decode($body, true, 512, \JSON_THROW_ON_ERROR);
             if (\is_array($parsed) && isset($parsed['error']) && \is_array($parsed['error'])) {
                 /** @var array<string, mixed> $envelope */
                 $envelope = $parsed['error'];
+            } elseif (self::isRefusalBody($parsed)) {
+                /** @var array<string, mixed> $refusal */
+                $refusal = $parsed;
             }
         } catch (\JsonException) {
             $envelope = null;
@@ -27,7 +31,8 @@ final class ErrorMapper
         $str = static fn(string $k): ?string => isset($envelope[$k]) && \is_string($envelope[$k]) ? $envelope[$k] : null;
         $requestId = $str('request_id') ?? ($headers['x-request-id'] ?? null);
         $redirect = $status >= 300 && $status < 400;
-        $bodyCode = $str('code');
+        $bodyCode = $str('code') ?? (null !== $refusal && \is_string($refusal['reason'] ?? null) ? $refusal['reason'] : null);
+        $envelope ??= $refusal;
         $code = $redirect ? 'unexpected_status' : ($bodyCode ?? "http_{$status}");
         $message = $str('message');
         if (null === $message) {
@@ -56,6 +61,15 @@ final class ErrorMapper
             $status >= 400 => new InvalidRequestException($message, $code, $status, $requestId, $param, $type, $envelope),
             default => new ServerException($message, $code, $status, $requestId, $param, $type, $envelope),
         };
+    }
+
+    /**
+     * A goal refusal answered as a result body instead of an error envelope
+     * (`422 {"status": "refused", "reason": "unknown_goal", ...}`): the reason is the error code.
+     */
+    private static function isRefusalBody(mixed $v): bool
+    {
+        return \is_array($v) && 'refused' === ($v['status'] ?? null) && \is_string($v['reason'] ?? null) && '' !== $v['reason'];
     }
 
     /** Map a batch item's `{status, error}` to a typed exception. */

@@ -25,10 +25,11 @@ Put the call in the gateway's **success callback**. Report the reference that th
 - The providers are enums generated from Clikgate's gateway list (`Provider`; `ClikgateProvider` on iOS, Flutter and React Native). For a gateway added after the SDK release, use `fromString("...")` (React Native `providerFromString('...')`); the server checks it.
 - `provider` and `reference` are required on a Payment goal, from every sender (page, app or server): without them the call is refused (`422 payment_goal_needs_confirmation`, with `missing`).
 - Never pass an amount, a currency or customer data. A value sent from a browser or app for a Payment goal is ignored (the result says `value_ignored`).
-- The result's `status` is a `GoalStatus`: `counted`, `waiting` (a Payment goal waiting for its confirmation, the normal answer for a report) or `refused`, with a `reason`. In test mode the SDKs log "order_paid is a Payment goal: waiting for confirmation".
+- The result's `status` is a `GoalStatus`: `counted`, `waiting` (a Payment goal waiting for its confirmation, the normal answer for a report), `received` (the name isn't counted as a goal in the dashboard yet) or `refused`, with a `reason`. In test mode the SDKs log "order_paid is a Payment goal: waiting for confirmation".
 - Reports are queued and retried like goals. The same gateway and reference is reported once.
-- "Allow from browser" is not needed for a Payment goal, and app event rules can't target one (`422 rule_targets_payment_goal`).
-- Mobile reports need install attribution (Growth and up), like app goals. Website reports work from Starter.
+- "Allow from browser" is not needed for a Payment goal.
+- With "Allow unknown goal names" off, a live report whose goal name isn't set up is refused with `unknown_goal` before the payment fields are checked, even with `provider` and `reference`. Make sure the Payment goal exists in the dashboard with that exact key.
+- Reports from apps and websites work on every plan that has Payment goals (Starter and up).
 
 ## 2. Confirm: the business's trusted source
 

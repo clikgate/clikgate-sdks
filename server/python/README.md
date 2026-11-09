@@ -24,7 +24,7 @@ clikgate.goal("account_opened", click_id=click_id, reference="APP-55231", value=
 Create one client and reuse it. It is thread-safe.
 
 - **`goal()`** is the one method for goals and payments. It never raises: it queues the event, and a daemon thread sends it in batches with safe retries.
-- **`goals.send()`** waits for the API and returns the result: `status` is `GoalStatus.COUNTED`, `WAITING` or `REFUSED` (with `reason`), plus `goal_kind`, `attributed_to`, …
+- **`goals.send()`** waits for the API and returns the result: `status` is `GoalStatus.COUNTED`, `WAITING`, `RECEIVED` or `REFUSED` (with `reason`), plus `goal_kind`, `attributed_to`, … `received` means the name isn't ticked as a goal in the dashboard yet (or the goal is archived): it is stored, not counted, and shows in "Seen from your app and website". Every status is a result, never an error, and none is retried. Goals work on every plan, up to the plan's allowance.
 
 ```python
 from clikgate import GoalKind, GoalStatus, Provider
@@ -57,6 +57,27 @@ clikgate.goal(
 The email is trimmed and lowercased. The phone must include its country code (`+234…` or `00234…`); a national number such as `0803 123 4567` is an `InvalidRequestError` (`invalid_argument`), and the SDK never guesses the country. A hashed value that isn't 64 lowercase hex characters is refused before sending (`invalid_hashed_identifier`). `conversions.create` takes the same fields. Hashed values are never logged.
 
 In private mode, hash on your own server: Clikgate never hashes for you there.
+
+## Identify your users
+
+Two ways to tell Clikgate which of your users is using the app. Full guide: https://clikgate.com/docs/identify-users. The customer ID is your own user ID from your database, never an email, phone number or ID number. Anonymous users don't need either path.
+
+**Path A (default): identity token.** Create the identity secret in Apps › your app › Identity secret and store it as `CLIKGATE_IDENTITY_SECRET` on your server only. `create_identity_token(customer_id, app_id=None)` (also `clikgate.create_identity_token()`, with the `identity_secret` / `identity_secrets` options) signs a token with no network call; return it in the responses the app already calls, and the app passes it to the mobile SDK's `identifyUser()`. Tokens last 30 days by default and are never force-refreshed. Throws `ClikgateServerOnlyError` in browser or mobile Python builds (Pyodide, WASI, iOS, Android).
+
+```python
+from clikgate import create_identity_token
+# sign-in and "current user" responses: one extra field
+return {"user": user, "clikgate_identity_token": create_identity_token(str(user.id))}   # reads CLIKGATE_IDENTITY_SECRET
+create_identity_token(str(user.id), app_id="app_…")                                    # several apps: CLIKGATE_IDENTITY_SECRETS
+```
+
+**Path B: installation ID, no secret or token.** The app reads `getInstallationId()` and includes it in its sign-in request; your server calls `identifyUser` with the app ID, installation ID and customer ID, after sign-in and at every signed-in app open. Clikgate accepts installations active in the last 7 days.
+
+```python
+# The app sends Clikgate.getInstallationId() with its sign-in request (None when tracking is off: skip)
+if installation_id:
+    clikgate.identify_user(app_id="app_…", installation_id=installation_id, customer_id=str(user.id))
+```
 
 ## People: identify a user and label them
 

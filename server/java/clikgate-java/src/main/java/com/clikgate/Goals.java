@@ -1,5 +1,6 @@
 package com.clikgate;
 
+import com.clikgate.exception.ClikgateException;
 import com.clikgate.exception.InvalidRequestException;
 import com.clikgate.http.RequestOptions;
 import com.clikgate.internal.ApiRequest;
@@ -136,6 +137,22 @@ public final class Goals {
   }
 
   /**
+   * Internal: {@code POST /v1/goals/events} for one checked wire event; notes an {@code unknown_goal} refusal (a
+   * debug line). Returns the answer's data.
+   */
+  static @Nullable Object sendWire(Core core, Map<String, Object> wire, @Nullable RequestOptions options) {
+    Object data;
+    try {
+      data = core.requester.request(sendRequest(wire, options)).data;
+    } catch (ClikgateException e) {
+      core.noteRefusedGoal(wire.get("goal"), e.getCode());
+      throw e;
+    }
+    core.noteRefusedGoal(wire.get("goal"), data instanceof Map ? ((Map<?, ?>) data).get("reason") : null);
+    return data;
+  }
+
+  /**
    * Send one goal event and wait for the result. Retries are safe: each call sends a random
    * {@code Idempotency-Key}, reused across its retries, and the API ignores a second event with the
    * same goal and reference, so a resend never counts twice.
@@ -157,7 +174,7 @@ public final class Goals {
   public GoalEvent send(String key, Goal goal, RequestOptions options) {
     Map<String, Object> wire = wire(key, goal);
     checkBeforeSend(core, core.guardState(), wire);
-    Object data = core.requester.request(sendRequest(wire, options)).data;
+    Object data = sendWire(core, wire, options);
     return new GoalEvent(data instanceof Map ? (Map<String, ?>) data : null);
   }
 
@@ -206,6 +223,7 @@ public final class Goals {
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("events", wires);
     Object data = core.requester.request(new ApiRequest("POST", "/v1/goals/events/batch").body(body).options(options)).data;
+    core.noteRefusedItems(wires, data);
     return new GoalBatchResult(data instanceof Map ? (Map<String, ?>) data : null);
   }
 

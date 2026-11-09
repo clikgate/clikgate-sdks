@@ -219,8 +219,8 @@ export class GoalQueue {
     }
   }
 
-  /** Track a sync-mode send so flush() waits for it. */
-  track(p: Promise<unknown>): void {
+  /** Hold on to a sync-mode send so flush() waits for it. */
+  holdSend(p: Promise<unknown>): void {
     this.pendingSync.add(p);
     void p.finally(() => this.pendingSync.delete(p));
   }
@@ -290,14 +290,20 @@ export class GoalQueue {
         body: { events: sendable.map((q) => q.wire) },
       });
       for (const item of data?.data ?? []) {
-        if (item.ok) continue;
         const q = sendable[item.index];
         if (!q) continue;
-        this.core.report(errorFromBatchItem(item.status, item.error), { operation: 'goal', events: [this.shown(q.wire)], dropped: true });
+        if (item.ok) {
+          this.core.noteRefusedGoal(q.wire.goal, item.goal_event?.reason);
+          continue;
+        }
+        const error = errorFromBatchItem(item.status, item.error);
+        this.core.noteRefusedGoal(q.wire.goal, error.code);
+        this.core.report(error, { operation: 'goal', events: [this.shown(q.wire)], dropped: true });
       }
       return [];
     } catch (err) {
       const error = asClikgateError(err);
+      for (const q of sendable) this.core.noteRefusedGoal(q.wire.goal, error.code);
       if (isRetryable(error)) {
         const keep: Queued[] = [];
         const drop: Queued[] = [];
@@ -375,12 +381,19 @@ export class Goals {
   async sendWire(wire: GoalWire, requestOptions: RequestOptions = {}): Promise<GoalEvent> {
     const state = await this.core.guardState();
     checkBeforeSend(this.core, state, wire);
-    const { data } = await this.core.requester.request<GoalEvent>({
-      method: 'POST',
-      path: '/v1/goals/events',
-      body: wire,
-      ...requestOptions,
-    });
+    let data: GoalEvent;
+    try {
+      ({ data } = await this.core.requester.request<GoalEvent>({
+        method: 'POST',
+        path: '/v1/goals/events',
+        body: wire,
+        ...requestOptions,
+      }));
+    } catch (err) {
+      if (err instanceof ClikgateError) this.core.noteRefusedGoal(wire.goal, err.code);
+      throw err;
+    }
+    this.core.noteRefusedGoal(wire.goal, data?.reason);
     return data;
   }
 
@@ -402,6 +415,9 @@ export class Goals {
     const state = await this.core.guardState();
     wires.forEach((w, i) => withIndex(i, () => checkBeforeSend(this.core, state, w)));
     const { data } = await this.core.requester.request<GoalBatchResult>({ method: 'POST', path: '/v1/goals/events/batch', body: { events: wires }, ...requestOptions });
+    for (const item of data?.data ?? []) {
+      this.core.noteRefusedGoal(wires[item.index]?.goal, item.ok ? item.goal_event?.reason : (item.error as { code?: unknown } | null)?.code);
+    }
     return data;
   }
 

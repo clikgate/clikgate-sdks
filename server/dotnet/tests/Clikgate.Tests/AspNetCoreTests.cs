@@ -26,6 +26,22 @@ public class AspNetCoreTests
         return services.BuildServiceProvider();
     }
 
+    [Fact]
+    public void Identity_secrets_bind_from_configuration()
+    {
+        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Clikgate:ApiKey"] = "cg_test_aspnet000", ["Clikgate:IdentitySecret"] = "cgis_aspnet_single", ["Clikgate:IdentitySecrets:app_rider"] = "cgis_aspnet_rider" }).Build();
+        var services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(config);
+        services.AddLogging();
+        services.AddClikgate(o => o.ShutdownHooks = false);
+        using var sp = services.BuildServiceProvider();
+        var client = sp.GetRequiredService<IClikgateClient>();
+        var token = client.CreateIdentityToken("user_42");
+        Assert.Equal(IdentityTokens.Create("user_42", "cgis_aspnet_single", long.Parse(token[(token.LastIndexOf('.') + 1)..], System.Globalization.CultureInfo.InvariantCulture)), token);
+        var rider = client.CreateIdentityToken("user_42", "app_rider");
+        Assert.Equal(IdentityTokens.Create("user_42", "cgis_aspnet_rider", long.Parse(rider[(rider.LastIndexOf('.') + 1)..], System.Globalization.CultureInfo.InvariantCulture)), rider);
+    }
+
     private const string Body = "{\"click_id\":\"" + Cid + "\",\"page_click_id\":\"" + Cid + "\"}";
 
     private static async Task<HttpContext> KeepAsync(RequestDelegate pipeline, ServiceProvider sp, string method, string body, params string[] headers)

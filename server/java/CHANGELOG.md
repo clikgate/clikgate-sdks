@@ -5,6 +5,18 @@ All notable changes to these artifacts, which are released together. The format 
 
 ## [Unreleased]
 
+### Strict goal names
+- With the organisation's "Allow unknown goal names" off, the API refuses a goal name that isn't set up with `422 unknown_goal`, and an archived goal with `422 goal_archived`. Both are `InvalidRequestError` (`getCode()` is the reason) and final: never retried, never re-queued; background `goal()` passes them to `onError` as dropped. The SDK never checks names itself and never remembers the refusal.
+- A `422` answered with the refusal body `{"status": "refused", "reason": ...}` (no error envelope) now maps to that reason instead of `http_422`; the body is the error's raw object.
+- With debug logging on (SLF4J debug or java.util.logging `FINE`; `ClikgateLogger` gains a `debug(code, message)` default method that does nothing), each refusal logs "Goal `{name}` isn't set up in Clikgate" with the goal name only.
+
+### Identity tokens, one goal() method
+
+- **Added:** `IdentityTokens.create(customerId)`, `IdentityTokens.create(customerId, appId)` and `IdentityTokens.create(customerId, secret, issuedAtSeconds)` (no API key needed), and `clikgate.createIdentityToken(customerId)` / `createIdentityToken(customerId, appId)`: `base64url_nopad(HMAC_SHA256(secret, customerId + "." + issuedAt)) + "." + issuedAt`, the signer Clikgate verifies with, with no network call. The secret comes from (with `appId`) that app's entry in the builder's `identitySecrets(...)` / `CLIKGATE_IDENTITY_SECRETS` (a JSON object), else `identitySecret(...)` / `CLIKGATE_IDENTITY_SECRET`. Errors: `ConfigurationException` (`missing_identity_secret`, `invalid_identity_secrets`), `InvalidRequestException` (`invalid_customer_id`: 1-255 code points; never echoed), and the new `ClikgateServerOnlyException` (`server_only`) when `android.os.Build` loads (an Android app). Tested against the shared vectors in `server/conformance/vectors/identity-token-vectors.json`. Guide: https://clikgate.com/docs/identify-users.
+- **Docs:** `identifyUser()` documents path B (no secret or token): your server calls it with `appId`, `installationId`, `customerId` and optionally `label` from the installation ID the app sends at sign-in and at every signed-in app open, and skips the call when there is none.
+- **Added:** `GoalStatus.RECEIVED` `received`: `goal()` / `goals.send` with a name that isn't ticked as a goal yet (or an archived goal) answers `200` with `status: "received"` and `reason` `not_counted_yet` (or `goal_archived`). It is a result, like `waiting` and `refused`: never an error and never retried.
+- **Removed (generated API):** the app events resource (`clikgate.api().appEvents()` and `AppEventsApi`): List App Events (`GET /v1/app-events`), Report App Events (`POST /v1/apps/{app_id}/events`) and the Event rules operations (`/v1/apps/{app_id}/event-rules`). Clikgate has one method for anything that happens in an app, website or server, `goal()`; names not ticked as goals yet show in the dashboard's "Seen from your app and website". No released version ever had them (the generator drops them through `server/codegen/removed.mjs` until the backend's public document no longer lists them).
+
 ### Hashed email and phone for ad networks
 
 - **Added:** `HashForAds.hash(String email, String phone)` returning `HashedIdentifiers` (`getHashedEmail()`, `getHashedPhoneE164()`, `getHashedPhoneDigits()`; null for an input not given). Pure and offline: the email is trimmed and lowercased and must contain `@`; the phone must start with `+` or `00` and have 7-15 digits after it. Otherwise `InvalidRequestException` `invalid_argument` (param `email` or `phone`), never echoing the input.

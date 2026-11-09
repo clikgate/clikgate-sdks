@@ -140,4 +140,79 @@ final class ServiceProviderTest extends TestCase
         Clikgate::goal('account_opened', ['reference' => 'APP-1', 'value' => '2000000']);
         Queue::assertPushed(SendGoal::class, static fn(SendGoal $job): bool => 'account_opened' === $job->key && 'APP-1' === $job->options['reference'] && 'redis' === $job->connection);
     }
+
+    public function testQueuedGoalRefusedAsUnknownEndsWithoutFailing(): void
+    {
+        $answers = [
+            [422, '{"error":{"type":"invalid_request","code":"unknown_goal","message":"Not set up.","param":"goal"},"status":"refused","reason":"unknown_goal","counted":false,"goal_kind":null}'],
+            [422, '{"status":"refused","reason":"goal_archived"}'],
+            [422, '{"error":{"type":"invalid_request","code":"value_required","message":"Needs a value.","param":"value"}}'],
+        ];
+        $calls = 0;
+        $http = new class ($answers, $calls) implements \Psr\Http\Client\ClientInterface {
+            /** @param list<array{int, string}> $answers */
+            public function __construct(private array $answers, private int &$calls) {}
+
+            public function sendRequest(\Psr\Http\Message\RequestInterface $request): \Psr\Http\Message\ResponseInterface
+            {
+                ++$this->calls;
+                [$status, $body] = array_shift($this->answers) ?? [500, '{}'];
+
+                return new \GuzzleHttp\Psr7\Response($status, ['Content-Type' => 'application/json'], $body);
+            }
+        };
+        $client = new Client(['apiKey' => 'cg_test_laravel000', 'httpClient' => $http, 'shutdownHooks' => false, 'privateMode' => false]);
+
+        foreach (['level_complete', 'old_signup'] as $goal) {
+            $job = (new SendGoal($goal, ['reference' => 'APP-1']))->withFakeQueueInteractions();
+            $job->handle($client);
+            $job->assertNotFailed();
+        }
+        $job = (new SendGoal('order_paid', ['reference' => 'APP-2']))->withFakeQueueInteractions();
+        $job->handle($client);
+        $job->assertFailed();
+        self::assertSame(3, $calls);
+    }
+
+    public function testCreateIdentityTokenThroughTheFacade(): void
+    {
+        $json = file_get_contents(__DIR__ . '/../../conformance/vectors/identity-token-vectors.json');
+        self::assertIsString($json);
+        $doc = json_decode($json, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertIsArray($doc);
+        self::assertIsArray($doc['vectors']);
+        $byName = [];
+        foreach ($doc['vectors'] as $v) {
+            self::assertIsArray($v);
+            self::assertIsString($v['name']);
+            $byName[$v['name']] = $v;
+        }
+        $a = $byName['ascii'];
+        $other = $byName['other_app_secret'];
+        self::assertIsString($a['secret']);
+        self::assertIsString($a['token']);
+        self::assertIsInt($a['issued_at']);
+        self::assertIsString($other['secret']);
+        self::assertIsString($other['token']);
+        self::assertIsInt($other['issued_at']);
+        $this->app['config']->set('clikgate.identity_secret', $a['secret']);
+        $this->app['config']->set('clikgate.identity_secrets', json_encode(['app_rider' => $other['secret']]));
+        $this->app->forgetInstance(Client::class);
+        self::assertSame($a['token'], Clikgate::createIdentityToken('user_42', ['issuedAt' => $a['issued_at']]));
+        self::assertSame($other['token'], Clikgate::createIdentityToken('user_42', ['appId' => 'app_rider', 'issuedAt' => $other['issued_at']]));
+    }
+
+    public function testMalformedIdentitySecretsFailOnlyWhenTokensAreCreated(): void
+    {
+        $this->app['config']->set('clikgate.identity_secrets', '{not json');
+        $this->app->forgetInstance(Client::class);
+        self::assertSame('test', Clikgate::client()->mode);
+        try {
+            Clikgate::createIdentityToken('user_42', ['appId' => 'app_rider']);
+            self::fail('expected ConfigurationException');
+        } catch (\Clikgate\Exception\ConfigurationException $e) {
+            self::assertSame('invalid_identity_secrets', $e->getErrorCode());
+            self::assertStringNotContainsString('not json', $e->getMessage());
+        }
+    }
 }

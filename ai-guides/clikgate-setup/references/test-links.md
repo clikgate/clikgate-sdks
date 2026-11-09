@@ -23,7 +23,7 @@ Anything else is refused with `422 test_destination_not_allowed`. The error list
    | Shorthand | Page |
    |---|---|
    | `clikgate-test:inspect` | Click inspector: shows the click ID, link, UTM and query parameters, device and time |
-   | `clikgate-test:checkout` | A fake "Pay ₦5,000 (test)" page that sends a test goal for the click |
+   | `clikgate-test:checkout` | A test-only "Pay ₦5,000 (test)" page that sends a test goal for the click |
    | `clikgate-test:app-open` | Tries to open the organisation's apps and reports what happened |
    | `clikgate-test:store` | A simulated store page, for testing deferred deep links |
 

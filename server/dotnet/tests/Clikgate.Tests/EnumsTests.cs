@@ -18,6 +18,7 @@ public class EnumsTests
         Assert.Null(ClikgateEnums.ParseGoalKind("subscription"));
         Assert.Null(ClikgateEnums.ParseGoalKind(null));
         Assert.Equal(GoalStatus.WAITING, ClikgateEnums.ParseGoalStatus("waiting"));
+        Assert.Equal(GoalStatus.RECEIVED, ClikgateEnums.ParseGoalStatus("received")); // change 22 R.9
         Assert.Null(ClikgateEnums.ParseGoalStatus("deferred"));
     }
 

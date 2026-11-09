@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Clikgate;
@@ -92,6 +93,14 @@ public static class ClikgateServiceCollectionExtensions
         if (int.TryParse(c["MaxQueueSize"], out var mq))
         {
             o.MaxQueueSize = mq;
+        }
+        // Identity tokens: "Clikgate:IdentitySecret", and "Clikgate:IdentitySecrets:app_…" for several apps.
+        // Unset, the client reads CLIKGATE_IDENTITY_SECRET / CLIKGATE_IDENTITY_SECRETS.
+        o.IdentitySecret = c["IdentitySecret"] ?? o.IdentitySecret;
+        var perApp = c.GetSection("IdentitySecrets").GetChildren().Where(s => !string.IsNullOrEmpty(s.Value)).ToDictionary(s => s.Key, s => s.Value!, StringComparer.Ordinal);
+        if (perApp.Count > 0)
+        {
+            o.IdentitySecrets = perApp;
         }
     }
 

@@ -174,6 +174,7 @@ The backend envelope (backend spec 6.2), from `src/core/errors.py`:
 | 13 | status 1xx/3xx (redirects are never followed) | `ServerError` | `unexpected_status` |
 
 - When an error body isn't JSON, or has no `error` object (a proxy's HTML 502, for example), the class still follows the status. `code` is then `http_<status>`, and `message` is `"HTTP <status>"` plus at most the first 200 characters of the body, with control characters stripped.
+- **A goal refusal body** (change 23 R.1): a response with no `error` object whose body is a JSON object with `status: "refused"` and a non-empty string `reason` (`422 {"status": "refused", "reason": "unknown_goal", "counted": false, "goal_kind": null}`) takes `code` = that `reason`. The body is the `raw` object; `param` and `type` are null; `message` follows the rule above. The class still follows the status.
 
 **Hierarchy:**
 
@@ -213,6 +214,8 @@ ClikgateError
   | `unknown_provider` | 422 → `InvalidRequestError` (param `provider`) | — (a well-formed provider the API doesn't know) | change 12 B3 |
   | `value_required`, `invalid_value`, `code_not_supported` | 422 → `InvalidRequestError` (param `value` / `code`) | — (a Payment goal sent by the server needs a value above 0 and takes `click_id`, not `code`) | change 12 B2.2, `src/goals/services/goal_events.py` |
   | `payment_goal_needs_confirmation` | 422 → `InvalidRequestError` (param `provider` or `reference`) | `missing` (list) stays in `raw` | change 12 B2.2 / B2.5: a Payment goal without `provider` or `reference`, from any sender (also `goals.send` and `conversions.create`) |
+  | `unknown_goal` | 422 → `InvalidRequestError` (param `goal`, or null for a refusal body) | `status`, `reason`, `counted`, `goal_kind` stay in `raw` | change 23 R.1: "Allow unknown goal names" is off and no goal (or alias) has this name. Final: never retried (section 23.2) |
+  | `goal_archived` | 422 → `InvalidRequestError` | — | change 23 R.1: the goal is archived and "Allow unknown goal names" is off (with the setting on it is a `received` result, never `410`) |
 
   Node also exports the `KnownErrorCode` union of these codes, plus every local code in this section.
 - `PrivateModeFieldRejectedError` exposes `field`, the field **name** only. Its message MUST NOT contain the rejected value, and SDKs MUST NOT log the value either.
@@ -502,7 +505,7 @@ When on, before the HTTP layer sees anything, the SDK checks every wire field of
 | `value_required` | there is no value and `value_mode` is `required` |
 
 - **Once only:** each (code, goal key) pair is warned once per client.
-- **The event is still sent.** The server is the source of truth, and config can be up to 10 minutes old.
+- **The event is still sent.** The server is the source of truth, and config can be up to 10 minutes old. With "Allow unknown goal names" off the server may then refuse it (`422 unknown_goal`, section 23.2): the warning never blocks, and the SDK never remembers the setting.
 
 ## 13. Click IDs
 
@@ -626,6 +629,7 @@ hex = lowercase hex HMAC-SHA256(key = UTF-8 bytes of the whole secret including 
 
 - **Signature:** every warning is logged at `warn` level with a stable code, `logger.warn(message, {code, ...context})`. Python passes `extra={"clikgate_code": code}`; Java uses an SLF4J marker or MDC key `clikgate_code`; .NET uses an `EventId` name. Conformance runners capture the codes.
 - **Warning codes:** `inexact_number`, `unknown_goal`, `value_not_allowed`, `value_required`, `config_unavailable`, `sdk_below_minimum_version`, `queue_full_dropped`.
+- **Debug lines:** a goal refused with `unknown_goal` (section 23.2) logs ``Goal `{name}` isn't set up in Clikgate`` at **debug** level, code `unknown_goal`, so it shows only when debug logging is on: Node, a `logger` with a `debug` method; Python, the `clikgate` logger enabled for `DEBUG`; PHP, the PSR-3 logger's `debug()`; Java, SLF4J debug or java.util.logging `FINE` (`ClikgateLogger.debug`, a default method that does nothing, so existing loggers keep compiling); .NET, `ClikgateLogLevel.Debug`. The goal name only.
 - **Errors** in background or `goal()` sends are logged at `error` level with the error's class, code and request ID, plus `on_error`.
 - **Never logged:** API keys (at most the first 8 characters, `cg_live_` style, and only at debug level), webhook secrets, bodies, values, metadata, and (in private mode) references.
 - **Default level:** warnings and above, so the defaults produce no info or debug output.
@@ -882,7 +886,7 @@ settings: never in a goal call, D4). `goal()` is the only goal method; there is 
 | Enum | Values (wire) | Node | Python | PHP | Java | .NET |
 |---|---|---|---|---|---|---|
 | `GoalKind` | `standard`, `payment` | `GoalKind.Payment` (type `'standard' \| 'payment'`) | `GoalKind.PAYMENT` | `GoalKind::Payment` | `GoalKind.PAYMENT` | `GoalKind.PAYMENT` |
-| `GoalStatus` | `counted`, `waiting`, `refused` | `GoalStatus.Counted` | `GoalStatus.COUNTED` | `GoalStatus::Counted` | `GoalStatus.COUNTED` | `GoalStatus.COUNTED` |
+| `GoalStatus` | `counted`, `waiting`, `refused`, `received` (change 22 R.9) | `GoalStatus.Counted` | `GoalStatus.COUNTED` | `GoalStatus::Counted` | `GoalStatus.COUNTED` | `GoalStatus.COUNTED` |
 | `Provider` | every provider in `GET /v1/payment-gateways`, plus `shopify`, `woocommerce`, `custom` | `Provider.Paystack` | `Provider.PAYSTACK` | `Provider::Paystack` | `Provider.PAYSTACK` | `Provider.PAYSTACK` |
 
 - **Generated, never hand-written:** `node server/codegen/generate.mjs` writes them from `openapi.json`'s
@@ -910,8 +914,21 @@ Every goal call returns (batch items: in `goal_event`) the `goal_event` with:
 | `event_status` | the conversion state that `status` held before change 12 (`attributed`, `unattributed`, `rejected_bot`, …), or null while a Payment goal waits |
 | `payment` | for a Payment goal sent by the server: `{confirmation_id, match_status, report_id, provider}`; else null |
 
-- `waiting` and `refused` are **results**, not errors: `goals.send` returns them, background `goal()` doesn't pass them to
-  `on_error`. 4xx errors stay errors (section 5).
+- `waiting`, `refused` and `received` are **results**, not errors: `goals.send` returns them, background `goal()`
+  doesn't pass them to `on_error`, and none is retried. 4xx errors stay errors (section 5).
+- **`received` (change 22 R.9, R.10):** a name that isn't ticked as a goal yet answers `200 {status: "received", reason:
+  "not_counted_yet"}`; an archived goal answers `received` with reason `goal_archived` (no longer `410 goal_archived`).
+  The event is stored for 30 days, not counted, not metered and not sent to ad networks. Conformance:
+  `goals.send.status.received_not_counted_yet` and `goals.background.received_not_counted_yet`.
+- **Strict goal names (change 23 R.1, R.2, R.9):** with the organisation's "Allow unknown goal names" off, a name with
+  no goal (or alias) behind it answers `422 unknown_goal` and an archived goal `422 goal_archived` (an error envelope,
+  like `payment_goal_needs_confirmation`, or the refusal body of section 5; both map to `InvalidRequestError` with that
+  code). Both are **final**: `goals.send` throws once (422 is never retried); background and sync `goal()` pass it to
+  `on_error` with `dropped: true` and never re-queue it; a batch item is a per-item failure. The SDK **never checks names
+  itself and never caches the setting** (the section 12.3 `unknown_goal` warning stays warn-only and the event is still
+  sent): a refused name is sent again next time. Each refusal logs the section 15 debug line with the goal name only,
+  never the reference, customer ID, values or labels. Conformance: `goals.send.refused.*`,
+  `goals.background.refused.*`, `goals.batch.refused.unknown_goal_item`.
 - **A Payment goal from the business's server** is a trusted confirmation (route D): send it with `goals.send`/`goal()`
   and the confirmed `value` (required, above 0), `currency`, `provider` and `reference` (both required: `422
   payment_goal_needs_confirmation` with `missing` otherwise; there is no default provider) (the payment
@@ -952,6 +969,63 @@ An SDK released today MUST keep working against a newer API:
 - **Goals:** optional `label` (wire `label`) on `goal`, `goals.send` and batch events; `is_first` is unchanged (from the
   server it is what counts a new customer).
 - The removed `POST /v1/apps/{app_id}/identify` is gone from the generated layer. Conformance: suite `people` (6 cases).
+- **Path B (change 22 I.6, R.25, R.26):** the app reads `getInstallationId()` and sends it in its sign-in request; the
+  server calls `identifyUser` with `app_id`, `installation_id`, `customer_id` (and `label`) after sign-in and at every
+  signed-in app open, and skips the call when the app sends no installation ID (tracking off). No identity secret or
+  token is needed; the API accepts installations active in the last 7 days, and the call satisfies
+  `require_identity_token`. Each SDK's `identifyUser` doc comment and README show this path next to path A (section 26)
+  and link to https://clikgate.com/docs/identify-users.
+
+
+## 26. Identity tokens: `createIdentityToken` (change 22 I.1, R.22, R.27)
+
+The default way for an app to prove which of the business's users is signed in (path A of
+https://clikgate.com/docs/identify-users): the business's server signs a token and returns it in responses the app
+already calls (sign-in, "current user"); the app passes it to the mobile SDK's `identifyUser(label?, customerId,
+identityToken)`.
+
+- **Token** (SDK spec 8.5, the backend's `sign_identity_token`):
+  `base64url_nopad(HMAC_SHA256(secret, customer_id + "." + issued_at)) + "." + issued_at`, with `secret` and the message
+  encoded as UTF-8, no Unicode normalisation, and `issued_at` in whole Unix seconds (now, by default). No network call
+  and no API key.
+- **Names** (section 2 casing):
+
+  | | Function (no client) | Client method | Options / config |
+  |---|---|---|---|
+  | Node | `createIdentityToken(customerId, { appId?, secret?, issuedAt? })` | `clikgate.createIdentityToken(customerId, { appId? })` | `identitySecret`, `identitySecrets` |
+  | Python | `create_identity_token(customer_id, *, app_id=None, secret=None, issued_at=None)` | `Clikgate.create_identity_token(customer_id, *, app_id=None, issued_at=None)` (plain method on `AsyncClikgate` too) | `identity_secret`, `identity_secrets` |
+  | PHP | `Clikgate\IdentityToken::create(string $customerId, array{appId?, secret?, issuedAt?} $options = [])` | `$clikgate->createIdentityToken($customerId, ['appId' => …])` | `identitySecret`, `identitySecrets` |
+  | Laravel | | `Clikgate::createIdentityToken($customerId, ['appId' => …])` | `clikgate.identity_secret`, `clikgate.identity_secrets` |
+  | Java | `IdentityTokens.create(customerId)`, `create(customerId, appId)`, `create(customerId, secret, issuedAtSeconds)` | `clikgate.createIdentityToken(customerId[, appId])` | builder `identitySecret(...)`, `identitySecrets(Map)` |
+  | Spring Boot | | the bean's `createIdentityToken` | `clikgate.identity-secret`, `clikgate.identity-secrets.<appId>` |
+  | .NET | `IdentityTokens.Create(customerId, appId = null)`, `Create(customerId, secret, issuedAtSeconds)` | `client.CreateIdentityToken(customerId, appId = null)` (also on `IClikgateClient`) | `IdentitySecret`, `IdentitySecrets`; ASP.NET Core `Clikgate:IdentitySecret`, `Clikgate:IdentitySecrets:<appId>` |
+
+- **Which secret:** an explicit `secret` (function form only); else, with `app_id`, that app's entry in the client's
+  `identity_secrets` or the `CLIKGATE_IDENTITY_SECRETS` environment variable (a JSON object `{"app_…": "cgis_…"}`);
+  else the client's `identity_secret` or `CLIKGATE_IDENTITY_SECRET`. With several apps' secrets and no `app_id` and no
+  single secret: `ConfigurationError` `missing_identity_secret` (param `app_id`). No secret at all:
+  `ConfigurationError` `missing_identity_secret`. A malformed `CLIKGATE_IDENTITY_SECRETS`: `ConfigurationError`
+  `invalid_identity_secrets` (the value is never echoed). Laravel reports a malformed `identity_secrets` only when a
+  token is created, so the rest of the client keeps working.
+- **Customer ID:** 1-255 characters, counted as Unicode code points (as the backend's identify schema); else
+  `InvalidRequestError` `invalid_customer_id` (param `customer_id`), never echoed. PHP also refuses invalid UTF-8.
+- **Server only** (R.27): `ClikgateServerOnlyError` (code `server_only`; PHP, Java and .NET `ClikgateServerOnlyException`)
+  - Node: when `window`, `document` or React Native (`navigator.product === "ReactNative"`) is detected;
+  - Java: when `android.os.Build` loads;
+  - .NET: under MAUI or Xamarin (OS platform Android, iOS, tvOS, Mac Catalyst or watchOS, or `Microsoft.Maui`,
+    `Microsoft.Maui.Controls`, `Xamarin.*`, `Mono.Android`, `Microsoft.iOS`/`Android`/`MacCatalyst`/`tvOS` loaded; not
+    `Microsoft.Maui.Graphics` alone, which also runs on servers) and in browser (WebAssembly) or WASI builds;
+  - Python: in Pyodide / Emscripten / WASI builds and CPython on iOS or Android (`sys.platform` `emscripten`, `wasi`,
+    `ios`, `android`). A regular Python process can't be bundled into an app or website, so that is the whole risk;
+  - PHP: not applicable (PHP has no browser or mobile build); no check and no exception class.
+- **Never logged:** the secret, the token and the customer ID appear in no log line or error message.
+- **Vectors:** `server/conformance/vectors/identity-token-vectors.json` (built by
+  `server/conformance/tools/build_identity_token_vectors.py` from the backend's `sign_identity_token`; `--check` fails when
+  stale). Every language's unit tests check every vector (ASCII, dots, combining marks, precomposed vs decomposed é,
+  CJK, an emoji outside the BMP, Arabic, 255 characters, `issued_at` 0 and after 2038, a second app's secret, a
+  non-ASCII secret) and refuse every `invalid_customer_ids` entry.
+- **Verification reasons** (backend, R.22) the docs list: `expired`, `bad_signature`, `secret_rotated`, `no_secret_set`,
+  `not_yet_valid` (issued more than 5 minutes ahead). The SDKs never verify tokens.
 
 
 ## 25. Hashed email and phone for ad network matching (change 19)

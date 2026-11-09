@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Facade;
  * @method static array<string, mixed>|null config()
  * @method static bool flush(float $timeout = 10.0)
  * @method static array<string, mixed> verifyWebhook(string $rawBody, ?string $signatureHeader, string $secret, int $tolerance = 300)
+ * @method static string createIdentityToken(string $customerId, array{appId?: ?string, issuedAt?: ?int} $options = [])
+ * @method static array<string, mixed> identifyUser(array<string, mixed> $params, array<string, mixed> $requestOptions = [])
  * @method static \Clikgate\Clikgate client()
  *
  * @see \Clikgate\Laravel\ClikgateManager

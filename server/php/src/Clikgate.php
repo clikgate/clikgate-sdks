@@ -47,10 +47,13 @@ use Psr\Log\LoggerInterface;
  */
 final class Clikgate
 {
-    private const OPTIONS = ['apiKey', 'baseUrl', 'timeout', 'maxRetries', 'sendMode', 'privateMode', 'clickIdParam', 'logger', 'onError', 'httpClient', 'proxy', 'batchSize', 'flushInterval', 'maxQueueSize', 'shutdownHooks', 'clock', 'random'];
+    private const OPTIONS = ['apiKey', 'baseUrl', 'timeout', 'maxRetries', 'sendMode', 'privateMode', 'clickIdParam', 'logger', 'onError', 'httpClient', 'proxy', 'batchSize', 'flushInterval', 'maxQueueSize', 'shutdownHooks', 'identitySecret', 'identitySecrets', 'clock', 'random'];
 
     /** `live` or `test`, from the API key prefix. */
     public readonly string $mode;
+    private readonly ?string $identitySecret;
+    /** @var array<string, string>|null */
+    private readonly ?array $identitySecrets;
     /** Goal events. */
     public readonly Goals $goals;
     /** Conversions (older API). */
@@ -160,6 +163,26 @@ final class Clikgate
             return $clickIdParam ?? (\is_string($fromConfig) ? $fromConfig : 'cgid');
         });
         $this->api = new ApiClient($requester);
+        $identitySecret = $options['identitySecret'] ?? null;
+        if (null !== $identitySecret && (!\is_string($identitySecret) || '' === $identitySecret)) {
+            throw self::invalid('identitySecret', 'identitySecret must be a non-empty string.');
+        }
+        $rawSecrets = $options['identitySecrets'] ?? null;
+        $identitySecrets = null;
+        if (null !== $rawSecrets) {
+            if (!\is_array($rawSecrets)) {
+                throw self::invalid('identitySecrets', 'identitySecrets must be an array of app IDs to identity secrets.');
+            }
+            $identitySecrets = [];
+            foreach ($rawSecrets as $k => $v) {
+                if (!\is_string($k) || !\is_string($v) || '' === $v) {
+                    throw self::invalid('identitySecrets', 'identitySecrets must be an array of app IDs to identity secrets.');
+                }
+                $identitySecrets[$k] = $v;
+            }
+        }
+        $this->identitySecret = $identitySecret;
+        $this->identitySecrets = $identitySecrets;
     }
 
     /**
@@ -186,7 +209,7 @@ final class Clikgate
             $wire = Goals::wire($key, $options);
             if ('sync' === $this->sendMode) {
                 Goals::checkBeforeSend($this->core, $this->core->guardState(), $wire);
-                $this->core->requester->request(Goals::sendRequest($wire));
+                $this->goals->sendWire($wire);
 
                 return;
             }
@@ -201,14 +224,41 @@ final class Clikgate
     }
 
     /**
+     * Create an identity token for the signed-in user (path A of https://clikgate.com/docs/identify-users).
+     * Return it in your sign-in and "current user" responses; the app passes it to the mobile SDK's `identifyUser()`.
+     * Uses the `identitySecret` / `identitySecrets` options, else `CLIKGATE_IDENTITY_SECRET` / `CLIKGATE_IDENTITY_SECRETS`.
+     * No network call. See {@see IdentityToken::create()}.
+     *
+     * ```php
+     * return ['user' => $user, 'clikgateIdentityToken' => $clikgate->createIdentityToken((string) $user->id)];
+     * $clikgate->createIdentityToken((string) $user->id, ['appId' => 'app_…']);   // several apps
+     * ```
+     *
+     * @param array{appId?: ?string, issuedAt?: ?int} $options
+     */
+    public function createIdentityToken(string $customerId, array $options = []): string
+    {
+        return IdentityToken::createWith($customerId, ['appId' => $options['appId'] ?? null, 'issuedAt' => $options['issuedAt'] ?? null], $this->identitySecret, $this->identitySecrets);
+    }
+
+    /**
      * Tell Clikgate who a person is (`POST /v1/people/identify`): a click (`clickId`), an app installation (`appId` +
      * `installationId`) or your `customerId`, at least one. With a click or installation, `customerId` links it to
      * that customer. `label` is what your team sees instead of the click ID (1-80 characters, `''` clears it; Growth
      * and up). Always verified (your server), so it also satisfies a referral program's `require_identity_token`.
      * In private mode `customerId` is refused locally and `label` needs "Allow labels in private mode".
      *
+     * Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
+     * `getInstallationId()` and sends it in its sign-in request; your server calls this with `appId`,
+     * `installationId`, `customerId` and optionally `label`, after sign-in and at every signed-in app open. When the
+     * app sends no installation ID (tracking is off), skip the call. Clikgate accepts installations active in the
+     * last 7 days.
+     *
      * ```php
      * $clikgate->identifyUser(['clickId' => $order->clickId, 'customerId' => 'user_42', 'label' => 'Ada (VIP)']);
+     * if ($installationId !== null) {
+     *     $clikgate->identifyUser(['appId' => 'app_…', 'installationId' => $installationId, 'customerId' => (string) $user->id]);
+     * }
      * ```
      *
      * @param array{clickId?: ?string, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string} $params
