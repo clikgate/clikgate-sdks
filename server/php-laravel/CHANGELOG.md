@@ -8,6 +8,10 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 - **Removed:** `track()` and app events are gone from Clikgate in favour of one method, `goal()`, for anything that happens in an app, website or server. A name that isn't set up as a goal yet still arrives (status `received`) and shows in the dashboard under "Seen from your app and website", ready to be counted. This package now requires `clikgate/clikgate-php` ^2.0, which drops the generated app events resource: send goals with `Clikgate::goal()` or the queued goal sending.
 
+### Breaking: Laravel 11 is no longer supported; Laravel 12+ required
+
+- **Removed:** Laravel 11 support. Every Laravel 11.x release now has a security advisory (Laravel 11 has been end of life since 2026-03-12), so Composer refuses to install it. This version needs Laravel 12 or 13 (`illuminate/*` `^12.0 || ^13.0`); PHP 8.2+ as before.
+
 ### Strict goal names
 - A queued goal (`SendGoal`) refused with `unknown_goal` (the organisation accepts only set-up goals) or `goal_archived` ends the job without failing it: it is never retried or kept as a failed job. With `LOG_LEVEL=debug` the SDK logs "Goal `{name}` isn't set up in Clikgate" (goal name only).
 

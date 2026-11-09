@@ -1,6 +1,6 @@
 # clikgate/clikgate-laravel
 
-Laravel integration for [`clikgate/clikgate-php`](https://github.com/clikgate/clikgate-php): an auto-discovered service provider, the `Clikgate` facade, the `clikgate` middleware, `$request->clikgateClickId()`, and queued goal sending. Laravel 11, 12 and 13.
+Laravel integration for [`clikgate/clikgate-php`](https://github.com/clikgate/clikgate-php): an auto-discovered service provider, the `Clikgate` facade, the `clikgate` middleware, `$request->clikgateClickId()`, and queued goal sending. Laravel 12 and 13.
 
 ```bash
 composer require clikgate/clikgate-laravel
