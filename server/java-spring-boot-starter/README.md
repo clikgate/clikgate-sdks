@@ -12,7 +12,7 @@ Spring Boot 4 (Java 17+) auto-configuration for [`com.clikgate:clikgate-java`](.
 <dependency>
   <groupId>com.clikgate</groupId>
   <artifactId>clikgate-spring-boot-starter</artifactId>
-  <version>1.1.0</version>
+  <version>2.0.0</version>
 </dependency>
 ```
 
