@@ -24,7 +24,7 @@ CI:
 
 - `server-node.yml` / `server-node-release.yml`: Node 18-26; npm trusted publishing with provenance.
 - `server-python.yml` / `server-python-release.yml`: Python 3.9-3.15; PyPI trusted publishing with PEP 740 attestations.
-- `server-php.yml` / `server-php-release.yml`: PHP 8.1-8.5 and Laravel 11-13; split repositories for Packagist.
+- `server-php.yml` / `server-php-release.yml`: PHP 8.1-8.5 and Laravel 12-13; split repositories for Packagist.
 - `server-java.yml` / `server-java-release.yml`: Java 8-27; Maven Central with GPG signatures.
 - `server-dotnet.yml` / `server-dotnet-release.yml`: .NET 8 and 10, and .NET Framework 4.7.2; NuGet trusted publishing.
 - `server-codegen.yml`: the drift check for every generated layer.
