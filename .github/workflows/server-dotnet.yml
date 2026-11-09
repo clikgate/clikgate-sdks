@@ -48,12 +48,12 @@ jobs:
           node-version: 24
       - run: scripts/check-version.sh
       - name: Build (warnings are errors)
-        run: dotnet build Clikgate.sln -c Release "-p:TestTfms=${{ matrix.tfms }}"
+        run: dotnet build Clikgate.sln -c Release "-p:TestTfms=\"${{ matrix.tfms }}\""
       - name: Format
         if: runner.os == 'Linux'
         run: dotnet format Clikgate.sln --verify-no-changes
       - name: Unit tests
-        run: dotnet test --project tests/Clikgate.Tests -c Release --no-build "-p:TestTfms=${{ matrix.tfms }}"
+        run: dotnet test --project tests/Clikgate.Tests -c Release --no-build "-p:TestTfms=\"${{ matrix.tfms }}\""
       - name: Conformance suite
         run: dotnet run --project tests/Clikgate.Conformance -c Release --no-build
 
