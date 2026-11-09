@@ -17,7 +17,7 @@ Example (FastAPI)::
     async def create_application(cid: str | None = Depends(click_id)):
         ...
 
-The ``/cg/keep`` route (change 16; the web script's ``data-server-endpoint="/cg/keep"``)::
+The ``/cg/keep`` route (the web script's ``data-server-endpoint="/cg/keep"``)::
 
     from clikgate.fastapi import keep_endpoint
     app.add_api_route("/cg/keep", keep_endpoint(client=clikgate), methods=["POST"])
@@ -75,7 +75,7 @@ class ClikgateMiddleware:
             return
         secure = _scope_secure(scope)
         cookie = self.helpers.cookie_header(cid, days=self.days, secure=secure, domain=self.domain).encode("latin-1")
-        marker = kept_marker_header(days=self.days, secure=secure, domain=self.domain).encode("latin-1")  # change 16
+        marker = kept_marker_header(days=self.days, secure=secure, domain=self.domain).encode("latin-1")
 
         async def send_with_cookie(message: Message) -> None:
             if message.get("type") == "http.response.start":

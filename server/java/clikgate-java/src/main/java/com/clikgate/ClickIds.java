@@ -25,7 +25,7 @@ public final class ClickIds {
   public static final Pattern PATTERN = Pattern.compile("clk_[0-9A-Z]{26}");
   /** The header a caller (your mobile app or BFF) can use to pass the click ID. */
   public static final String HEADER = "Clikgate-Click-Id";
-  /** The marker cookie (change 16): {@code _cg_kept=s} says your server kept the click ID ({@code kept_by: server_cookie}). */
+  /** The marker cookie: {@code _cg_kept=s} says your server kept the click ID ({@code kept_by: server_cookie}). */
   public static final String MARKER = "_cg_kept";
   private static final List<String> PAYMENT_KEYS = Arrays.asList("cg_click_id", "cgid", "clikgate_click_id");
   private static final List<String> CONTAINERS = Arrays.asList("metadata", "meta", "meta_data", "note_attributes", "attributes", "custom_attributes", "customAttributes");

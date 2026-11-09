@@ -97,7 +97,7 @@ public class ClikgateAutoConfiguration {
   }
 
   /**
-   * {@code POST /cg/keep} (change 16), only with {@code clikgate.keep-route.enabled=true}: nothing appears unasked.
+   * {@code POST /cg/keep}, only with {@code clikgate.keep-route.enabled=true}: nothing appears unasked.
    * With Spring Security, exclude the path from CSRF; see {@link ClikgateKeepController}.
    */
   @Configuration(proxyBeanMethods = false)

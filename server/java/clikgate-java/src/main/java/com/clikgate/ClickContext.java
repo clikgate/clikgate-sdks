@@ -3,7 +3,7 @@ package com.clikgate;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The visitor context for a goal (SPEC 13.1, change 16), from {@link ClickIds#context}: the click ID, how it was kept
+ * The visitor context for a goal (SPEC 13.1), from {@link ClickIds#context}: the click ID, how it was kept
  * and the browser engine and platform. The SDK parses the {@code User-Agent}; the User-Agent itself is never sent.
  * Pass it with {@link Goal.Builder#context(ClickContext)}. All three fields are allowed in private mode.
  */

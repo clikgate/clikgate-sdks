@@ -31,7 +31,7 @@ public sealed class ClickIds
     /// <summary>The header a caller (your mobile app or BFF) can use to pass the click ID.</summary>
     public const string Header = "Clikgate-Click-Id";
 
-    /// <summary>The marker cookie (change 16): <c>_cg_kept=s</c> says your server kept the click ID (<c>kept_by: server_cookie</c>).</summary>
+    /// <summary>The marker cookie: <c>_cg_kept=s</c> says your server kept the click ID (<c>kept_by: server_cookie</c>).</summary>
     public const string Marker = "_cg_kept";
     private static readonly Regex Pattern = new("^clk_[0-9A-Z]{26}$", RegexOptions.CultureInvariant);
     private static readonly string[] PaymentKeys = ["cg_click_id", "cgid", "clikgate_click_id"];

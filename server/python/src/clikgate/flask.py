@@ -19,7 +19,7 @@ Example::
 
 Config keys: ``CLIKGATE_API_KEY``, ``CLIKGATE_PERSIST`` (default True), ``CLIKGATE_COOKIE_DAYS`` (30),
 ``CLIKGATE_COOKIE_DOMAIN``, and ``CLIKGATE_OPTIONS`` (a dict of other client options).
-The ``/cg/keep`` route (change 16; the web script's ``data-server-endpoint="/cg/keep"``)::
+The ``/cg/keep`` route (the web script's ``data-server-endpoint="/cg/keep"``)::
 
     from clikgate.flask import keep_view
     app.add_url_rule("/cg/keep", "clikgate_keep", keep_view(), methods=["POST"])

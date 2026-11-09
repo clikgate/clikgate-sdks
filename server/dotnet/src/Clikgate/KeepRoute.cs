@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 
 namespace Clikgate;
 
-/// <summary>The visitor context for a goal (SPEC 13.1, change 16), from <see cref="ClickIds.Context(string?, Func{string, string?})"/>.</summary>
+/// <summary>The visitor context for a goal (SPEC 13.1), from <see cref="ClickIds.Context(string?, Func{string, string?})"/>.</summary>
 /// <remarks>The SDK parses the <c>User-Agent</c>; the User-Agent itself is never sent. All three fields are allowed in private mode.</remarks>
 public sealed class ClickContext
 {
@@ -50,7 +50,7 @@ public sealed class KeepResponse
 }
 
 /// <summary>
-/// The <c>/cg/keep</c> route (SPEC 13.1, change 16). The web script's <c>data-server-endpoint="/cg/keep"</c> posts the click
+/// The <c>/cg/keep</c> route (SPEC 13.1). The web script's <c>data-server-endpoint="/cg/keep"</c> posts the click
 /// ID from the page URL here, and the response sets the first-party <c>_cg_&lt;param&gt;</c> cookie and the <c>_cg_kept=s</c>
 /// marker from your own server. Safari, and every browser on iPhone, keeps a click ID saved by a script for up to 7 days
 /// (sometimes less). When your server saves it, it lasts as long as you choose, up to the browser's limit.
