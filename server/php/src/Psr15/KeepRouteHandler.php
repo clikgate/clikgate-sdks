@@ -12,7 +12,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 /**
- * The `/cg/keep` route as a PSR-15 request handler (SPEC 13.1, change 16): `$clikgate->clickIds->keepRoute()`.
+ * The `/cg/keep` route as a PSR-15 request handler (SPEC 13.1): `$clikgate->clickIds->keepRoute()`.
  * Needs `psr/http-server-handler` (brought by `psr/http-server-middleware`). The response factory is found with
  * `php-http/discovery` unless you pass one.
  *

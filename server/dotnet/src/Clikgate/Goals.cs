@@ -49,15 +49,15 @@ public class GoalOptions
     public string? Label { get; set; }
 
     /// <summary>
-    /// How the click ID was kept (change 16): <c>server_cookie</c>, <c>script_cookie</c>, <c>form</c>,
+    /// How the click ID was kept: <c>server_cookie</c>, <c>script_cookie</c>, <c>form</c>,
     /// <c>payment_metadata</c> or <c>unknown</c>. Allowed in private mode. See <see cref="ClickIds.Context(string?, Func{string, string?})"/>.
     /// </summary>
     public string? KeptBy { get; set; }
 
-    /// <summary>The browser engine (change 16): <c>webkit_ios</c>, <c>safari_mac</c>, <c>chromium</c>, <c>gecko</c> or <c>other</c>.</summary>
+    /// <summary>The browser engine: <c>webkit_ios</c>, <c>safari_mac</c>, <c>chromium</c>, <c>gecko</c> or <c>other</c>.</summary>
     public string? BrowserEngine { get; set; }
 
-    /// <summary>The platform (change 16): <c>ios</c>, <c>android</c>, <c>macos</c>, <c>windows</c>, <c>linux</c> or <c>other</c>.</summary>
+    /// <summary>The platform: <c>ios</c>, <c>android</c>, <c>macos</c>, <c>windows</c>, <c>linux</c> or <c>other</c>.</summary>
     public string? Platform { get; set; }
 
     /// <summary>
@@ -160,7 +160,7 @@ public sealed class Goals
         return reference;
     }
 
-    /// <summary>Change 16 (SPEC 9.1, 13.1): the visitor context values.</summary>
+    /// <summary>The visitor context values (SPEC 9.1, 13.1).</summary>
     internal static readonly string[] KeptByValues = ["server_cookie", "script_cookie", "form", "payment_metadata", "unknown"];
     internal static readonly string[] BrowserEngineValues = ["webkit_ios", "safari_mac", "chromium", "gecko", "other"];
     internal static readonly string[] PlatformValues = ["ios", "android", "macos", "windows", "linux", "other"];

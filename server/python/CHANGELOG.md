@@ -17,12 +17,12 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 - **Added:** `GoalStatus.RECEIVED` `received`: `goal()` / `goals.send` with a name that isn't ticked as a goal yet (or an archived goal) answers `200` with `status: "received"` and `reason` `not_counted_yet` (or `goal_archived`). It is a result, like `waiting` and `refused`: never an error and never retried.
 - **Removed (generated API):** the app events resource (`clikgate.api.app_events` and `AppEventsApi`): List App Events (`GET /v1/app-events`), Report App Events (`POST /v1/apps/{app_id}/events`) and the Event rules operations (`/v1/apps/{app_id}/event-rules`). Clikgate has one method for anything that happens in an app, website or server, `goal()`; names not ticked as goals yet show in the dashboard's "Seen from your app and website". No released version ever had them (the generator drops them through `server/codegen/removed.mjs` until the backend's public document no longer lists them).
 
-### Hashed email and phone for ad network matching (change 19)
+### Hashed email and phone for ad network matching
 
 - **Added:** `hash_for_ads(email=None, phone=None)` → `HashedIdentifiers` (`hashed_email`, `hashed_phone_e164`, `hashed_phone_digits`; only the fields given), to pass as `**kwargs` to `goal()`. Pure and offline: the email is trimmed and lowercased (must contain `@`); the phone must start with `+` or `00` and be 7-15 digits starting with 1-9 (E.164). Bad input is a local `invalid_argument` (`param` `email` / `phone`, never echoed).
 - **Added:** goal options `hashed_email`, `hashed_phone_e164` and `hashed_phone_digits` (`goal()`, `goals.send`, batch events; sync and async); `conversions.create` takes the same fields. A value that isn't 64 lowercase hex characters is a local `invalid_hashed_identifier` (`param` = the field; the value is never echoed). The private-mode guard allows the three fields on goals and conversions; hashed values are never logged.
 
-### Keep the click ID longer (change 16)
+### Keep the click ID longer
 
 - **Added:** `clikgate.click_ids.keep_route(days=30, secure=True, domain=None)`, the `/cg/keep` route for the web script's `data-server-endpoint="/cg/keep"`: the framework-neutral `handle_keep(method, headers, body)`, plus `clikgate.django.keep_view()`, `clikgate.flask.keep_view()` and `clikgate.starlette.keep_endpoint()` / `clikgate.fastapi.keep_endpoint()` (also as `route.django_view`, `route.flask_view`, `route.starlette_endpoint`). Same-origin `POST` only, a valid click ID matching the page URL's, `no-store`, empty bodies, never a redirect. `days` outside 1-400 is `invalid_argument`.
 - **Added:** `clikgate.click_ids.context(request)` → `{"click_id", "kept_by", "browser_engine", "platform"}` for a goal's options (the User-Agent is parsed in the SDK, never sent).

@@ -32,11 +32,11 @@ CLICK_ID_HEADER = "Clikgate-Click-Id"
 _DEFAULT_PARAM = "cgid"
 _PAYMENT_KEYS = ("cg_click_id", "cgid", "clikgate_click_id")
 _CONTAINERS = ("metadata", "meta", "meta_data", "note_attributes", "attributes", "custom_attributes", "customAttributes")
-#: ``kept_by`` values (SPEC 9.1, change 16): how the click ID was kept.
+#: ``kept_by`` values (SPEC 9.1): how the click ID was kept.
 KEPT_BY = ("server_cookie", "script_cookie", "form", "payment_metadata", "unknown")
-#: ``browser_engine`` values (SPEC 9.1, change 16).
+#: ``browser_engine`` values (SPEC 9.1).
 BROWSER_ENGINES = ("webkit_ios", "safari_mac", "chromium", "gecko", "other")
-#: ``platform`` values (SPEC 9.1, change 16).
+#: ``platform`` values (SPEC 9.1).
 PLATFORMS = ("ios", "android", "macos", "windows", "linux", "other")
 #: The marker cookie that says your server kept the click ID (the web script reports ``kept_by: server_cookie``).
 KEPT_COOKIE = "_cg_kept"

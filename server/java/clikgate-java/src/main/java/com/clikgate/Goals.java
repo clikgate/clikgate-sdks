@@ -53,7 +53,7 @@ public final class Goals {
     return provider;
   }
 
-  /** Change 16 (SPEC 9.1, 13.1): the visitor context values. */
+  /** The visitor context values (SPEC 9.1, 13.1). */
   static final List<String> KEPT_BY = Arrays.asList("server_cookie", "script_cookie", "form", "payment_metadata", "unknown");
   static final List<String> BROWSER_ENGINES = Arrays.asList("webkit_ios", "safari_mac", "chromium", "gecko", "other");
   static final List<String> PLATFORMS = Arrays.asList("ios", "android", "macos", "windows", "linux", "other");

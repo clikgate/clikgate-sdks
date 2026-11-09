@@ -17,12 +17,12 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 - **Added:** `GoalStatus.Received` `received`: `goal()` / `goals.send` with a name that isn't ticked as a goal yet (or an archived goal) answers `200` with `status: "received"` and `reason` `not_counted_yet` (or `goal_archived`). It is a result, like `waiting` and `refused`: never an error and never retried.
 - **Removed (generated API):** the app events resource (`clikgate.api.appEvents`, `AppEventsApi` and its `AppEvent*` / `*EventRule*` types): List App Events (`GET /v1/app-events`), Report App Events (`POST /v1/apps/{app_id}/events`) and the Event rules operations (`/v1/apps/{app_id}/event-rules`). Clikgate has one method for anything that happens in an app, website or server, `goal()`; names not ticked as goals yet show in the dashboard's "Seen from your app and website". No released version ever had them (the generator drops them through `server/codegen/removed.mjs` until the backend's public document no longer lists them).
 
-### Hashed email and phone for ad network matching (change 19)
+### Hashed email and phone for ad network matching
 
 - **Added:** `hashForAds({ email, phone })` → `HashedIdentifiers` (`hashedEmail`, `hashedPhoneE164`, `hashedPhoneDigits`; only the fields given), to spread into goal options. Pure and offline: the email is trimmed and lowercased (must contain `@`); the phone must start with `+` or `00` and be 7-15 digits starting with 1-9 (E.164). Bad input is a local `invalid_argument` (`param` `email` / `phone`, never echoed).
 - **Added:** goal options `hashedEmail`, `hashedPhoneE164`, `hashedPhoneDigits` (wire `hashed_email`, `hashed_phone_e164`, `hashed_phone_digits`) on `goal()`, `goals.send` and batch events; `conversions.create` takes the same wire fields. A value that isn't 64 lowercase hex characters is a local `invalid_hashed_identifier`. The private-mode guard allows the three fields on goals and conversions (the API accepts them there only while a destination matches by hashed identifiers). In private mode, hash on your own server.
 
-### Keep the click ID longer (change 16)
+### Keep the click ID longer
 
 - **Added:** `clikgate.clickIds.keepRoute({ days = 30, secure = true, domain? })`, the `/cg/keep` route for the web script's `data-server-endpoint="/cg/keep"`: a Fetch handler (`export const POST = clikgate.clickIds.keepRoute()` in a Next.js App Router route) with `.express`, `.node` and `.handle` adapters, and `keepRoute()` from `@clikgate/node/next`. Same-origin `POST` only, a valid click ID matching the page URL's, `no-store`, empty bodies, never a redirect. `days` outside 1-400 is `invalid_argument`.
 - **Added:** `clikgate.clickIds.context(req)` → `{ clickId, keptBy, browserEngine, platform }` for a goal's options (the User-Agent is parsed in the SDK, never sent).
