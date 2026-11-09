@@ -98,7 +98,7 @@ jobs:
           extensions: curl, mbstring
           coverage: none
       - name: Use the core package from this checkout
-        run: composer config repositories.clikgate-php '{"type":"path","url":"../php","options":{"symlink":false,"versions":{"clikgate/clikgate-php":"1.0.0"}}}'
+        run: composer config repositories.clikgate-php '{"type":"path","url":"../php","options":{"symlink":false,"versions":{"clikgate/clikgate-php":"2.0.0"}}}'
       # Laravel 11 is EOL (2026-03-12) and every 11.x release now carries a security advisory, so Composer 2.9+
       # refuses to resolve it. It stays in the supported range (docs/DECISIONS.md), so this test job still installs
       # it to prove compatibility. Only this matrix row, only in CI; nothing published depends on it.
