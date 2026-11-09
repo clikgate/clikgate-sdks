@@ -33,6 +33,22 @@ class ClikgateAutoConfigurationTest {
   }
 
   @Test
+  void identitySecretsComeFromProperties() {
+    new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(ClikgateAutoConfiguration.class))
+        .withPropertyValues("clikgate.api-key=cg_test_spring000", "clikgate.identity-secret=cgis_spring_single", "clikgate.identity-secrets.app_rider=cgis_spring_rider")
+        .run(ctx -> {
+          Clikgate c = ctx.getBean(Clikgate.class);
+          String token = c.createIdentityToken("user_42");
+          long issued = Long.parseLong(token.substring(token.lastIndexOf('.') + 1));
+          assertThat(token).isEqualTo(com.clikgate.IdentityTokens.create("user_42", "cgis_spring_single", issued));
+          String rider = c.createIdentityToken("user_42", "app_rider");
+          long riderIssued = Long.parseLong(rider.substring(rider.lastIndexOf('.') + 1));
+          assertThat(rider).isEqualTo(com.clikgate.IdentityTokens.create("user_42", "cgis_spring_rider", riderIssued));
+        });
+  }
+
+  @Test
   void canBeDisabled() {
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(ClikgateAutoConfiguration.class))

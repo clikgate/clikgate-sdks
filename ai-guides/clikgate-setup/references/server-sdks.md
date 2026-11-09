@@ -36,7 +36,7 @@ Don't add a dependency on a package marked "not available yet": it isn't publish
 npm install @clikgate/node
 ```
 
-Create one client and reuse it. `goal()` is the one goal method, for Standard and Payment goals alike. It never throws: it queues the event and sends it in the background, in batches, with safe retries. `goals.send()` waits and returns the result. Its status is a `GoalStatus`: `GoalStatus.Counted`, `Waiting` or `Refused`, with a `reason`, plus `goal_kind`: `GoalKind.Standard` or `GoalKind.Payment`. `waiting` and `refused` are results, not errors.
+Create one client and reuse it. `goal()` is the one goal method, for Standard and Payment goals alike. It never throws: it queues the event and sends it in the background, in batches, with safe retries. `goals.send()` waits and returns the result. Its status is a `GoalStatus`: `GoalStatus.Counted`, `Waiting`, `Received` or `Refused`, with a `reason`, plus `goal_kind`: `GoalKind.Standard` or `GoalKind.Payment`. `waiting`, `received` (the name isn't ticked as a goal in the dashboard yet) and `refused` are results, not errors, and are never retried.
 
 ```ts clikgate-check
 import { Clikgate } from '@clikgate/node';
@@ -73,6 +73,22 @@ The pattern: capture the click ID when the visitor lands, save it with the busin
 ### Payment goals confirmed by the server
 
 Right after the server's own verification with the gateway, either send the Payment goal with the confirmed value, `await clikgate.goals.send('order_paid', { reference, provider: Provider.Paystack, value: '7500', currency: 'NGN', clickId })` (from the server it is a trusted confirmation; `Provider` lists every gateway, and a provider key string works for a newer one), or call `await clikgate.payments.fromPaystack(verified)`, or `fromFlutterwave`, `fromMonnify` or `fromStripe`. For other gateways, use `payments.confirm({...})`. The helpers send only the reference, status, exact amount, currency and time, never the whole response. Never call them with browser or app data. See [payments.md](payments.md).
+
+### Identify users: identity tokens (path A)
+
+When the app calls `identifyUser()` with a customer ID, return an identity token from the server in the responses the app already calls (sign-in, and "current user" / "me" at app open). One extra field, no new endpoint, no network call. The secret is `CLIKGATE_IDENTITY_SECRET` in the server's environment only (add `CLIKGATE_IDENTITY_SECRET=` with no value to `.env.example`); for several apps, `CLIKGATE_IDENTITY_SECRETS` is a JSON object of app IDs to secrets and you pass `{ appId }`.
+
+```ts clikgate-check
+import { createIdentityToken } from '@clikgate/node';
+
+export function signInResponse(user: { id: string; name: string }): { user: { id: string; name: string }; clikgateIdentityToken: string } {
+  return { user, clikgateIdentityToken: createIdentityToken(user.id) }; // reads CLIKGATE_IDENTITY_SECRET
+}
+```
+
+- `user.id` is the business's own user ID, never an email or phone number. It throws `ClikgateServerOnlyError` in a browser or React Native: never import it into app or website code.
+- **Path B** (no secret or token): the app sends `getInstallationId()` with its sign-in request (skip when it is `null`), and the server calls `await clikgate.identifyUser({ appId: 'app_…', installationId, customerId: user.id })` after sign-in and at every signed-in app open.
+- Guide: https://clikgate.com/docs/identify-users.
 
 ### Webhooks
 
@@ -114,10 +130,12 @@ curl https://api.clikgate.com/v1/goals/events \
 
 - `goal` and `reference` are required. Clikgate dedupes `(goal, reference)`: resending returns `200` with the stored event, so retries never count twice. Correct a goal with a reversal, not by resending it with a different body.
 - Optionally send an `Idempotency-Key` header: a random UUID per call, reused on that call's retries. Never derive it from the reference (Clikgate already dedupes the reference).
-- Responses give the goal status, `counted`, `waiting` or `refused` (field `status`), `reason`, `goal_kind`, which is `standard` or `payment`, and `event_status`, the attribution state,, `value` as a decimal string (normal units) and `value_minor` as an integer (minor units, e.g. kobo). Read `value` for exact amounts; never parse it as a float. Ignore fields you don't know: new ones can appear.
+- Responses give the goal status, `counted`, `waiting`, `received` or `refused` (field `status`), `reason`, `goal_kind`, which is `standard` or `payment`, and `event_status`, the attribution state,, `value` as a decimal string (normal units) and `value_minor` as an integer (minor units, e.g. kobo). Read `value` for exact amounts; never parse it as a float. Ignore fields you don't know: new ones can appear.
 - A Payment goal from the server: add `"provider"` (a key from `GET /v1/payment-gateways`, e.g. `"paystack"`) and the payment reference, with the confirmed `value` (required, above 0) and `click_id` (not `code`).
 - Send `value` as a decimal **string** built from the language's exact type: Python `Decimal` (`format(d, "f")`), Java `BigDecimal.toPlainString()`, .NET `decimal.ToString(CultureInfo.InvariantCulture)`, PHP strings. Never use floats.
 - Retry only network errors, `429` (honour `Retry-After`), `500`, `502`, `503` and `504`. Never retry other statuses.
+- `422 unknown_goal` (the organisation turned off "Allow unknown goal names" and no goal or alias has this name; live keys only) and `422 goal_archived` in that mode are final: the error envelope also carries `status: "refused"`, `reason`, `counted: false` and `goal_kind: null`. The SDKs raise their invalid-request error with that code; for `unknown_goal` they log ``Goal `{name}` isn't set up in Clikgate`` only when debug logging is on. Never check names locally or cache the setting; the fix is setting the goal up in the dashboard.
 - Batches: `POST /v1/goals/events/batch` with `{"events": [...]}` (at most 500).
 - Reversals (refunds, cancellations): `POST /v1/goals/events/reverse` with `{"goal", "reference", "value"?}`.
+- Identity tokens (path A, no network call): `base64url_nopad(HMAC_SHA256(CLIKGATE_IDENTITY_SECRET, customerId + "." + issuedAt)) + "." + issuedAt`, with UTF-8 bytes and `issuedAt` in whole Unix seconds. Python: `base64.urlsafe_b64encode(hmac.new(secret.encode(), f"{customer_id}.{issued}".encode(), hashlib.sha256).digest()).rstrip(b"=").decode() + f".{issued}"`. Run it on the server only. Path B instead: `POST /v1/people/identify` with `{"app_id", "installation_id", "customer_id", "label"?}`.
 - Webhook signatures: header `Clikgate-Signature: t=<unix seconds>,v1=<hex>`. The hex is HMAC-SHA256 with the whole secret (including `whsec_`) as the key, over `"<t>." + raw body`. Compare in constant time, and reject timestamps more than 300 s away.

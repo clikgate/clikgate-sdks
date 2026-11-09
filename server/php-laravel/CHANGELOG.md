@@ -4,6 +4,14 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Strict goal names
+- A queued goal (`SendGoal`) refused with `unknown_goal` (the organisation accepts only set-up goals) or `goal_archived` ends the job without failing it: it is never retried or kept as a failed job. With `LOG_LEVEL=debug` the SDK logs "Goal `{name}` isn't set up in Clikgate" (goal name only).
+
+### Identity tokens
+- `Clikgate::createIdentityToken($customerId, ['appId' => …])` with the new config keys `identity_secret` (`CLIKGATE_IDENTITY_SECRET`) and `identity_secrets` (`CLIKGATE_IDENTITY_SECRETS`, a JSON object of app IDs to secrets). A malformed `identity_secrets` only fails token creation (`invalid_identity_secrets`); the rest of the client keeps working. Guide: https://clikgate.com/docs/identify-users.
+- `Clikgate::identifyUser([...])` on the facade, documented with path B (`appId` + `installationId` + `customerId`, no secret or token).
+- From `clikgate/clikgate-php`: `GoalStatus::Received` and the app events resource removed from the generated API.
+
 ### Hashed email and phone for ad network matching (change 19)
 - `\Clikgate\HashForAds::hash()` and the goal options `hashedEmail`, `hashedPhoneE164`, `hashedPhoneDigits` (from `clikgate/clikgate-php`) work through the facade and `SendGoal`.
 

@@ -27,7 +27,7 @@ clikgate.goal("account_opened", Goal.builder().clickId(clickId).reference("APP-5
 Create one client and reuse it. It is thread-safe.
 
 - **`goal()`** never throws. It queues the event, and a daemon thread sends it in batches with safe retries. A JVM shutdown hook flushes the queue (`Spring` closes the bean instead).
-- **`goals().send()`** waits for the API and returns the `GoalEvent`: `getStatus()` is `GoalStatus.COUNTED`, `WAITING` or `REFUSED` (with `getReason()`), plus `getGoalKind()` (`GoalKind.STANDARD` or `GoalKind.PAYMENT`), `getEventStatus()`, `getAttributedTo()`, …. `WAITING` and `REFUSED` are results, not exceptions.
+- **`goals().send()`** waits for the API and returns the `GoalEvent`: `getStatus()` is `GoalStatus.COUNTED`, `WAITING`, `RECEIVED` or `REFUSED` (with `getReason()`), plus `getGoalKind()` (`GoalKind.STANDARD` or `GoalKind.PAYMENT`), `getEventStatus()`, `getAttributedTo()`, …. `received` means the name isn't ticked as a goal in the dashboard yet (or the goal is archived): it is stored, not counted, and shows in "Seen from your app and website". Every status is a result, never an error, and none is retried. Goals work on every plan, up to the plan's allowance.
 
 `goal()` is the only goal method: there is no separate payment method. The goal's kind (Standard or Payment) is set in the goal's settings in the dashboard, never in the call.
 
@@ -52,6 +52,27 @@ clikgate.goal("account_opened", Goal.builder()
 ```
 
 In private mode, hash on your own server: Clikgate never hashes for you there. The hashes are never written to the SDK's logs or `onError` context.
+
+## Identify your users
+
+Two ways to tell Clikgate which of your users is using the app. Full guide: https://clikgate.com/docs/identify-users. The customer ID is your own user ID from your database, never an email, phone number or ID number. Anonymous users don't need either path.
+
+**Path A (default): identity token.** Create the identity secret in Apps › your app › Identity secret and store it as `CLIKGATE_IDENTITY_SECRET` on your server only. `IdentityTokens.create(customerId[, appId])` (also `clikgate.createIdentityToken()`, with the builder's `identitySecret(...)` / `identitySecrets(...)`; Spring Boot: `clikgate.identity-secret`, `clikgate.identity-secrets.<appId>`) signs a token with no network call; return it in the responses the app already calls, and the app passes it to the mobile SDK's `identifyUser()`. Tokens last 30 days by default and are never force-refreshed. Throws `ClikgateServerOnlyException` in an Android app (when `android.os.Build` loads).
+
+```java
+// sign-in and "current user" responses: one extra field
+response.put("clikgateIdentityToken", IdentityTokens.create(user.getId()));   // reads CLIKGATE_IDENTITY_SECRET
+IdentityTokens.create(user.getId(), "app_…");                                  // several apps: CLIKGATE_IDENTITY_SECRETS
+```
+
+**Path B: installation ID, no secret or token.** The app reads `getInstallationId()` and includes it in its sign-in request; your server calls `identifyUser` with the app ID, installation ID and customer ID, after sign-in and at every signed-in app open. Clikgate accepts installations active in the last 7 days.
+
+```java
+// The app sends Clikgate.getInstallationId() with its sign-in request (null when tracking is off: skip)
+if (installationId != null) {
+  clikgate.identifyUser(IdentifyUserParams.builder().appId("app_…").installationId(installationId).customerId(user.getId()).build());
+}
+```
 
 ## People: identify a user and label them
 

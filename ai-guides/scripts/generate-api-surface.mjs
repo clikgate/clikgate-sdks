@@ -193,16 +193,11 @@ function flutter() {
       'class ClikgateDeepLink {',
       ...fields('ClikgateDeepLink'),
       '}',
-      '',
-      'class ClikgateMoney {',
-      '  ' + mustMatch(models, /const ClikgateMoney\.ofMinor\([^)]*\)/, 'Flutter ClikgateMoney.ofMinor') + '; // minor units: ClikgateMoney.ofMinor(1500000, \'NGN\') is ₦15,000',
-      ...fields('ClikgateMoney'),
-      '}',
     ]),
   ].join('\n');
 }
 
-// Change 09 (X.E10): the money helper `ClikgateMoney.ofMinor(...)`, read from each SDK's source.
+// Change 22: `ClikgateMoney` (the track() revenue helper) was removed from every mobile SDK with track().
 function mustMatch(src, re, what) {
   const m = re.exec(src);
   if (!m) throw new Error(`${what} not found in the SDK source (has it moved? update generate-api-surface.mjs)`);
@@ -243,11 +238,6 @@ function reactNative() {
       'const referrals: { // import { referrals } from \'@clikgate/react-native\'',
       ...refs.map((s) => '  ' + s + ';'),
       '};',
-      '',
-      'const ClikgateMoney: { // import { ClikgateMoney } from \'@clikgate/react-native\'',
-      '  ' + mustMatch(models, /ofMinor\(amountMinor: number, currency: string\): ClikgateMoney/, 'React Native ClikgateMoney.ofMinor') + '; // minor units',
-      '};',
-      ...iface('ClikgateMoney'),
       '',
       ...iface('ClikgateConfig'),
       ...iface('GoalOptions'),
@@ -315,10 +305,6 @@ function android() {
       enumClass('Models.kt', 'GoalKind'),
       'class Provider { companion object { val PAYSTACK: Provider; val FLUTTERWAVE: Provider; …; fun fromString(value: String): Provider? } } // every gateway, generated',
       dataClass('Models.kt', 'ClikgateDeepLink'),
-      '',
-      'class ClikgateMoney(val amountMinor: Long, val currency: String) {',
-      '    companion object { ' + mustMatch(stripComments(read(pkg, 'Models.kt')), /fun ofMinor\(amountMinor: Long, currency: String\): ClikgateMoney/, 'Android ClikgateMoney.ofMinor') + ' } // minor units: ClikgateMoney.ofMinor(1_500_000, "NGN") is ₦15,000',
-      '}',
     ]),
   ].join('\n');
 }
@@ -358,11 +344,6 @@ function ios() {
       '',
       'struct ClikgateDeepLinkResult {',
       ...structFields('ClikgateModels.swift', 'ClikgateDeepLinkResult'),
-      '}',
-      '',
-      'struct ClikgateMoney {',
-      '    ' + mustMatch(stripComments(read(pub, 'ClikgateModels.swift')), /static func ofMinor\(_ amountMinor: Int64, currency: String\) -> ClikgateMoney/, 'iOS ClikgateMoney.ofMinor') + ' // minor units: ClikgateMoney.ofMinor(1_500_000, currency: "NGN") is ₦15,000',
-      ...structFields('ClikgateModels.swift', 'ClikgateMoney'),
       '}',
     ]),
   ].join('\n');

@@ -8,6 +8,7 @@ import com.clikgate.Version;
 import com.clikgate.exception.ClikgateException;
 import com.clikgate.model.ServerSdkConfig;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,6 +39,46 @@ public final class Core {
     this.logger = logger;
     this.privateMode = privateMode;
     this.onError = onError;
+  }
+
+  /** The API's reason (and error code) for a goal name that isn't set up, while only set-up goals are accepted. */
+  public static final String UNKNOWN_GOAL = "unknown_goal";
+
+  /**
+   * A goal the API refused because the organisation accepts only goals it has set up ({@code unknown_goal}): one
+   * debug-level line, shown only when debug logging is on. The goal name only: never the reference, customer ID,
+   * values or labels. The SDK never checks names itself and never remembers the refusal. Never throws.
+   */
+  public void noteRefusedGoal(@Nullable Object goal, @Nullable Object codeOrReason) {
+    if (!UNKNOWN_GOAL.equals(codeOrReason) || !(goal instanceof String)) {
+      return;
+    }
+    try {
+      logger.debug(UNKNOWN_GOAL, "Goal `" + goal + "` isn't set up in Clikgate");
+    } catch (RuntimeException ignored) {
+      // a broken logger must not break the caller
+    }
+  }
+
+  /** {@link #noteRefusedGoal} for each item of a batch result ({@code wires.get(i)} is the event sent at index i). */
+  public void noteRefusedItems(List<? extends Map<String, Object>> wires, @Nullable Object data) {
+    Object items = data instanceof Map ? ((Map<?, ?>) data).get("data") : null;
+    if (!(items instanceof List)) {
+      return;
+    }
+    for (Object o : (List<?>) items) {
+      if (!(o instanceof Map)) {
+        continue;
+      }
+      Map<?, ?> item = (Map<?, ?>) o;
+      Object index = item.get("index");
+      if (!(index instanceof Number) || ((Number) index).intValue() < 0 || ((Number) index).intValue() >= wires.size()) {
+        continue;
+      }
+      Object detail = Boolean.TRUE.equals(item.get("ok")) ? item.get("goal_event") : item.get("error");
+      Object reason = detail instanceof Map ? ((Map<?, ?>) detail).get(Boolean.TRUE.equals(item.get("ok")) ? "reason" : "code") : null;
+      noteRefusedGoal(wires.get(((Number) index).intValue()).get("goal"), reason);
+    }
   }
 
   /** Warn with a stable code. With {@code onceKey}, at most once per client for that key. */

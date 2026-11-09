@@ -16,6 +16,8 @@ conformance/
   mock-server/judge.mjs   matching rules
   schema/case.schema.json JSON Schema of a case file
   vectors/payment-helper-vectors.json  copy of clikgate_api/docs/payment-helper-vectors.json (change 11 helper vectors; --check fails on drift)
+  vectors/identity-token-vectors.json  createIdentityToken() vectors made by the backend's sign_identity_token (change 22;
+                                       tools/build_identity_token_vectors.py [--check]); each SDK's unit tests read it
 ```
 
 Commands:

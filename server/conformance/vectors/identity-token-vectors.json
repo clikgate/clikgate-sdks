@@ -1,0 +1,106 @@
+{
+  "description": "Change 22 I.1 / R.27 identity-token vectors. token = base64url_nopad(HMAC_SHA256(secret, customer_id + '.' + issued_at)) + '.' + issued_at, with secret and message encoded as UTF-8 and no Unicode normalisation (the precomposed and decomposed e-acute vectors differ). Built by server/conformance/tools/build_identity_token_vectors.py from clikgate_api/src/sdk/utils/identity_tokens.py sign_identity_token. Every server SDK's createIdentityToken() must return `token` for each vector, and refuse every invalid_customer_ids entry (customer IDs are 1-255 characters, counted as Unicode code points, as the backend's identify schema does). The secrets and customer IDs are invented. Non-ASCII text is written as \\u escapes so no editor can normalise it.",
+  "vectors": [
+    {
+      "name": "ascii",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "user_42",
+      "issued_at": 1767225600,
+      "token": "JweA6pz058Yu4n6ocI0DFuDEmO8ZnxCUkwKFnDuGeL4.1767225600"
+    },
+    {
+      "name": "dots_in_customer_id",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "acct.2026.0042",
+      "issued_at": 1767225600,
+      "token": "tfMswMykVq_gO4OM3dxJN3B2KAP-kDGucPsEu9R1n6Q.1767225600"
+    },
+    {
+      "name": "latin_with_combining_marks",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "ad\u00e9b\u00e1y\u1ecd\u0300_01",
+      "issued_at": 1767225600,
+      "token": "wi1MH20qqlJU9_yGplgeYd-sB5zCAbcpp61mK8eyExo.1767225600"
+    },
+    {
+      "name": "precomposed_e_acute",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "caf\u00e9",
+      "issued_at": 1767225600,
+      "token": "lXQMrWtSvMocJPt5dVkicrKBWfE9LQR96Qd8fD1tATI.1767225600"
+    },
+    {
+      "name": "decomposed_e_acute",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "cafe\u0301",
+      "issued_at": 1767225600,
+      "token": "jNw-3SvETGszeEh928yogL1QfXPr_LO480kHslXDra8.1767225600"
+    },
+    {
+      "name": "cjk",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "\u9867\u5ba2-8812",
+      "issued_at": 1767225600,
+      "token": "VjZEpZyuMyv4nP3t_dbGtHsU8TbJ2NmtDDtQc8DtPJQ.1767225600"
+    },
+    {
+      "name": "emoji_outside_bmp",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "user_\ud83e\udd81_7",
+      "issued_at": 1767225600,
+      "token": "GgY_KpL1Gv53N7AdjDHqNDwTF8U_dus18Yyk3-5_7bQ.1767225600"
+    },
+    {
+      "name": "arabic",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "\u0639\u0645\u064a\u0644_19",
+      "issued_at": 1767225600,
+      "token": "XqCxxHu7Ga0cNGB1X_kUiFMwO_CX4uJG7WQtMD8iKtA.1767225600"
+    },
+    {
+      "name": "max_length_255",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\u00e9",
+      "issued_at": 1767225600,
+      "token": "pR2jozl19iJZfQls-WDOiVVJO9HsPoinwuBVCpucmY8.1767225600"
+    },
+    {
+      "name": "issued_at_after_2038",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "user_42",
+      "issued_at": 4102444800,
+      "token": "CYDU2BqHyeVjmAbVXaOcRMqMUQnboFjKZ5sy5MFbGrs.4102444800"
+    },
+    {
+      "name": "issued_at_zero",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "user_42",
+      "issued_at": 0,
+      "token": "WRqIM2Lqfobl9PF7ZJReB5gVXjg8eVZFSo9MWbq6ayo.0"
+    },
+    {
+      "name": "other_app_secret",
+      "secret": "cgis_VectorOnlyOtherApp00000000000000000000",
+      "customer_id": "user_42",
+      "issued_at": 1767225600,
+      "token": "H7vu0XYz3ArU_Dda_mPcXY6rhKQssIKG-O3XerMOWRY.1767225600"
+    },
+    {
+      "name": "non_ascii_secret",
+      "secret": "cgis_Vector\u00e9\u00df\u2603",
+      "customer_id": "user_42",
+      "issued_at": 1767225600,
+      "token": "JoML0UrYv5E4lyqUgynpiKO2FgZoHefmb6yW-SExu8I.1767225600"
+    }
+  ],
+  "invalid_customer_ids": [
+    {
+      "name": "empty",
+      "customer_id": ""
+    },
+    {
+      "name": "too_long_256",
+      "customer_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  ]
+}

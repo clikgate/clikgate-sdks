@@ -52,6 +52,23 @@ Route::clikgateKeep('/cg/keep');
 - **Visitor context for goals:** `Clikgate::clickIds()->context($request)` returns `clickId`, `keptBy`, `browserEngine` and `platform`, worked out in the SDK from the cookie and the `User-Agent` (the User-Agent itself is never sent): `Clikgate::goal('account_opened', ['reference' => $application->reference, ...Clikgate::clickIds()->context($request)])`. Allowed in private mode.
 - **Hashed email and phone for ad networks:** when the business has turned on matching by hashed email or phone for a destination, add `\Clikgate\HashForAds::hash($email, $phone)` to a goal's options (`hashedEmail`, `hashedPhoneE164`, `hashedPhoneDigits`; see the `clikgate/clikgate-php` README). In private mode, hash on your own server: Clikgate never hashes for you there.
 
+## Identify your users
+
+Full guide: https://clikgate.com/docs/identify-users. **Path A (default):** set `CLIKGATE_IDENTITY_SECRET` (Apps › your app › Identity secret) on the server only, and add one field to your sign-in and "current user" responses; the app passes it to the mobile SDK's `identifyUser()`. For several apps, `CLIKGATE_IDENTITY_SECRETS` is a JSON object of app IDs to secrets.
+
+```php
+return response()->json(['user' => $user, 'clikgateIdentityToken' => Clikgate::createIdentityToken((string) $user->id)]);
+Clikgate::createIdentityToken((string) $user->id, ['appId' => 'app_…']);   // several apps
+```
+
+**Path B (no secret or token):** the app sends `getInstallationId()` with its sign-in request, and you call `Clikgate::identifyUser()` after sign-in and at every signed-in app open (skip it when there's no installation ID):
+
+```php
+if ($request->filled('installation_id')) {
+    Clikgate::identifyUser(['appId' => 'app_…', 'installationId' => $request->string('installation_id')->toString(), 'customerId' => (string) $user->id]);
+}
+```
+
 ## Queued sending (recommended)
 
 Set `CLIKGATE_QUEUE=redis` (any queue connection) and, optionally, `CLIKGATE_QUEUE_NAME`.
@@ -63,7 +80,7 @@ Set `CLIKGATE_QUEUE=redis` (any queue connection) and, optionally, `CLIKGATE_QUE
 ## Everything else
 
 - `Clikgate::payments()->fromPaystack($verifyResponse)` (and `fromFlutterwave`, `fromMonnify`, `fromStripe`, `confirm([...])`): confirm a payment **right after your own verification with the gateway**, never with data from the browser or the app (see the PHP SDK's Payments section).
-- `Clikgate::goal('order_paid', ['reference' => 'T123456', 'provider' => Provider::Paystack])` reports a payment on a Payment goal; results carry `status` (`GoalStatus`: `counted`, `waiting`, `refused`). See the PHP SDK's Payment goals section.
+- `Clikgate::goal('order_paid', ['reference' => 'T123456', 'provider' => Provider::Paystack])` reports a payment on a Payment goal; results carry `status` (`GoalStatus`: `counted`, `waiting`, `received`, `refused`). See the PHP SDK's Payment goals section.
 - `Clikgate::goals()->send(…)`, `Clikgate::links()`, `Clikgate::clickIds()` and `Clikgate::api()`.
 - `Clikgate::verifyWebhook($request->getContent(), $request->header('Clikgate-Signature'), $secret)`.
 - `app(\Clikgate\Clikgate::class)` gives the client itself.

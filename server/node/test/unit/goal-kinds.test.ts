@@ -8,7 +8,7 @@ const CLICK = 'clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6';
 test('enums carry the wire values', () => {
   assert.equal(GoalKind.Payment, 'payment');
   assert.equal(GoalKind.Standard, 'standard');
-  assert.deepEqual(Object.values(GoalStatus), ['counted', 'waiting', 'refused']);
+  assert.deepEqual(Object.values(GoalStatus), ['counted', 'waiting', 'refused', 'received']);
   assert.equal(Provider.Paystack, 'paystack');
   assert.equal(Provider.MtnMomo, 'mtn_momo');
   assert.equal(Provider.Custom, 'custom');

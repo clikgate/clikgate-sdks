@@ -17,6 +17,12 @@ public interface ClikgateLogger {
 
   void error(String code, String message);
 
+  /**
+   * A debug-level line, shown only when debug logging is on for {@code com.clikgate} (SLF4J debug, java.util.logging
+   * {@code FINE}). The default does nothing, so existing loggers keep working.
+   */
+  default void debug(String code, String message) {}
+
   /** The default: SLF4J if present, else java.util.logging. */
   static ClikgateLogger standard() {
     try {
@@ -39,6 +45,11 @@ public interface ClikgateLogger {
       @Override
       public void error(String code, String message) {
         log(Level.SEVERE, code, message);
+      }
+
+      @Override
+      public void debug(String code, String message) {
+        log(Level.FINE, code, message);
       }
 
       private void log(Level level, String code, String message) {
@@ -74,6 +85,19 @@ public interface ClikgateLogger {
           org.slf4j.MDC.put("clikgate_code", code);
           try {
             logger.error("{} ({})", message, code);
+          } finally {
+            org.slf4j.MDC.remove("clikgate_code");
+          }
+        }
+
+        @Override
+        public void debug(String code, String message) {
+          if (!logger.isDebugEnabled()) {
+            return;
+          }
+          org.slf4j.MDC.put("clikgate_code", code);
+          try {
+            logger.debug("{} ({})", message, code);
           } finally {
             org.slf4j.MDC.remove("clikgate_code");
           }

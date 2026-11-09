@@ -30,6 +30,7 @@ class EnumsTest {
     assertNull(GoalKind.fromValue("subscription"));
     assertNull(GoalKind.fromValue(null));
     assertSame(GoalStatus.WAITING, GoalStatus.fromValue("waiting"));
+    assertSame(GoalStatus.RECEIVED, GoalStatus.fromValue("received")); // change 22 R.9
     assertEquals("counted", GoalStatus.COUNTED.getValue());
     assertNull(GoalStatus.fromValue("deferred"));
   }

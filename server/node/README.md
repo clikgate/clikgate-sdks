@@ -22,8 +22,8 @@ clikgate.goal('account_opened', { clickId, reference: 'APP-55231', value: '20000
 Create one client and reuse it. `goal()` is the one method for every goal, Standard or Payment.
 
 - **`goal()`** never throws. It queues the event and sends it in the background, in batches, with safe retries.
-- **`goals.send()`** waits for the API and returns the result: `status` is a `GoalStatus` (`counted`, `waiting` or
-  `refused`), with `reason`, `goal_kind` (`GoalKind`), `attributed_to`, …
+- **`goals.send()`** waits for the API and returns the result: `status` is a `GoalStatus` (`counted`, `waiting`,
+  `received` or `refused`), with `reason`, `goal_kind` (`GoalKind`), `attributed_to`, … `received` means the name isn't ticked as a goal in the dashboard yet (or the goal is archived): it is stored, not counted, and shows in "Seen from your app and website". Every status is a result, never an error, and none is retried. Goals work on every plan, up to the plan's allowance.
 
 ```ts
 import { GoalStatus } from '@clikgate/node';
@@ -49,6 +49,26 @@ clikgate.goal('account_opened', {
 The email is trimmed and lowercased. The phone must include its country code (`+234…` or `00234…`); a national number such as `0803 123 4567` is an `InvalidRequestError` (`invalid_argument`), and the SDK never guesses the country. A hashed value that isn't 64 lowercase hex characters is refused before sending (`invalid_hashed_identifier`). `conversions.create` takes the same wire fields. Hashed values are never logged.
 
 In private mode, hash on your own server: Clikgate never hashes for you there.
+
+## Identify your users
+
+Two ways to tell Clikgate which of your users is using the app. Full guide: https://clikgate.com/docs/identify-users. The customer ID is your own user ID from your database, never an email, phone number or ID number. Anonymous users don't need either path.
+
+**Path A (default): identity token.** Create the identity secret in Apps › your app › Identity secret and store it as `CLIKGATE_IDENTITY_SECRET` on your server only. `createIdentityToken(customerId, { appId? })` (also `clikgate.createIdentityToken()`, with the `identitySecret` / `identitySecrets` options) signs a token with no network call; return it in the responses the app already calls, and the app passes it to the mobile SDK's `identifyUser()`. Tokens last 30 days by default and are never force-refreshed. Throws `ClikgateServerOnlyError` in a browser or React Native.
+
+```ts
+import { createIdentityToken } from '@clikgate/node';
+// sign-in and "current user" responses: one extra field
+res.json({ user, clikgateIdentityToken: createIdentityToken(user.id) });   // reads CLIKGATE_IDENTITY_SECRET
+createIdentityToken(user.id, { appId: 'app_…' });                          // several apps: CLIKGATE_IDENTITY_SECRETS
+```
+
+**Path B: installation ID, no secret or token.** The app reads `getInstallationId()` and includes it in its sign-in request; your server calls `identifyUser` with the app ID, installation ID and customer ID, after sign-in and at every signed-in app open. Clikgate accepts installations active in the last 7 days.
+
+```ts
+// The app sends Clikgate.getInstallationId() with its sign-in request (null when tracking is off: skip)
+if (body.installationId) await clikgate.identifyUser({ appId: 'app_…', installationId: body.installationId, customerId: user.id });
+```
 
 ## People: identify a user and label them
 

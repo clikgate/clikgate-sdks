@@ -491,3 +491,118 @@ Built 2026-10-26, in that order. .NET was added after the .NET SDK (10.0.403) wa
 - **Versions.** `ai-guides/versions.json` follows the mobile SDK patch releases (Android, iOS, Flutter 1.5.1, React
   Native 1.6.1, setup 1.1.1); `api-surface.md` regenerated (it also picked up earlier drift: `blockMessage`,
   Node `keepRoute` / `context`) and `ai-guides/dist` rebuilt.
+
+
+## Change 22 C22-B3 (S, I.1, R.9, R.27, R.44): server SDKs and AI guides (2026-11-08)
+
+- **Generated API: removal applied in the generator, not by re-syncing.** The backend builder was still changing the
+  goal and app-event routes, and `clikgate_api/docs/openapi-public.json` still listed the app events resource, the server
+  event intake, the event-rule routes (all four forms) and the SDK events route. Re-syncing (`--from`) would have
+  brought them back, so the vendored document is unchanged and `server/codegen/removed.mjs` drops those paths (and
+  adds GoalStatus `received`) before filtering. It is idempotent: once the backend's public document has caught up it
+  does nothing, and the next `generate.mjs --from ../clikgate_api` is the normal sync. `filter-report.txt` records
+  counts only. **Re-run `node server/codegen/generate.mjs --from ../clikgate_api` after the backend's C22-B1 lands**
+  to pick up its other schema changes (the funnel/progress `app_event` values, `measurement_partner_sends_app_events`,
+  `app_event_webhook_names`, `goal-names`, aliases), which this change deliberately doesn't invent.
+- **GoalStatus `received` (R.9).** Added to the shared enums in every language (generated). No send-path change was
+  needed: every SDK already treated any 2xx goal answer as a result (never retried, never passed to `on_error`).
+  Conformance `goals.send.status.received_not_counted_yet` and `goals.background.received_not_counted_yet` prove it in
+  all five languages. The old `errors.410.goal_archived` case stays: it tests the generic 410 → `InvalidRequestError`
+  mapping, which any 410 still follows.
+- **`createIdentityToken` shape.** A function that needs no client or API key (Node `createIdentityToken`, Python
+  `create_identity_token`, PHP `IdentityToken::create`, Java `IdentityTokens.create`, .NET `IdentityTokens.Create`),
+  plus a client method that uses the client's own `identitySecret` / `identitySecrets` options (Laravel config keys,
+  Spring properties, ASP.NET Core configuration). The function form also takes an explicit `secret` and `issuedAt` (for
+  tests and odd setups); the client method doesn't take `secret`, so secrets come from configuration only.
+- **The per-app map.** `CLIKGATE_IDENTITY_SECRETS` is a JSON object of app IDs to secrets (the spec said "a per-app
+  map" without a format). With `appId`, that app's entry wins; an app not in the map falls back to the single
+  `CLIKGATE_IDENTITY_SECRET` (a one-app server that passes `appId` anyway keeps working). Several apps and no `appId`
+  and no single secret: `missing_identity_secret` with param `app_id`. A malformed map is `invalid_identity_secrets`,
+  never echoed; Laravel reports it only when a token is created, so a bad value can't break `goal()`.
+- **Customer ID rule.** 1-255 characters counted as Unicode code points, matching the backend's identify schema
+  (`customer_user_id` max 255); no normalisation (the vectors include precomposed and decomposed é). PHP also refuses
+  invalid UTF-8. Errors never contain the customer ID, token or secret.
+- **Server-only detection (R.27).** Node: `window`, `document`, or `navigator.product === "ReactNative"`. Java:
+  `android.os.Build` loads (checked once, cached). .NET: MAUI/Xamarin by OS platform (Android, iOS, tvOS, Mac Catalyst,
+  watchOS) or loaded assembly (`Microsoft.Maui`, `Microsoft.Maui.Controls`, `Xamarin.Forms.Core`, `Xamarin.iOS`,
+  `Xamarin.Mac`, `Mono.Android`, `Microsoft.iOS`/`Android`/`MacCatalyst`/`tvOS`), not `Microsoft.Maui.Graphics` alone
+  (it runs on servers too); browser (Blazor WebAssembly) and WASI builds are refused as well, since the rule is "refuses
+  browser and mobile builds". **Python is applicable after all:** Pyodide/Emscripten, WASI, and CPython's official iOS
+  and Android builds (`sys.platform` `ios` / `android`, 3.13+) are refused. **PHP: not applicable** (no browser or mobile
+  PHP runtime), so no check and no exception class.
+- **Shared vectors.** `server/conformance/vectors/identity-token-vectors.json`, written by
+  `server/conformance/tools/build_identity_token_vectors.py`, which loads the backend's own `sign_identity_token` from
+  the sibling checkout (`--check` for drift). Non-ASCII text is stored as `\u` escapes so no editor can normalise it.
+  Each language's unit tests read it directly (not through the conformance mock: the function makes no request).
+- **AI guides.** The plan wording is the spec's sentence ("Events and goals work on every plan, up to the plan's
+  allowance. Growth and up add re-engagement, Apple Ads, install fraud scoring, and uninstall tracking on Pro.");
+  "needs Growth" troubleshooting replaced by the "Seen from your app and website" explanation; identity setup added
+  (path A default, path B mentioned) in SKILL.md, goals.md, server-sdks.md (a compiled `ts clikgate-check` block) and
+  plain/AGENTS.md. Non-Node server SDKs are still "not available yet" in the guides, so they get the token formula.
+  `api-surface.md`: the four mobile `track` signatures were removed by hand, because the mobile SDK builder hadn't
+  removed them from `clikgate_mobile_sdk` yet; **re-run `generate-api-surface.mjs --mobile ../clikgate_mobile_sdk`
+  after the mobile C22 work lands** (it will also add `getInstallationId()`, and its `--check` CI step fails until
+  then if the mobile sources still have `track`). `versions.json` unchanged (no SDK version moved: nothing is published).
+- **Versions.** Server SDKs stay 1.1.0 (unreleased); the changelog entries record the removal in the pre-release
+  history. Removing the generated app events resource would be breaking for a published version, but none exists.
+- **CI guard.** `scripts/check_no_track.mjs` + `.github/workflows/no-track-guard.yml`, R.44 patterns exactly. Allowed by
+  path: `docs/spec/`, ignored third-party/build directories, the vendored backend OpenAPI document, `removed.mjs` and its
+  test, the guard. In a CHANGELOG.md only `- **Removed` lines; a test asserting a 404 can carry `no-track-guard: 404
+  test`. It also checks that every server SDK README links to https://clikgate.com/docs/identify-users (I.8 "Also").
+- **Internal rename.** Node's private `GoalQueue.track(promise)` (bookkeeping for sync sends, never public) is now
+  `holdSend`, so no `track(` remains in SDK sources.
+
+## Change 23 S (R.1, R.9): strict goal names in the server SDKs (2026-11-08)
+
+Spec: `docs/spec/clikgate-change-23-unknown-goals-goal-groups.md` U, S, R.1, R.2, R.9 (R wins). Contract: `server/SPEC.md`
+sections 5 (known codes, refusal body), 12.3, 15 (debug lines) and 23.2. No version bumped (entries under "Unreleased").
+`server/codegen/generate.mjs` was **not** run (the backend OpenAPI is changing at the same time); `unknown_goal` reaches
+the generated reason lists when the owner regenerates.
+
+- **An error, like `payment_goal_needs_confirmation`.** R.1 says the refusal is `422` "like
+  payment_goal_needs_confirmation", which the server SDKs already map to `InvalidRequestError` (SPEC 5, rule 12). So
+  `unknown_goal` and `goal_archived` are errors, not `refused` results: `goals.send` throws, background/sync `goal()`
+  pass them to `on_error` (dropped), batch items are per-item failures. 422 was already never retried and a whole-batch
+  4xx already dropped, so the "final" rule needed no retry change.
+- **Two body shapes accepted.** The backend isn't built yet, and R.1 shows the body as `{status: "refused", reason:
+  "unknown_goal", counted: false, goal_kind: null}`. Every SDK accepts the usual error envelope (with or without those
+  extra top-level fields) and, new, a body with **no** `error` object whose `status` is `refused` and `reason` a
+  non-empty string: `code` = `reason`, `raw` = the body, `param`/`type` null. Before, that body gave `http_422`.
+  Conformance covers both shapes, sync and background.
+- **The debug line is debug level.** R.9 says "only when debug logging is on", and SPEC 15's default is warnings and
+  above, so the line is logged at debug: Node calls `logger.debug` only if the logger has one (the default console
+  logger has none); Python `logger.debug` (filtered by the `clikgate` logger's level); PHP PSR-3 `debug()`; Java a new
+  `ClikgateLogger.debug(code, message)` **default** method (no-op, so custom loggers keep compiling; the built-in SLF4J
+  and java.util.logging loggers implement it at debug / `FINE`); .NET `ClikgateLogLevel.Debug` (already in the enum).
+  Text ``Goal `{name}` isn't set up in Clikgate``, code `unknown_goal`; the goal name only. Only `unknown_goal` gets it
+  (the spec names one message); `goal_archived` is final but logs nothing new.
+- **No name checks on the server SDK side.** Nothing stores refused names; the next call with the same name is sent
+  (conformance `goals.send.refused.not_remembered`). The existing SPEC 12.3 `unknown_goal` **warning** (config-based,
+  `privateMode: auto`) is kept: it is warn-only, never blocks and says "the API decides", so it doesn't conflict with
+  R.9's "never check names on the device". It shares the code `unknown_goal` with the debug line; the warning is at
+  warn level, the refusal line at debug level.
+- **Laravel `SendGoal` job.** The only persisted queue in the server SDKs. It used to `fail()` every
+  `InvalidRequestException`, which stores the job in `failed_jobs` where it can be retried by hand. For `unknown_goal` and
+  `goal_archived` the job now ends without failing (dropped, never retried); other 4xx still fail the job.
+- **Conformance cases** (tools/build-cases.mjs, `goals` suite, 8 new, 511 total): `goals.send.refused.unknown_goal`
+  (envelope, `max_retries: 3`, one request, reference and value not in logs), `.unknown_goal_refusal_body`,
+  `.goal_archived`, `.not_remembered`; `goals.background.refused.unknown_goal_item`, `.goal_archived_item`,
+  `.whole_batch_refusal_body`; `goals.batch.refused.unknown_goal_item`. The judge has no "log line present" check
+  (only `logs_exclude`), so the debug line itself is asserted in each SDK's unit tests rather than adding a new
+  expectation every runner would need.
+- **Not done here:** the AI guides (`ai-guides/`, built into `dist/`) don't mention `unknown_goal` yet; they're
+  generated with the website docs work (C23-W1).
+
+
+## Change 23 C23-W1: the AI guides (2026-11-08)
+
+- `unknown_goal` / `goal_archived` (strict mode, live only, `422`, final) added where the guides cover `goal()` answers
+  and troubleshooting: `SKILL.md` ("Or the server refuses unknown names"), `references/goals.md` (the answer paragraph,
+  a Rules entry with what each sender returns, the archive row), `references/troubleshooting.md` (two rows),
+  `references/server-sdks.md` (final, debug line for `unknown_goal` only), `references/payments.md` (an unknown name
+  with `provider` and `reference` answers `unknown_goal`).
+- Goal groups: the goals API table gains `/v1/goals/settings` and `/v1/goal-groups` (labels only; never changes
+  counting or sending); troubleshooting explains the `goal_group` webhook/export field.
+- The guides tell assistants never to check names on the device, cache the setting or create goals from app code.
+- Rebuilt (`ai-guides/scripts/check.mjs`, `build.mjs`) and copied to the website with its `pnpm sync:ai-guides`.
+  `api-surface.md` is generated from SDK sources and wasn't touched.

@@ -26,6 +26,12 @@ return [
     'proxy' => env('CLIKGATE_PROXY'),
     'click_id_param' => env('CLIKGATE_CLICK_ID_PARAM'),
 
+    // Identity tokens (Clikgate::createIdentityToken(), https://clikgate.com/docs/identify-users): the app's identity
+    // secret (Apps › your app › Identity secret), on the server only. For several apps, CLIKGATE_IDENTITY_SECRETS is a
+    // JSON object of app IDs to secrets, e.g. {"app_…": "cgis_…"}.
+    'identity_secret' => env('CLIKGATE_IDENTITY_SECRET'),
+    'identity_secrets' => env('CLIKGATE_IDENTITY_SECRETS'),
+
     // The click-ID cookie written by the "clikgate" middleware and by Route::clikgateKeep('/cg/keep') (days: 1-400)
     'cookie' => [
         'persist' => true,

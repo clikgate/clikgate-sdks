@@ -35,7 +35,7 @@ final class GoalKindsTest extends TestCase
     public function testEnumValues(): void
     {
         self::assertSame(['standard', 'payment'], array_map(static fn(GoalKind $k): string => $k->value, GoalKind::cases()));
-        self::assertSame(['counted', 'waiting', 'refused'], array_map(static fn(GoalStatus $s): string => $s->value, GoalStatus::cases()));
+        self::assertSame(['counted', 'waiting', 'refused', 'received'], array_map(static fn(GoalStatus $s): string => $s->value, GoalStatus::cases()));
         self::assertSame('mtn_momo', Provider::MtnMomo->value);
         self::assertSame(Provider::Paystack, Provider::from('paystack'));
         self::assertNotContains('deferred', array_map(static fn(GoalStatus $s): string => $s->value, GoalStatus::cases()));

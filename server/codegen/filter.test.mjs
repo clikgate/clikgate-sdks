@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { declaresAudiences, filterSpec, neverPublishedOperations } from './filter.mjs';
 import { backendSpec, vendoredSpec } from './source.mjs';
+import { applyChange22 } from './removed.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const AUDIENCES = ['public', 'sdk', 'dashboard', 'partner', 'webhook', 'staff', 'internal'];
@@ -122,4 +123,25 @@ test('the backend public document is preferred, with a fallback to the legacy on
   assert.equal(vendoredSpec('/v', has('/v/openapi.json')).name, 'openapi.json');
   // Never the private documents
   for (const s of [backendSpec('/b', () => true), vendoredSpec('/v', () => true)]) assert.doesNotMatch(s.path, /staff|dashboard/);
+});
+
+test('change 22: app-event routes are removed and GoalStatus gains received, idempotently', () => {
+  const base = audienceSpec();
+  base.paths['/v1/sdk/events'] = { post: op('sdk', 'Sdk events') };
+  base.paths['/v1/app-events'] = { get: op('public', 'List app events') };
+  base.paths['/v1/apps/{app_id}/events'] = { post: op('public', 'Report app events') };
+  base.paths['/v1/apps/{app_id}/event-rules'] = { get: op('public', 'List rules'), post: op('public', 'Add rule') };
+  base.paths['/v1/apps/{app_id}/event-rules/{rule_id}'] = { patch: op('public', 'Update rule'), delete: op('public', 'Delete rule') };
+  base.paths['/v1/goals/events'] = { post: op('public', 'Send goal') };
+  base.components.schemas.GoalStatus = { type: 'string', enum: ['counted', 'waiting', 'refused'] };
+  const { spec, notes } = applyChange22(base);
+  assert.deepEqual(Object.keys(spec.paths).filter((p) => /events|event-rules/.test(p)), ['/v1/goals/events']);
+  assert.deepEqual(spec.components.schemas.GoalStatus.enum, ['counted', 'waiting', 'refused', 'received']);
+  assert.equal(notes.length, 2);
+  assert.match(notes[0], /^7 app-event operations removed/);
+  assert.ok(!notes.join(' ').includes('/v1/'), 'notes never name the removed routes');
+  assert.deepEqual(base.components.schemas.GoalStatus.enum, ['counted', 'waiting', 'refused'], 'the input is not changed');
+  const again = applyChange22(spec);
+  assert.deepEqual(again.notes, []);
+  assert.deepEqual(Object.keys(again.spec.paths), Object.keys(spec.paths));
 });

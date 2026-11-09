@@ -327,6 +327,7 @@ class _QueueLogic:
             q = sendable[index]
             error = error_from_batch_item(int(item.get("status") or 0), item.get("error"))
             self.core.report(error, ErrorContext("goal", [self.shown(q.wire)], True))
+        self.core.note_refused_items([q.wire for q in sendable], data)
 
     def on_failure(self, error: ClikgateError, sendable: List[_Queued]) -> List[_Queued]:
         if is_retryable(error):
@@ -338,6 +339,8 @@ class _QueueLogic:
             if drop:
                 self.core.report(error, ErrorContext("goals.batch", [self.shown(q.wire) for q in drop], True))
             return keep
+        for q in sendable:
+            self.core.note_refused_goal(q.wire.get("goal"), error.code)
         self.core.report(error, ErrorContext("goals.batch", [self.shown(q.wire) for q in sendable], True))
         return []
 
@@ -688,7 +691,12 @@ class Goals:
 
     def _send_wire(self, wire: Wire, options: Optional[RequestOptions] = None) -> GoalEvent:
         check_before_send(self._core, self._core.guard_state(), wire)
-        _s, data, _h = self._core.requester.request(send_request(wire, options))
+        try:
+            _s, data, _h = self._core.requester.request(send_request(wire, options))
+        except ClikgateError as err:
+            self._core.note_refused_goal(wire.get("goal"), err.code)
+            raise
+        self._core.note_refused_goal(wire.get("goal"), data.get("reason") if isinstance(data, dict) else None)
         return cast(GoalEvent, with_enums(data))
 
     def send_batch(self, events: Sequence[GoalBatchEvent], *, request_options: Optional[RequestOptions] = None) -> GoalBatchResult:
@@ -714,6 +722,7 @@ class Goals:
         _s, data, _h = self._core.requester.request(
             ApiRequest("POST", "/v1/goals/events/batch", body={"events": wires}).with_options(request_options)
         )
+        self._core.note_refused_items(wires, data)
         return cast(GoalBatchResult, with_enums(data))
 
     def reverse(
@@ -800,7 +809,12 @@ class AsyncGoals:
 
     async def _send_wire(self, wire: Wire, options: Optional[RequestOptions] = None) -> GoalEvent:
         check_before_send(self._core, await self._core.guard_state(), wire)
-        _s, data, _h = await self._core.requester.request(send_request(wire, options))
+        try:
+            _s, data, _h = await self._core.requester.request(send_request(wire, options))
+        except ClikgateError as err:
+            self._core.note_refused_goal(wire.get("goal"), err.code)
+            raise
+        self._core.note_refused_goal(wire.get("goal"), data.get("reason") if isinstance(data, dict) else None)
         return cast(GoalEvent, with_enums(data))
 
     async def send_batch(self, events: Sequence[GoalBatchEvent], *, request_options: Optional[RequestOptions] = None) -> GoalBatchResult:
@@ -817,6 +831,7 @@ class AsyncGoals:
         _s, data, _h = await self._core.requester.request(
             ApiRequest("POST", "/v1/goals/events/batch", body={"events": wires}).with_options(request_options)
         )
+        self._core.note_refused_items(wires, data)
         return cast(GoalBatchResult, with_enums(data))
 
     async def reverse(

@@ -257,6 +257,23 @@ public sealed class Goals
         }
     }
 
+    /// <summary><c>POST /v1/goals/events</c> for one checked wire event; notes an <c>unknown_goal</c> refusal (a debug line).</summary>
+    internal static async Task<JsonNode?> SendWireAsync(Core core, JsonObject wire, RequestOptions? options, CancellationToken cancellationToken)
+    {
+        JsonNode? data;
+        try
+        {
+            (_, data, _) = await core.Requester.RequestAsync(SendRequest(wire, options), cancellationToken).ConfigureAwait(false);
+        }
+        catch (ClikgateException e)
+        {
+            core.NoteRefusedGoal(Json.Str(wire["goal"]), e.Code);
+            throw;
+        }
+        core.NoteRefusedGoal(Json.Str(wire["goal"]), data is JsonObject o ? Json.Str(o["reason"]) : null);
+        return data;
+    }
+
     internal static ApiRequest SendRequest(JsonObject wire, RequestOptions? options) =>
         // A random Idempotency-Key per call (the requester's default), reused across its retries.
         new ApiRequest("POST", "/v1/goals/events").WithBody(wire).With(options);
@@ -277,7 +294,7 @@ public sealed class Goals
     {
         var wire = Wire(key, options);
         CheckBeforeSend(_core, await _core.GuardStateAsync(cancellationToken).ConfigureAwait(false), wire);
-        var (_, data, _) = await _core.Requester.RequestAsync(SendRequest(wire, requestOptions), cancellationToken).ConfigureAwait(false);
+        var data = await SendWireAsync(_core, wire, requestOptions, cancellationToken).ConfigureAwait(false);
         return new GoalEvent(data as JsonObject);
     }
 
@@ -329,6 +346,7 @@ public sealed class Goals
         }
         var body = new JsonObject { ["events"] = new JsonArray(wires.Select(w => (JsonNode)w).ToArray()) };
         var (_, data, _) = await _core.Requester.RequestAsync(new ApiRequest("POST", "/v1/goals/events/batch").WithBody(body).With(requestOptions), cancellationToken).ConfigureAwait(false);
+        _core.NoteRefusedItems(wires, data);
         return new GoalBatchResult(data as JsonObject);
     }
 

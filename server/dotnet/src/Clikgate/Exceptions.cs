@@ -142,3 +142,9 @@ public class ClikgateTimeoutException(string message) : ClikgateException(messag
 
 /// <summary>A webhook signature did not verify: <c>missing_signature</c>, <c>malformed_signature</c>, <c>timestamp_outside_tolerance</c>, <c>no_matching_signature</c> or <c>invalid_payload</c>.</summary>
 public class SignatureVerificationException(string message, string code) : ClikgateException(message, code);
+
+/// <summary>
+/// <c>CreateIdentityToken()</c> ran in a MAUI, Xamarin or browser (WebAssembly) build. Identity tokens
+/// are signed with your identity secret, which must stay on your server. <c>Code</c>: <c>server_only</c>.
+/// </summary>
+public class ClikgateServerOnlyException(string message) : ClikgateException(message, "server_only");

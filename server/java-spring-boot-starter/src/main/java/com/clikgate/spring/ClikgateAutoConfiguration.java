@@ -52,6 +52,8 @@ public class ClikgateAutoConfiguration {
             .batchSize(p.getBatchSize())
             .flushInterval(p.getFlushInterval())
             .maxQueueSize(p.getMaxQueueSize())
+            .identitySecret(p.getIdentitySecret() == null || p.getIdentitySecret().isEmpty() ? null : p.getIdentitySecret())
+            .identitySecrets(p.getIdentitySecrets().isEmpty() ? null : p.getIdentitySecrets())
             .shutdownHooks(false); // the context's lifecycle closes it
     if (p.getProxy() != null && !p.getProxy().isEmpty()) {
       b.proxy(p.getProxy());

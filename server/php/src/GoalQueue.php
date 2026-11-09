@@ -139,6 +139,7 @@ final class GoalQueue
             $status = \is_int($item['status'] ?? null) ? $item['status'] : 0;
             $this->core->report(ErrorMapper::fromBatchItem($status, $item['error'] ?? null), new ErrorContext('goal', [$this->shown($sendable[$index]['wire'])], true));
         }
+        $this->core->noteRefusedItems(array_map(static fn(array $q): array => $q['wire'], $sendable), $data);
 
         return [];
     }
@@ -151,6 +152,9 @@ final class GoalQueue
     private function failed(ClikgateException $error, array $sendable): array
     {
         if (!Requester::isRetryable($error)) {
+            foreach ($sendable as $q) {
+                $this->core->noteRefusedGoal($q['wire']['goal'] ?? null, $error->getErrorCode());
+            }
             $this->core->report($error, new ErrorContext('goals.batch', array_map(fn(array $q): array => $this->shown($q['wire']), $sendable), true));
 
             return [];

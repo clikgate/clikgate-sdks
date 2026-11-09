@@ -26,6 +26,7 @@ from ._errors import ConfigurationError, as_clikgate_error, local_error
 from ._goals import AsyncGoals, AsyncSender, Goals, SyncSender, build_goal_wire, check_before_send, send_request
 from ._guard import guard_payload
 from ._http import ApiRequest, AsyncRequester, Clock, Requester, RequestOptions, Settings
+from ._identity import _create as _create_identity_token
 from ._money import MoneyInput
 from ._payments import AsyncPayments, Payments
 from ._resources import AsyncClicks, AsyncConversions, AsyncLinks, Clicks, Conversions, Links
@@ -305,6 +306,8 @@ class Clikgate:
         flush_interval: float = 1.0,
         max_queue_size: int = 10_000,
         shutdown_hooks: bool = True,
+        identity_secret: Optional[str] = None,
+        identity_secrets: Optional[Mapping[str, str]] = None,
         clock: Optional[Clock] = None,
         random: Optional[Callable[[], float]] = None,
         **unknown: Any,
@@ -336,6 +339,8 @@ class Clikgate:
         config = ConfigCache(requester, r.logger, r.timeout)
         self._core = Core(requester, config, r.logger, r.private_mode, on_error)
         self._send_mode = r.send_mode
+        self._identity_secret = identity_secret
+        self._identity_secrets: Optional[Mapping[str, str]] = dict(identity_secrets) if identity_secrets is not None else None
         self._sender = SyncSender(self._core, r.batch_size, r.max_queue_size, r.flush_interval)
         self._closed = False
         #: Goal events.
@@ -435,13 +440,35 @@ class Clikgate:
             def job() -> None:
                 try:
                     check_before_send(core, core.guard_state(), wire)
-                    core.requester.request(send_request(wire, None))
+                    _s, data, _h = core.requester.request(send_request(wire, None))
+                    core.note_refused_goal(key, data.get("reason") if isinstance(data, dict) else None)
                 except Exception as err:
-                    core.report(as_clikgate_error(err), ErrorContext("goal", [_shown(core, key, reference)], True))
+                    error = as_clikgate_error(err)
+                    core.note_refused_goal(key, error.code)
+                    core.report(error, ErrorContext("goal", [_shown(core, key, reference)], True))
 
             self._sender.post(job)
         except Exception:  # goal() never raises, whatever happens
             pass
+
+    def create_identity_token(self, customer_id: str, *, app_id: Optional[str] = None, issued_at: Optional[int] = None) -> str:
+        """Create an identity token for the signed-in user (path A of
+        https://clikgate.com/docs/identify-users). Uses ``identity_secret`` / ``identity_secrets`` from the options,
+        else ``CLIKGATE_IDENTITY_SECRET`` / ``CLIKGATE_IDENTITY_SECRETS``. No network call (also on
+        :class:`AsyncClikgate`, where it is a plain method). See :func:`clikgate.create_identity_token`.
+
+        Example::
+
+            return {"user": user, "clikgate_identity_token": clikgate.create_identity_token(str(user.id))}
+        """
+        return _create_identity_token(
+            customer_id,
+            app_id=app_id,
+            secret=None,
+            issued_at=issued_at,
+            own_secret=self._identity_secret,
+            own_secrets=self._identity_secrets,
+        )
 
     def identify_user(
         self,
@@ -460,9 +487,17 @@ class Clikgate:
         ``require_identity_token``. In private mode ``customer_id`` is refused locally and ``label`` needs "Allow
         labels in private mode".
 
+        Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
+        ``getInstallationId()`` and sends it in its sign-in request; your server calls this with ``app_id``,
+        ``installation_id``, ``customer_id`` and optionally ``label``, after sign-in and at every signed-in app open.
+        When the app sends no installation ID (tracking is off), skip the call. Clikgate accepts installations active
+        in the last 7 days.
+
         Example::
 
             clikgate.identify_user(click_id=order.click_id, customer_id="user_42", label="Ada (VIP)")
+            if installation_id:
+                clikgate.identify_user(app_id="app_…", installation_id=installation_id, customer_id=str(user.id))
         """
         body = _identify_body(click_id, app_id, installation_id, customer_id, label)
         if self._core.guard_state().guard:
@@ -559,6 +594,8 @@ class AsyncClikgate:
         flush_interval: float = 1.0,
         max_queue_size: int = 10_000,
         shutdown_hooks: bool = True,
+        identity_secret: Optional[str] = None,
+        identity_secrets: Optional[Mapping[str, str]] = None,
         clock: Optional[Clock] = None,
         random: Optional[Callable[[], float]] = None,
         **unknown: Any,
@@ -590,6 +627,8 @@ class AsyncClikgate:
         config = AsyncConfigCache(requester, r.logger, r.timeout)
         self._core = AsyncCore(requester, config, r.logger, r.private_mode, on_error)
         self._send_mode = r.send_mode
+        self._identity_secret = identity_secret
+        self._identity_secrets: Optional[Mapping[str, str]] = dict(identity_secrets) if identity_secrets is not None else None
         self._sender = AsyncSender(self._core, r.batch_size, r.max_queue_size, r.flush_interval)
         self._closed = False
         self.goals = AsyncGoals(self._core)
@@ -674,9 +713,12 @@ class AsyncClikgate:
                 async def job() -> None:
                     try:
                         check_before_send(core, await core.guard_state(), wire)
-                        await core.requester.request(send_request(wire, None))
+                        _s, data, _h = await core.requester.request(send_request(wire, None))
+                        core.note_refused_goal(key, data.get("reason") if isinstance(data, dict) else None)
                     except Exception as err:
-                        core.report(as_clikgate_error(err), ErrorContext("goal", [_shown(core, key, reference)], True))
+                        error = as_clikgate_error(err)
+                        core.note_refused_goal(key, error.code)
+                        core.report(error, ErrorContext("goal", [_shown(core, key, reference)], True))
 
                 self._sender.post(job)
             except RuntimeError:
@@ -686,6 +728,25 @@ class AsyncClikgate:
                 )
         except Exception:
             pass
+
+    def create_identity_token(self, customer_id: str, *, app_id: Optional[str] = None, issued_at: Optional[int] = None) -> str:
+        """Create an identity token for the signed-in user (path A of
+        https://clikgate.com/docs/identify-users). Uses ``identity_secret`` / ``identity_secrets`` from the options,
+        else ``CLIKGATE_IDENTITY_SECRET`` / ``CLIKGATE_IDENTITY_SECRETS``. No network call (also on
+        :class:`AsyncClikgate`, where it is a plain method). See :func:`clikgate.create_identity_token`.
+
+        Example::
+
+            return {"user": user, "clikgate_identity_token": clikgate.create_identity_token(str(user.id))}
+        """
+        return _create_identity_token(
+            customer_id,
+            app_id=app_id,
+            secret=None,
+            issued_at=issued_at,
+            own_secret=self._identity_secret,
+            own_secrets=self._identity_secrets,
+        )
 
     async def identify_user(
         self,
@@ -704,9 +765,17 @@ class AsyncClikgate:
         ``require_identity_token``. In private mode ``customer_id`` is refused locally and ``label`` needs "Allow
         labels in private mode".
 
+        Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
+        ``getInstallationId()`` and sends it in its sign-in request; your server calls this with ``app_id``,
+        ``installation_id``, ``customer_id`` and optionally ``label``, after sign-in and at every signed-in app open.
+        When the app sends no installation ID (tracking is off), skip the call. Clikgate accepts installations active
+        in the last 7 days.
+
         Example::
 
             await clikgate.identify_user(click_id=order.click_id, customer_id="user_42", label="Ada (VIP)")
+            if installation_id:
+                await clikgate.identify_user(app_id="app_…", installation_id=installation_id, customer_id=str(user.id))
         """
         body = _identify_body(click_id, app_id, installation_id, customer_id, label)
         if (await self._core.guard_state()).guard:

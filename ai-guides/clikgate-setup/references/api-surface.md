@@ -20,9 +20,9 @@ class Clikgate {
   static Stream<ClikgateDeepLink> get onDeepLink;
   static Stream<ClikgateBrowserHandoff> get onBrowserHandoff;
   static Future<ClikgateAttribution> getAttribution();
-  static Future<void> track(String name, {ClikgateMoney? revenue, Map<String, Object?>? properties});
   static Future<GoalResult> goal(String key, {Object? value, String? currency, String? reference, ClikgateProvider? provider, bool? isFirst, String? label});
   static Future<void> identifyUser({String? label, String? customerId = _keepCustomerId, String? identityToken});
+  static Future<String?> getInstallationId();
   static Future<void> setTrackingEnabled(bool enabled);
   static Future<void> setPushToken(String? token, {required PushProvider provider});
   static bool isClikgateMessage(Map<String, dynamic>? data);
@@ -30,7 +30,7 @@ class Clikgate {
   static Future<void> setConsent({ConsentState? analytics, ConsentState? attribution, ConsentState? adUserData, ConsentState? adPersonalization});
   static Future<ClikgateConsent> getConsent();
   static Future<void> setConsentRegion(String? region);
-  static Future<void> enableFirebaseForwarding({bool logAttributionEvent = true, bool setUserProperties = true, bool mirrorEvents = false, Map<String, String> eventNameMap = const {}});
+  static Future<void> enableFirebaseForwarding({bool logAttributionEvent = true, bool setUserProperties = true});
   static Future<Map<String, String>> attributionMetadata();
   static Future<void> enableGoogleOnDeviceMeasurement();
   static Future<String> nativeSdkVersion();
@@ -54,12 +54,6 @@ class ClikgateDeepLink {
   final Referral? referral;
   final String? blockMessage;
 }
-
-class ClikgateMoney {
-  const ClikgateMoney.ofMinor(this.amountMinor, this.currency); // minor units: ClikgateMoney.ofMinor(1500000, 'NGN') is ₦15,000
-  final int amountMinor;
-  final String currency;
-}
 ```
 
 ### React Native and Expo: `@clikgate/react-native` 1.6.1
@@ -73,9 +67,9 @@ const Clikgate: {
   onDeepLink(listener: DeepLinkListener): () => void;
   onBrowserHandoff(listener: BrowserHandoffListener): () => void;
   getAttribution(): Promise<ClikgateAttribution>;
-  track(name: string, options: {revenue?: ClikgateMoney | null; properties?: Record<string, unknown> | null;} = {}): Promise<void>;
   goal(key: string, options: GoalOptions = {}): Promise<GoalResult>;
   identifyUser(options: IdentifyUserOptions = {}): Promise<void>;
+  getInstallationId(): Promise<string | null>;
   setTrackingEnabled(enabled: boolean): Promise<void>;
   setPushToken(token: string | null | undefined, options: {provider: PushProvider}): Promise<void>;
   handleUrl(url: string): Promise<boolean>;
@@ -94,14 +88,6 @@ const referrals: { // import { referrals } from '@clikgate/react-native'
   applyCode(options: {programId: string; code: string;}): Promise<Referral>;
   referredBy(): Promise<ReferredBy>;
 };
-
-const ClikgateMoney: { // import { ClikgateMoney } from '@clikgate/react-native'
-  ofMinor(amountMinor: number, currency: string): ClikgateMoney; // minor units
-};
-interface ClikgateMoney {
-  amountMinor: number;
-  currency: string;
-}
 
 interface ClikgateConfig {
   sdkKey: string;
@@ -163,9 +149,10 @@ object Clikgate {
     fun onBrowserHandoff(listener: BrowserHandoffListener?)
     fun attribution(listener: AttributionListener)
     suspend fun awaitAttribution(): ClikgateAttribution
-    fun track(name: String, revenue: ClikgateMoney? = null, properties: Map<String, Any?>? = null)
     fun goal(key: String, value: java.math.BigDecimal? = null, currency: String? = null, reference: String? = null, provider: Provider? = null, isFirst: Boolean? = null, label: String? = null, onResult: GoalResultListener? = null)
     fun identifyUser(label: String? = null, customerId: String? = KEEP_CUSTOMER_ID, identityToken: String? = null)
+    fun getInstallationId(listener: InstallationIdListener)
+    suspend fun getInstallationId(): String?
     fun setTrackingEnabled(enabled: Boolean)
     fun setConsent(analytics: ConsentState? = null, attribution: ConsentState? = null, adUserData: ConsentState? = null, adPersonalization: ConsentState? = null)
     fun getConsent(): ClikgateConsent
@@ -186,14 +173,10 @@ object ClikgateReferrals { // Clikgate.referrals
 
 data class ClikgateOptions(val linkDomains: List<String> = emptyList(), val logLevel: LogLevel = LogLevel.WARN, val environment: Environment = Environment.PRODUCTION, val attestation: Attestation = Attestation.OFF, val apiBaseUrl: String = DEFAULT_API_BASE_URL, val deferredDeepLinkTimeoutMs: Long = 5_000, val cloudProjectNumber: Long? = null, val platformDomainBrowserFallback: Boolean = true)
 data class GoalResult(val status: GoalStatus, val reason: String?, val goalKind: GoalKind?, val valueIgnored: Boolean)
-enum class GoalStatus(val value: String) { COUNTED, WAITING, REFUSED }
+enum class GoalStatus(val value: String) { COUNTED, WAITING, RECEIVED, REFUSED }
 enum class GoalKind(val value: String) { STANDARD, PAYMENT }
 class Provider { companion object { val PAYSTACK: Provider; val FLUTTERWAVE: Provider; …; fun fromString(value: String): Provider? } } // every gateway, generated
 data class ClikgateDeepLink(val url: String?, val path: String?, val data: Map<String, Any?>, val isDeferred: Boolean, val clickId: String?, val matchType: String?, val link: ClikgateLink?, val referral: Referral?, val blockMessage: String? = null)
-
-class ClikgateMoney(val amountMinor: Long, val currency: String) {
-    companion object { fun ofMinor(amountMinor: Long, currency: String): ClikgateMoney } // minor units: ClikgateMoney.ofMinor(1_500_000, "NGN") is ₦15,000
-}
 ```
 
 ### iOS: pod `Clikgate` / Swift package `clikgate-ios-sdk` 1.5.1
@@ -214,10 +197,11 @@ final class Clikgate {
     func removeDeepLinkHandler()
     func attribution() async throws -> ClikgateAttribution
     func attribution(completion: @escaping @MainActor @Sendable (Result<ClikgateAttribution, ClikgateError>) -> Void)
-    func track(_ name: String, revenue: ClikgateMoney? = nil, properties: [String: Any]? = nil, completion: (@MainActor @Sendable (ClikgateError?) -> Void)? = nil)
     func goal(_ key: String, value: Decimal? = nil, currency: String? = nil, reference: String? = nil, provider: ClikgateProvider? = nil, isFirst: Bool? = nil, label: String? = nil, completion: (@MainActor @Sendable (ClikgateGoalResult) -> Void)? = nil)
     func goal(_ key: String, decimalString value: String?, currency: String? = nil, reference: String? = nil, providerKey: String? = nil, isFirst: Bool? = nil, label: String? = nil, completion: (@MainActor @Sendable (ClikgateGoalResult) -> Void)? = nil)
     func identifyUser(label: String? = nil, customerId: String? = "\u{0}", identityToken: String? = nil)
+    func installationId() async throws -> String?
+    func installationId(completion: @escaping @MainActor @Sendable (Result<String?, ClikgateError>) -> Void)
     func setTrackingEnabled(_ enabled: Bool)
     func setPushToken(deviceToken: Data)
     func setPushToken(fcmToken: String)
@@ -244,12 +228,6 @@ struct ClikgateDeepLinkResult {
     let link: ClikgateLink?
     let referral: ClikgateReferral?
     var data: [String: Any]
-}
-
-struct ClikgateMoney {
-    static func ofMinor(_ amountMinor: Int64, currency: String) -> ClikgateMoney // minor units: ClikgateMoney.ofMinor(1_500_000, currency: "NGN") is ₦15,000
-    let amountMinor: Int64
-    let currency: String
 }
 ```
 
@@ -295,6 +273,7 @@ class Clikgate {
   readonly webhooks: {verify: typeof webhooks.verify; verifyAny: typeof webhooks.verifyAny;};
   constructor(options?: ClikgateOptions);
   goal(key: string, options: GoalOptions): void;
+  createIdentityToken(customerId: string, options?: IdentityTokenOptions): string;
   identifyUser(params: IdentifyUserParams, requestOptions?: RequestOptions): Promise<PersonIdentified>;
   config(): Promise<ServerSdkConfig | null>;
   flush(timeout?: number): Promise<boolean>;
@@ -317,6 +296,8 @@ interface ClikgateOptions {
   flushInterval?: number;
   maxQueueSize?: number;
   shutdownHooks?: boolean;
+  identitySecret?: string;
+  identitySecrets?: Record<string, string>;
 }
 
 class Goals { // clikgate.goals
@@ -337,6 +318,9 @@ interface GoalOptions {
   keptBy?: KeptBy | null;
   browserEngine?: BrowserEngine | null;
   platform?: Platform | null;
+  hashedEmail?: string | null;
+  hashedPhoneE164?: string | null;
+  hashedPhoneDigits?: string | null;
   occurredAt?: Date | string | null;
   metadata?: Record<string, unknown> | null;
   consent?: Record<string, unknown> | null;
@@ -400,6 +384,6 @@ interface PaymentConfirmParams {
 
 Webhooks: `webhooks.verify(rawBody, signatureHeader, secret, { tolerance? })` and `webhooks.verifyAny(rawBody, signatureHeader, secrets[], { tolerance? })`. No client or API key is needed.
 
-Enums (constants and types, `import { GoalKind, GoalStatus, Provider } from '@clikgate/node';`): `GoalKind` (`GoalKind.Standard`, `GoalKind.Payment`); `GoalStatus` (`GoalStatus.Counted`, `GoalStatus.Waiting`, `GoalStatus.Refused`); `Provider` (`Provider.Paystack`, `Provider.Flutterwave`, `Provider.Monnify`, …, `Provider.Custom`). `Provider` lists every gateway; a provider key string works too.
+Enums (constants and types, `import { GoalKind, GoalStatus, Provider } from '@clikgate/node';`): `GoalKind` (`GoalKind.Standard`, `GoalKind.Payment`); `GoalStatus` (`GoalStatus.Counted`, `GoalStatus.Waiting`, `GoalStatus.Refused`, `GoalStatus.Received`); `Provider` (`Provider.Paystack`, `Provider.Flutterwave`, `Provider.Monnify`, …, `Provider.Custom`). `Provider` lists every gateway; a provider key string works too.
 
 Python (`clikgate`), PHP (`clikgate/clikgate-php`), Java (`com.clikgate:clikgate-java`) and .NET (`Clikgate`) are **not available yet**. Use the HTTP API in [server-sdks.md](server-sdks.md).

@@ -7,7 +7,7 @@
 /** The enums, in the order they are written. `doc` is the one-line summary used in every language. */
 export const ENUMS = [
   { name: 'GoalKind', doc: "A goal's kind, set in the goal's settings (never in a goal call): `standard` or `payment`." },
-  { name: 'GoalStatus', doc: 'The outcome of a goal call: `counted`, `waiting` (a Payment goal waiting for its confirmation) or `refused`.' },
+  { name: 'GoalStatus', doc: "A goal call's outcome: `counted`, `waiting` (a Payment goal awaiting confirmation), `received` (not counted) or `refused`." },
   { name: 'Provider', doc: 'A payment provider: every gateway in `GET /v1/payment-gateways`, plus `shopify`, `woocommerce` and `custom`.' },
 ];
 

@@ -27,6 +27,55 @@ internal sealed class Core(Requester requester, IClikgateLogger logger, PrivateM
 
     public PrivateMode PrivateMode { get; } = privateMode;
 
+    /// <summary>The API's reason (and error code) for a goal name that isn't set up, while only set-up goals are accepted.</summary>
+    public const string UnknownGoal = "unknown_goal";
+
+    /// <summary>
+    /// A goal the API refused because the organisation accepts only goals it has set up (<c>unknown_goal</c>): one line
+    /// at <see cref="ClikgateLogLevel.Debug"/>, shown only when debug logging is on. The goal name only: never the
+    /// reference, customer ID, values or labels. The SDK never checks names itself and never remembers the refusal.
+    /// Never throws.
+    /// </summary>
+    public void NoteRefusedGoal(string? goal, string? codeOrReason)
+    {
+        if (codeOrReason != UnknownGoal || goal is null)
+        {
+            return;
+        }
+        try
+        {
+            logger.Log(ClikgateLogLevel.Debug, UnknownGoal, "Goal `" + goal + "` isn't set up in Clikgate");
+        }
+        catch (Exception)
+        {
+            // a broken logger must not break the caller
+        }
+    }
+
+    /// <summary><see cref="NoteRefusedGoal"/> for each item of a batch result (<c>wires[i]</c> is the event sent at index i).</summary>
+    public void NoteRefusedItems(IReadOnlyList<JsonObject> wires, JsonNode? data)
+    {
+        if (data is not JsonObject o || o["data"] is not JsonArray items)
+        {
+            return;
+        }
+        foreach (var node in items)
+        {
+            if (node is not JsonObject item)
+            {
+                continue;
+            }
+            var index = Json.Int(item["index"]);
+            if (index is null || index < 0 || index >= wires.Count)
+            {
+                continue;
+            }
+            var ok = Json.Bool(item["ok"]) == true;
+            var detail = ok ? item["goal_event"] as JsonObject : item["error"] as JsonObject;
+            NoteRefusedGoal(Json.Str(wires[index.Value]["goal"]), detail is null ? null : Json.Str(detail[ok ? "reason" : "code"]));
+        }
+    }
+
     public void Warn(string code, string message, string? onceKey = null)
     {
         if (onceKey is not null && !_warned.TryAdd(code + ":" + onceKey, true))

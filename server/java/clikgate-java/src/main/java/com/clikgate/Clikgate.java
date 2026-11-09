@@ -59,6 +59,8 @@ public final class Clikgate implements AutoCloseable {
   private final ApiClient api;
   private final Clock clock;
   private final @Nullable SocketTransport ownTransport;
+  private final @Nullable String identitySecret;
+  private final @Nullable Map<String, String> identitySecrets;
   private volatile boolean closed;
 
   private Clikgate(Builder b) {
@@ -71,6 +73,8 @@ public final class Clikgate implements AutoCloseable {
       throw new ConfigurationException("The API key is " + keyType(apiKey) + ". Server SDKs need a cg_live_… or cg_test_… API key from Developers → API keys.", "invalid_api_key", null, null, "apiKey", null, null);
     }
     this.mode = m.group(1);
+    this.identitySecret = b.identitySecret;
+    this.identitySecrets = b.identitySecrets == null ? null : Collections.unmodifiableMap(new LinkedHashMap<>(b.identitySecrets));
     String env = System.getenv("CLIKGATE_BASE_URL");
     String baseUrl = b.baseUrl != null ? b.baseUrl : (env != null && !env.isEmpty() ? env : "https://api.clikgate.com");
     while (baseUrl.endsWith("/")) {
@@ -231,7 +235,7 @@ public final class Clikgate implements AutoCloseable {
           () -> {
             try {
               Goals.checkBeforeSend(core, core.guardState(), wire);
-              core.requester.request(Goals.sendRequest(wire, null));
+              Goals.sendWire(core, wire, null);
             } catch (RuntimeException e) {
               core.report(ErrorMapper.wrap(e), new ErrorContext("goal", shown(key, goal), true));
             }
@@ -249,6 +253,25 @@ public final class Clikgate implements AutoCloseable {
   }
 
   /**
+   * Create an identity token for the signed-in user (path A of https://clikgate.com/docs/identify-users).
+   * Return it in your sign-in and "current user" responses; the app passes it to the mobile SDK's {@code identifyUser()}.
+   * Uses the builder's {@code identitySecret} / {@code identitySecrets}, else {@code CLIKGATE_IDENTITY_SECRET} /
+   * {@code CLIKGATE_IDENTITY_SECRETS}. No network call. Throws {@code ClikgateServerOnlyException} in an Android app.
+   *
+   * <pre>{@code
+   * response.put("clikgateIdentityToken", clikgate.createIdentityToken(user.getId()));
+   * }</pre>
+   */
+  public String createIdentityToken(String customerId) {
+    return createIdentityToken(customerId, null);
+  }
+
+  /** {@link #createIdentityToken(String)} with that app's secret, for several apps. */
+  public String createIdentityToken(String customerId, @Nullable String appId) {
+    return IdentityTokens.createWith(IdentityTokens.onAndroid(), identitySecret, identitySecrets, System::getenv, customerId, appId, null, null);
+  }
+
+  /**
    * Tell Clikgate who a person is ({@code POST /v1/people/identify}): a click, an app installation ({@code appId} +
    * {@code installationId}) or your {@code customerId}, at least one. With a click or installation, {@code customerId}
    * links it to that customer. {@code label} is what your team sees instead of the click ID (1-80 characters,
@@ -256,8 +279,17 @@ public final class Clikgate implements AutoCloseable {
    * {@code require_identity_token}. In private mode {@code customerId} is refused locally and {@code label} needs
    * "Allow labels in private mode".
    *
+   * <p>Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
+   * {@code getInstallationId()} and sends it in its sign-in request; your server calls this with {@code appId},
+   * {@code installationId}, {@code customerId} and optionally {@code label}, after sign-in and at every signed-in app
+   * open. When the app sends no installation ID (tracking is off), skip the call. Clikgate accepts installations active
+   * in the last 7 days.
+   *
    * <pre>{@code
    * clikgate.identifyUser(IdentifyUserParams.builder().clickId(clickId).customerId("user_42").label("Ada (VIP)").build());
+   * if (installationId != null) {
+   *   clikgate.identifyUser(IdentifyUserParams.builder().appId("app_…").installationId(installationId).customerId(user.getId()).build());
+   * }
    * }</pre>
    */
   public PersonIdentified identifyUser(IdentifyUserParams params) {
@@ -418,6 +450,8 @@ public final class Clikgate implements AutoCloseable {
     private Duration flushInterval = Duration.ofSeconds(1);
     private int maxQueueSize = 10_000;
     private boolean shutdownHooks = true;
+    private @Nullable String identitySecret;
+    private @Nullable Map<String, String> identitySecrets;
     private Clock clock = Clock.SYSTEM;
     private DoubleSupplier random = () -> ThreadLocalRandom.current().nextDouble();
 
@@ -518,6 +552,18 @@ public final class Clikgate implements AutoCloseable {
     /** Flush on JVM shutdown (default true). */
     public Builder shutdownHooks(boolean shutdownHooks) {
       this.shutdownHooks = shutdownHooks;
+      return this;
+    }
+
+    /** The identity secret for {@code createIdentityToken()}. Default: {@code CLIKGATE_IDENTITY_SECRET}. */
+    public Builder identitySecret(@Nullable String identitySecret) {
+      this.identitySecret = identitySecret;
+      return this;
+    }
+
+    /** Several apps' identity secrets, by app ID. Default: {@code CLIKGATE_IDENTITY_SECRETS} (a JSON object). */
+    public Builder identitySecrets(@Nullable Map<String, String> identitySecrets) {
+      this.identitySecrets = identitySecrets;
       return this;
     }
 

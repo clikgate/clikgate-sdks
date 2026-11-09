@@ -88,11 +88,42 @@ final class ClikgateServiceProvider extends ServiceProvider
             'maxRetries' => $c['max_retries'] ?? null,
             'proxy' => $c['proxy'] ?? null,
             'clickIdParam' => $c['click_id_param'] ?? null,
+            'identitySecret' => \is_string($c['identity_secret'] ?? null) ? $c['identity_secret'] : null,
+            'identitySecrets' => self::identitySecrets($c['identity_secrets'] ?? null),
         ], static fn(mixed $v): bool => null !== $v && '' !== $v);
         if ($logger instanceof \Psr\Log\LoggerInterface) {
             $options['logger'] = $logger;
         }
 
         return $options;
+    }
+
+    /**
+     * `clikgate.identity_secrets` as app ID => secret: an array, or the JSON text of `CLIKGATE_IDENTITY_SECRETS`.
+     * Null when unset or malformed (then {@see ClikgateManager::createIdentityToken()} reports it; the rest of the
+     * client keeps working).
+     *
+     * @return array<string, string>|null
+     */
+    public static function identitySecrets(mixed $value): ?array
+    {
+        if (\is_string($value)) {
+            if ('' === trim($value)) {
+                return null;
+            }
+            $value = json_decode($value, true);
+        }
+        if (!\is_array($value) || [] === $value || array_is_list($value)) {
+            return null;
+        }
+        $out = [];
+        foreach ($value as $k => $v) {
+            if (!\is_string($k) || !\is_string($v) || '' === $v) {
+                return null;
+            }
+            $out[$k] = $v;
+        }
+
+        return $out;
     }
 }

@@ -1,3 +1,17 @@
+# Progress: Change 23 S (strict goal names: `unknown_goal`, `goal_archived`), 2026-11-08
+
+Spec: `docs/spec/clikgate-change-23-unknown-goals-goal-groups.md` S, R.1, R.9. Decisions: [DECISIONS.md](DECISIONS.md)
+"Change 23 S". No version bumped. `server/codegen/generate.mjs` not run (owner regenerates later).
+
+| Item | Status |
+|---|---|
+| Refusal body (`422 {status: refused, reason}`, no envelope) → code = reason | Node, Python, PHP, Java, .NET |
+| Final: no retry, no re-queue, `on_error` dropped; Laravel job ends without failing | all five + Laravel |
+| Debug line ``Goal `{name}` isn't set up in Clikgate`` (debug level, name only) | Node, Python (sync + async), PHP, Java (`ClikgateLogger.debug` default method), .NET |
+| SPEC | sections 5, 12.3, 15, 23.2 |
+| Conformance | 8 new `goals` cases (511 total); `--check` passes |
+| Tests | Node `strict-goals.test.ts` (5), Python `test_strict_goals.py` (6), PHP `StrictGoalsTest` (5), Laravel (1), Java `StrictGoalsTest` (5), .NET `StrictGoalsTests` (4) |
+
 # Progress: Change 19 C19-S1 S.3 (hashed email and phone for ad network matching)
 
 Spec: `clikgate_api/docs/spec/clikgate-change-19-ad-networks.md` R.20 S.3, R.4, R.5; backend C19-B4. Contract:
@@ -156,3 +170,37 @@ PHP + Laravel, Java + servlet filters + Spring Boot starter, .NET + AspNetCore).
   - AI guides: `check.mjs` (14 files) and `generate-api-surface --check` pass. The guides were unchanged, and
     the website's `check:ai-guides` (27 files) matches.
   - Versions stay at 1.1.0 (unreleased).
+
+
+# Progress: Change 22 C22-B3, server SDKs and AI guides (2026-11-08)
+
+- **Sweep:** the generated app events resource (Node `api.appEvents`, Python `api.app_events`, PHP/Java/.NET
+  `AppEventsApi`) is gone from every SDK (via `server/codegen/removed.mjs`, see DECISIONS). The hand-written SDKs never
+  had a track method; Node's internal queue helper was renamed. `server/SPEC.md`, READMEs, changelogs and AI guides
+  updated; no "events and goals need Growth" wording left.
+- **Identity:** `createIdentityToken` in Node, Python, PHP, Laravel, Java, Spring Boot starter and .NET (names in
+  `server/SPEC.md` section 26), shared vectors in `server/conformance/vectors/identity-token-vectors.json`.
+  `identifyUser` docs show path B in every SDK (doc comments, READMEs, SPEC section 24).
+- **GoalStatus `received`** in every SDK's enums, docs and conformance (2 new cases, 503 in total).
+- **CI guard:** `node scripts/check_no_track.mjs` (and `--self-test`) passes; workflow `no-track-guard.yml`.
+- **Test runs (2026-11-08):**
+  - Node: unit 57 (6 new identity tests), conformance 501/501, lint, typecheck, typecheck:examples.
+  - Python: unit 135 (25 new identity tests), conformance 496/496 sync and 496/496 async, ruff, ruff format, mypy.
+  - PHP: unit 67 tests / 753 assertions, conformance 494/494, phpstan (max), php-cs-fixer. Laravel: 9 tests.
+  - Java (`mvn verify -Dconformance=true`, all modules): core 37 incl. 7 identity, conformance 495/495, servlets 10,
+    starter 5.
+  - .NET: `dotnet build Clikgate.sln -c Release` (warnings as errors, all TFMs), `dotnet format --verify-no-changes`,
+    tests 78 (net10.0), conformance 494/494.
+  - `generate.mjs --check`, `filter.test.mjs` (8), `build-cases.mjs --check` (503),
+    `build_identity_token_vectors.py --check`, `ai-guides/scripts/check.mjs` (15 files), `build.mjs`,
+    `check-code-blocks.mjs` (ts and swift; dart/kotlin skipped locally: no flutter/kotlinc).
+- **Open:** re-sync the OpenAPI document after backend C22-B1, and regenerate `api-surface.md` after the mobile C22
+  work (both in DECISIONS). Pre-existing: the release scan (`server/scripts/scan-package.mjs`) flags older CHANGELOG
+  headings that say "change 16" / "change 19"; the new entries avoid change numbers.
+
+## Change 23 C23-W1: AI guides (2026-11-08)
+
+- [x] `unknown_goal` / `goal_archived` and goal groups in `SKILL.md` and the goals, troubleshooting, server-sdks and
+      payments references (DECISIONS "Change 23 C23-W1").
+- [x] `node ai-guides/scripts/check.mjs` (15 files), `build.mjs`, `node scripts/check_no_track.mjs` (+ `--self-test`)
+      pass; website re-synced (`check:ai-guides`: 29 files match).
