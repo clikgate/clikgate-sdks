@@ -2,7 +2,11 @@
 
 All notable changes to these artifacts, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the artifacts use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Java versions are dropped only after their end of life.
 
-## [Unreleased]
+## [2.0.0] - unreleased
+
+### Breaking: track() removed in favour of goal()
+
+- **Removed:** `track()` and app events are gone from Clikgate in favour of one method, `goal()`, for anything that happens in an app, website or server. A name that isn't set up as a goal yet still arrives (status `received`) and shows in the dashboard under "Seen from your app and website", ready to be counted. This starter now uses `clikgate-java` 2.0.0, which drops the generated app events resource: send goals with `goal()`.
 
 ### Identity tokens
 - Properties `clikgate.identity-secret` and `clikgate.identity-secrets.<appId>` configure the bean's `createIdentityToken(customerId[, appId])` (default: `CLIKGATE_IDENTITY_SECRET` / `CLIKGATE_IDENTITY_SECRETS`). Guide: https://clikgate.com/docs/identify-users.
