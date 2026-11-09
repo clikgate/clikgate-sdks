@@ -20,7 +20,7 @@ public static class ClikgateHttpContextExtensions
     }
 
     /// <summary>
-    /// The visitor context for a goal (change 16): the click ID, how it was kept (<c>server_cookie</c>, <c>script_cookie</c>,
+    /// The visitor context for a goal: the click ID, how it was kept (<c>server_cookie</c>, <c>script_cookie</c>,
     /// <c>form</c>) and the browser engine and platform, parsed from the <c>User-Agent</c> in the SDK (never sent).
     /// </summary>
     /// <example><code>clikgate.Goal("account_opened", new GoalOptions { Reference = "APP-55231" }.WithContext(ctx.GetClikgateContext()));</code></example>

@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.AspNetCore.Builder;
 
-/// <summary>Maps the <c>/cg/keep</c> route (SPEC 13.1, change 16).</summary>
+/// <summary>Maps the <c>/cg/keep</c> route (SPEC 13.1).</summary>
 public static class ClikgateEndpointRouteBuilderExtensions
 {
     /// <summary>

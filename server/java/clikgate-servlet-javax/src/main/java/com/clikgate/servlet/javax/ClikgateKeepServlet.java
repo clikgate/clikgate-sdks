@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The {@code /cg/keep} route (SPEC 13.1, change 16) for the web script's {@code data-server-endpoint="/cg/keep"}:
+ * The {@code /cg/keep} route (SPEC 13.1) for the web script's {@code data-server-endpoint="/cg/keep"}:
  * sets the first-party {@code _cg_<param>} cookie and the {@code _cg_kept=s} marker from your server, so Safari (and
  * every browser on iPhone) keeps the click ID as long as you choose, up to the browser's limit, instead of up to 7
  * days.

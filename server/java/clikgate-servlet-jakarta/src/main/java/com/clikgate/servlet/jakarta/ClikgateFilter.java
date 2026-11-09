@@ -106,7 +106,7 @@ public class ClikgateFilter implements Filter {
   }
 
   /**
-   * The visitor context for a goal (change 16): the click ID, how it was kept ({@code server_cookie},
+   * The visitor context for a goal: the click ID, how it was kept ({@code server_cookie},
    * {@code script_cookie}, {@code form}) and the browser engine and platform, parsed from the {@code User-Agent} in the
    * SDK (the User-Agent itself is never sent).
    *

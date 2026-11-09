@@ -3,7 +3,11 @@
 All notable changes to this package. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package uses [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and PHP versions are dropped only after their end of life.
 
 
-## [Unreleased]
+## [2.0.0] - unreleased
+
+### Breaking: track() removed in favour of goal()
+
+- **Removed:** `track()` and app events are gone from Clikgate in favour of one method, `goal()`, for anything that happens in an app, website or server. A name that isn't set up as a goal yet still arrives (status `received`) and shows in the dashboard under "Seen from your app and website", ready to be counted. In this SDK that removes the generated app events resource (details under "Identity tokens, one goal() method" below): send `goal()` instead.
 
 ### Strict goal names
 - With the organisation's "Allow unknown goal names" off, the API refuses a goal name that isn't set up with `422 unknown_goal`, and an archived goal with `422 goal_archived`. Both are `InvalidRequestError` (`getErrorCode()` is the reason) and final: never retried, never re-queued; background `goal()` passes them to `onError` as dropped. The SDK never checks names itself and never remembers the refusal.
@@ -17,13 +21,13 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 - **Added:** `GoalStatus::Received` `received`: `goal()` / `goals.send` with a name that isn't ticked as a goal yet (or an archived goal) answers `200` with `status: "received"` and `reason` `not_counted_yet` (or `goal_archived`). It is a result, like `waiting` and `refused`: never an error and never retried.
 - **Removed (generated API):** the app events resource (`$clikgate->api->appEvents` and `AppEventsApi`): List App Events (`GET /v1/app-events`), Report App Events (`POST /v1/apps/{app_id}/events`) and the Event rules operations (`/v1/apps/{app_id}/event-rules`). Clikgate has one method for anything that happens in an app, website or server, `goal()`; names not ticked as goals yet show in the dashboard's "Seen from your app and website". No released version ever had them (the generator drops them through `server/codegen/removed.mjs` until the backend's public document no longer lists them).
 
-### Hashed email and phone for ad network matching (change 19)
+### Hashed email and phone for ad network matching
 
 - **Added:** `Clikgate\HashForAds::hash(?string $email = null, ?string $phone = null)` → the goal options `hashedEmail`, `hashedPhoneE164`, `hashedPhoneDigits` (only those given), to merge into a goal's options. Pure and offline: the email is trimmed and lowercased (must contain `@`); the phone must start with `+` or `00` and be 7-15 digits starting with 1-9 (E.164). Bad input is a local `invalid_argument` (`param` `email` / `phone`, never echoed).
 - **Added:** goal options `hashedEmail`, `hashedPhoneE164` and `hashedPhoneDigits` (wire `hashed_email`, `hashed_phone_e164`, `hashed_phone_digits`; `goal()`, `goals->send()`, batch events); `conversions->create()` takes the same wire fields. A value that isn't 64 lowercase hex characters is a local `invalid_hashed_identifier` (`param` = the wire field; the value is never echoed). The private-mode guard allows the three fields on goals and conversions; hashed values are never logged.
 - Conformance op `hash_for_ads`.
 
-### Keeping the click ID (change 16)
+### Keeping the click ID
 
 - **Added:** `$clikgate->clickIds->keepRoute(['days' => 30, 'secure' => true, 'domain' => …])`: the `/cg/keep` route as a PSR-15 handler (`Clikgate\Psr15\KeepRouteHandler`) for the web script's `data-server-endpoint="/cg/keep"`. Safari, and every browser on iPhone, keeps a click ID saved by a script for up to 7 days (sometimes less); when your server saves it, it lasts as long as you choose, up to the browser's limit. Same-origin `POST` only (`Sec-Fetch-Site`, else `Origin` = host), a JSON body of at most 1 KB with matching `click_id` and `page_click_id`, `204` with `Cache-Control: no-store, private`; 400/403/405 otherwise; never a redirect, never echoed or logged. `days` must be 1-400 (`invalid_argument`). The framework-neutral core is `keepRouteCore()->respond($method, $headers, $body)`.
 - **Added:** `$clikgate->clickIds->context($request)`: `clickId`, `keptBy` (`server_cookie`, `script_cookie`, `form` or null), `browserEngine` and `platform`, parsed from the `User-Agent` in the SDK (the User-Agent is never sent). Also `ClickIds::browserEngine()` and `ClickIds::platform()`.

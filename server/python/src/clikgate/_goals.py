@@ -114,7 +114,7 @@ def with_enums(data: Any) -> Any:
 
 
 def _check_enum(field: str, value: Any, allowed: Sequence[str]) -> None:
-    """``kept_by`` / ``browser_engine`` / ``platform`` (change 16): one of the documented values, else ``invalid_argument``."""
+    """``kept_by`` / ``browser_engine`` / ``platform``: one of the documented values, else ``invalid_argument``."""
     if value is None:
         return
     if not isinstance(value, str) or value not in allowed:

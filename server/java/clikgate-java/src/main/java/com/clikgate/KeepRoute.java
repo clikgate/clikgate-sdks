@@ -12,7 +12,7 @@ import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The {@code /cg/keep} route (SPEC 13.1, change 16). The web script's {@code data-server-endpoint="/cg/keep"} posts
+ * The {@code /cg/keep} route (SPEC 13.1). The web script's {@code data-server-endpoint="/cg/keep"} posts
  * the click ID from the page URL here, and the response sets the first-party {@code _cg_<param>} cookie and the
  * {@code _cg_kept=s} marker from your own server. Safari, and every browser on iPhone, keeps a click ID saved by a
  * script for up to 7 days (sometimes less). When your server saves it, it lasts as long as you choose, up to the

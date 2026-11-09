@@ -36,6 +36,9 @@ jobs:
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       DOTNET_NOLOGO: "1"
+      # Read by tests/Clikgate.Tests (MSBuild takes environment variables as properties). Not passed as -p:, because
+      # the ";" splits an unquoted -p: value and dotnet test (Testing Platform mode) does not strip the quotes.
+      TestTfms: ${{ matrix.tfms }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -48,12 +51,12 @@ jobs:
           node-version: 24
       - run: scripts/check-version.sh
       - name: Build (warnings are errors)
-        run: dotnet build Clikgate.sln -c Release "-p:TestTfms=${{ matrix.tfms }}"
+        run: dotnet build Clikgate.sln -c Release
       - name: Format
         if: runner.os == 'Linux'
         run: dotnet format Clikgate.sln --verify-no-changes
       - name: Unit tests
-        run: dotnet test --project tests/Clikgate.Tests -c Release --no-build "-p:TestTfms=${{ matrix.tfms }}"
+        run: dotnet test --project tests/Clikgate.Tests -c Release --no-build
       - name: Conformance suite
         run: dotnet run --project tests/Clikgate.Conformance -c Release --no-build
 

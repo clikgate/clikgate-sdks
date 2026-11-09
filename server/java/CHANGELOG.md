@@ -3,7 +3,11 @@
 All notable changes to these artifacts, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the artifacts use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Java versions are dropped only after their end of life.
 
 
-## [Unreleased]
+## [2.0.0] - unreleased
+
+### Breaking: track() removed in favour of goal()
+
+- **Removed:** `track()` and app events are gone from Clikgate in favour of one method, `goal()`, for anything that happens in an app, website or server. A name that isn't set up as a goal yet still arrives (status `received`) and shows in the dashboard under "Seen from your app and website", ready to be counted. In this SDK that removes the generated app events resource (details under "Identity tokens, one goal() method" below): send `goal()` instead.
 
 ### Strict goal names
 - With the organisation's "Allow unknown goal names" off, the API refuses a goal name that isn't set up with `422 unknown_goal`, and an archived goal with `422 goal_archived`. Both are `InvalidRequestError` (`getCode()` is the reason) and final: never retried, never re-queued; background `goal()` passes them to `onError` as dropped. The SDK never checks names itself and never remembers the refusal.
@@ -23,7 +27,7 @@ All notable changes to these artifacts, which are released together. The format 
 - **Added:** `Goal.Builder.hashedEmail()`, `hashedPhoneE164()`, `hashedPhoneDigits()` and `hashed(HashedIdentifiers)` (wire `hashed_email`, `hashed_phone_e164`, `hashed_phone_digits`) for `goal()`, `goals().send()` and batch events. A value that isn't 64 lowercase hex characters is refused locally (`invalid_hashed_identifier`, param = the wire field); `conversions().create()` checks the same fields in its params. The private-mode guard allows the three fields on goals and conversions. In private mode, hash on your own server: Clikgate never hashes for you there.
 - Conformance op `hash_for_ads`.
 
-### Keeping the click ID (change 16)
+### Keeping the click ID
 
 - **Added:** the `/cg/keep` route for the web script's `data-server-endpoint="/cg/keep"`. Safari, and every browser on iPhone, keeps a click ID saved by a script for up to 7 days (sometimes less); when your server saves it, it lasts as long as you choose, up to the browser's limit. Core: `clikgate.clickIds().keepRoute(CookieOptions)` returns a `KeepRoute` whose `respond(method, header, body)` gives a `KeepRoute.Response` (status and headers). Servlet: `ClikgateKeepServlet` in `clikgate-servlet-jakarta` and `clikgate-servlet-javax`. Spring Boot starter: `ClikgateKeepController` for `POST /cg/keep`, only with `clikgate.keep-route.enabled=true` (default false; also `clikgate.keep-route.path`, `clikgate.keep-route.secure`); with Spring Security, exclude the path from CSRF. Same-origin `POST` only (`Sec-Fetch-Site`, else `Origin` = host), a JSON body of at most 1 KB with matching `click_id` and `page_click_id`, `204` with `Cache-Control: no-store, private`; 400/403/405 otherwise; never a redirect, never echoed or logged. `days` must be a whole number from 1 to 400 (`invalid_argument`).
 - **Added:** `clikgate.clickIds().context(url, header)` (and `ClikgateFilter.context(clikgate, request)`) returning `ClickContext`: the click ID, `getKeptBy()` (`server_cookie`, `script_cookie`, `form` or null), `getBrowserEngine()` and `getPlatform()`, parsed from the `User-Agent` in the SDK (the User-Agent is never sent). Also `ClickIds.browserEngine(ua)` and `ClickIds.platform(ua)`.

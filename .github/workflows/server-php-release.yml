@@ -49,7 +49,7 @@ jobs:
       - name: Laravel package
         working-directory: server/php-laravel
         run: |
-          composer config repositories.clikgate-php '{"type":"path","url":"../php","options":{"symlink":false,"versions":{"clikgate/clikgate-php":"1.0.0"}}}'
+          composer config repositories.clikgate-php '{"type":"path","url":"../php","options":{"symlink":false,"versions":{"clikgate/clikgate-php":"2.0.0"}}}'
           composer update --no-interaction --no-progress
           vendor/bin/phpunit
           git checkout -- composer.json

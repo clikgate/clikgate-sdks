@@ -11,7 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
- * The {@code /cg/keep} route (SPEC 13.1, change 16), auto-configured when {@code clikgate.keep-route.enabled=true}.
+ * The {@code /cg/keep} route (SPEC 13.1), auto-configured when {@code clikgate.keep-route.enabled=true}.
  * The web script's {@code data-server-endpoint="/cg/keep"} posts the click ID here, and the response sets the
  * {@code _cg_<param>} cookie and the {@code _cg_kept=s} marker from your server.
  *

@@ -3,7 +3,11 @@
 All notable changes to these packages, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the packages use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and .NET versions are dropped only after their end of support.
 
 
-## [Unreleased]
+## [2.0.0] - unreleased
+
+### Breaking: track() removed in favour of goal()
+
+- **Removed:** `track()` and app events are gone from Clikgate in favour of one method, `goal()`, for anything that happens in an app, website or server. A name that isn't set up as a goal yet still arrives (status `received`) and shows in the dashboard under "Seen from your app and website", ready to be counted. In this SDK that removes the generated app events resource (details under "Identity tokens, one goal() method" below): send `goal()` instead.
 
 ### Strict goal names
 - With the organisation's "Allow unknown goal names" off, the API refuses a goal name that isn't set up with `422 unknown_goal`, and an archived goal with `422 goal_archived`. Both are `InvalidRequestError` (`Code` is the reason) and final: never retried, never re-queued; background `goal()` passes them to `onError` as dropped. The SDK never checks names itself and never remembers the refusal.
@@ -23,7 +27,7 @@ All notable changes to these packages, which are released together. The format f
 - **Added:** `GoalOptions.HashedEmail`, `HashedPhoneE164`, `HashedPhoneDigits` and `WithHashed(HashedIdentifiers)` (wire `hashed_email`, `hashed_phone_e164`, `hashed_phone_digits`) for `Goal()`, `Goals.SendAsync` and batch events. A value that isn't 64 lowercase hex characters is refused locally (`invalid_hashed_identifier`, `Param` = the wire field); `Conversions.CreateAsync` checks the same fields in its parameters. The private-mode guard allows the three fields on goals and conversions. In private mode, hash on your own server: Clikgate never hashes for you there.
 - Conformance op `hash_for_ads`.
 
-### Keeping the click ID (change 16)
+### Keeping the click ID
 
 - **Added:** `app.MapClikgateKeep("/cg/keep", new Clikgate.CookieOptions { Days = 30 })` in `Clikgate.AspNetCore`: the `/cg/keep` route for the web script's `data-server-endpoint="/cg/keep"` (also `ClikgateEndpointRouteBuilderExtensions.CreateClikgateKeepHandler(route)` as a `RequestDelegate`). Safari, and every browser on iPhone, keeps a click ID saved by a script for up to 7 days (sometimes less); when your server saves it, it lasts as long as you choose, up to the browser's limit. Core: `clikgate.ClickIds.KeepRoute(CookieOptions?)` returns a `ClikgateKeepRoute` whose `Respond(method, header, body)` gives a `KeepResponse`. Same-origin `POST` only (`Sec-Fetch-Site`, else `Origin` = host), a JSON body of at most 1 KB with matching `click_id` and `page_click_id`, `204` with `Cache-Control: no-store, private`; 400/403/405 otherwise; never a redirect, never echoed or logged. `Days` must be a whole number from 1 to 400 (`invalid_argument`). Antiforgery doesn't apply (a minimal-API JSON endpoint).
 - **Added:** `clikgate.ClickIds.Context(url, header)` and `HttpContext.GetClikgateContext()` returning `ClickContext` (`ClickId`, `KeptBy`: `server_cookie`, `script_cookie`, `form` or null, `BrowserEngine`, `Platform`), parsed from the `User-Agent` in the SDK (the User-Agent is never sent). Also `ClickIds.ParseBrowserEngine()` and `ClickIds.ParsePlatform()`.

@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 /**
- * The `/cg/keep` route (SPEC 13.1, change 16), registered with `Route::clikgateKeep('/cg/keep')`. The web script's
+ * The `/cg/keep` route (SPEC 13.1), registered with `Route::clikgateKeep('/cg/keep')`. The web script's
  * `data-server-endpoint="/cg/keep"` posts the click ID here and the response sets the `_cg_<param>` cookie and the
  * `_cg_kept=s` marker from your server. Days and domain come from `config/clikgate.php` (`cookie`); `Secure` is
  * always set unless `cookie.keep_secure` is false.
