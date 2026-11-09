@@ -18,7 +18,7 @@ Then, anywhere::
     from clikgate.django import get_client
     get_client().goal("account_opened", click_id=application.click_id, reference=application.reference)
 
-The ``/cg/keep`` route (change 16; the web script's ``data-server-endpoint="/cg/keep"``)::
+The ``/cg/keep`` route (the web script's ``data-server-endpoint="/cg/keep"``)::
 
     # urls.py
     from clikgate.django import keep_view

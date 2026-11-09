@@ -170,7 +170,7 @@ public final class Goal {
     }
 
     /**
-     * How the click ID was kept (change 16): {@code server_cookie}, {@code script_cookie}, {@code form},
+     * How the click ID was kept: {@code server_cookie}, {@code script_cookie}, {@code form},
      * {@code payment_metadata} or {@code unknown}. Allowed in private mode.
      */
     public Builder keptBy(@Nullable String keptBy) {
@@ -178,13 +178,13 @@ public final class Goal {
       return this;
     }
 
-    /** The browser engine (change 16): {@code webkit_ios}, {@code safari_mac}, {@code chromium}, {@code gecko} or {@code other}. */
+    /** The browser engine: {@code webkit_ios}, {@code safari_mac}, {@code chromium}, {@code gecko} or {@code other}. */
     public Builder browserEngine(@Nullable String browserEngine) {
       this.browserEngine = browserEngine;
       return this;
     }
 
-    /** The platform (change 16): {@code ios}, {@code android}, {@code macos}, {@code windows}, {@code linux} or {@code other}. */
+    /** The platform: {@code ios}, {@code android}, {@code macos}, {@code windows}, {@code linux} or {@code other}. */
     public Builder platform(@Nullable String platform) {
       this.platform = platform;
       return this;

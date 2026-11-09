@@ -7,7 +7,7 @@
        (bytecode 52); the Spring Boot starter targets Java 17, Spring Boot 4's minimum. -->
   <groupId>com.clikgate</groupId>
   <artifactId>clikgate-java-parent</artifactId>
-  <version>1.1.0</version>
+  <version>2.0.0</version>
   <packaging>pom</packaging>
 
   <name>Clikgate Java SDK (parent)</name>

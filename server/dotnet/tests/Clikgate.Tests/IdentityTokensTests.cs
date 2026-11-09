@@ -81,9 +81,9 @@ public class IdentityTokensTests
             IdentitySecrets = new Dictionary<string, string> { ["app_rider"] = S(other, "secret") },
         });
         var token = c.CreateIdentityToken("user_42");
-        Assert.Equal(IdentityTokens.Create("user_42", S(a, "secret"), long.Parse(token[(token.LastIndexOf('.') + 1)..], System.Globalization.CultureInfo.InvariantCulture)), token);
+        Assert.Equal(IdentityTokens.Create("user_42", S(a, "secret"), long.Parse(token.Substring(token.LastIndexOf('.') + 1), System.Globalization.CultureInfo.InvariantCulture)), token);
         var rider = c.CreateIdentityToken("user_42", "app_rider");
-        Assert.Equal(IdentityTokens.Create("user_42", S(other, "secret"), long.Parse(rider[(rider.LastIndexOf('.') + 1)..], System.Globalization.CultureInfo.InvariantCulture)), rider);
+        Assert.Equal(IdentityTokens.Create("user_42", S(other, "secret"), long.Parse(rider.Substring(rider.LastIndexOf('.') + 1), System.Globalization.CultureInfo.InvariantCulture)), rider);
     }
 
     [Fact]

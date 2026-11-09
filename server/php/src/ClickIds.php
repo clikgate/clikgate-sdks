@@ -16,7 +16,7 @@ final class ClickIds
 {
     public const PATTERN = '/^clk_[0-9A-Z]{26}$/D';
     public const HEADER = 'Clikgate-Click-Id';
-    /** The marker cookie (change 16): `_cg_kept=s` says the server kept the click ID, so goals report `server_cookie`. */
+    /** The marker cookie: `_cg_kept=s` says the server kept the click ID, so goals report `server_cookie`. */
     public const MARKER = '_cg_kept';
     private const PAYMENT_KEYS = ['cg_click_id', 'cgid', 'clikgate_click_id'];
     private const CONTAINERS = ['metadata', 'meta', 'meta_data', 'note_attributes', 'attributes', 'custom_attributes', 'customAttributes'];

@@ -20,7 +20,7 @@ use Clikgate\Http\Requester;
  * string or an int), `currency`, `isFirst`, `label` (the person's label, 1-80 characters; Growth and up), `occurredAt` (`DateTimeInterface` or an RFC 3339 string),
  * `metadata` (refused in private mode), `consent` (allowed), `provider` (a `Provider`, or a provider-key string for a
  * gateway newer than this release; the gateway of a Payment goal), `keptBy`, `browserEngine` and `platform` (the
- * visitor context from `clickIds->context()`, change 16; allowed in private mode), `hashedEmail`, `hashedPhoneE164` and
+ * visitor context from `clickIds->context()`; allowed in private mode), `hashedEmail`, `hashedPhoneE164` and
  * `hashedPhoneDigits` (your own SHA-256 hashes for ad network matching, 64 lowercase hex; make them with
  * `HashForAds::hash()`; allowed in private mode), `extra` (additional wire fields).
  *
@@ -33,7 +33,7 @@ use Clikgate\Http\Requester;
 final class Goals
 {
     private const OPTIONS = ['reference' => 'reference', 'clickId' => 'click_id', 'code' => 'code', 'value' => 'value', 'currency' => 'currency', 'isFirst' => 'is_first', 'label' => 'label', 'occurredAt' => 'occurred_at', 'metadata' => 'metadata', 'consent' => 'consent', 'extra' => 'extra', 'provider' => 'provider', 'keptBy' => 'kept_by', 'browserEngine' => 'browser_engine', 'platform' => 'platform', 'hashedEmail' => 'hashed_email', 'hashedPhoneE164' => 'hashed_phone_e164', 'hashedPhoneDigits' => 'hashed_phone_digits'];
-    /** Change 16 (SPEC 9.1, 13.1): the visitor context values, from `clickIds->context()`. */
+    /** The visitor context values (SPEC 9.1, 13.1), from `clickIds->context()`. */
     public const KEPT_BY = ['server_cookie', 'script_cookie', 'form', 'payment_metadata', 'unknown'];
     public const BROWSER_ENGINES = ['webkit_ios', 'safari_mac', 'chromium', 'gecko', 'other'];
     public const PLATFORMS = ['ios', 'android', 'macos', 'windows', 'linux', 'other'];

@@ -75,7 +75,9 @@ final class CaptureLogger extends AbstractLogger
 function startMock(): array
 {
     $mock = realpath(__DIR__ . '/../../../conformance/mock-server/server.mjs');
-    $node = trim((string) shell_exec('command -v node'));
+    // `command -v` is a POSIX shell builtin; cmd.exe (what shell_exec uses on Windows) has `where` instead.
+    $lookup = 'Windows' === PHP_OS_FAMILY ? 'where node 2>NUL' : 'command -v node';
+    $node = trim(strtok((string) shell_exec($lookup), "\r\n") ?: '');
     if ('' === $node || false === $mock) {
         fwrite(STDERR, "conformance: Node 18+ must be on the PATH to start the mock server\n");
         exit(1);

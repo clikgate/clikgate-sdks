@@ -53,7 +53,7 @@ final class ClientTest extends TestCase
     {
         self::assertSame('1.8.0-402', UserAgent::sanitise('1.8.0_402'));
         self::assertMatchesRegularExpression(self::UA, UserAgent::build());
-        self::assertSame('clikgate-php/1.1.0 (php 8.1.0; windows x64)', UserAgent::build('Windows', 'AMD64', '8.1.0'));
+        self::assertSame('clikgate-php/2.0.0 (php 8.1.0; windows x64)', UserAgent::build('Windows', 'AMD64', '8.1.0'));
         self::assertMatchesRegularExpression(self::UA, UserAgent::build('Linux', 'aarch64', '8.4.0-dev'));
     }
 

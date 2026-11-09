@@ -56,7 +56,7 @@ public class ClikgateProperties {
   private final KeepRoute keepRoute = new KeepRoute();
 
   /**
-   * The {@code /cg/keep} route (change 16) for the web script's {@code data-server-endpoint="/cg/keep"}. Off unless
+   * The {@code /cg/keep} route for the web script's {@code data-server-endpoint="/cg/keep"}. Off unless
    * {@code clikgate.keep-route.enabled=true}. It uses {@code clikgate.cookie.days} (1-400) and
    * {@code clikgate.cookie.domain}.
    */
