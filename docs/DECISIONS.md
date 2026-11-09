@@ -287,7 +287,7 @@ Built 2026-10-26, in that order. .NET was added after the .NET SDK (10.0.403) wa
   - `CLIKGATE_QUEUE` dispatches a `SendGoal` job (5 tries, backoff 10/30/120/600 s; 4xx fail at once).
   - **`EncryptCookies::except(['_cg_cgid'])`**: otherwise Laravel would encrypt the cookie the web script must read.
   - It reads the raw `Cookie` header for the same reason.
-  - Laravel 11, 12 and 13, on PHP 8.2+ (Laravel 11's minimum).
+  - Laravel 11, 12 and 13, on PHP 8.2+ (Laravel 11's minimum). Superseded in 2.0.0: Laravel 12 and 13 only (see "clikgate-laravel 2.0.0 drops Laravel 11" below).
   - The path repository to `../php` is added in CI (`composer config repositories…`), not committed, because the split public repository has no `../php`.
 - **Verified locally (PHP 8.5.12):**
   - PHPStan **max** (level 10) is clean on `src` (including `Generated`), `tests/Unit` and `examples`; php-cs-fixer (PER-CS 2.0) is clean.
@@ -405,7 +405,7 @@ Built 2026-10-26, in that order. .NET was added after the .NET SDK (10.0.403) wa
   - 8.5 has active support until 2027-12-31; 8.4 has active support until 2026-12-31; 8.3 has security fixes until 2027-12-31; 8.2 has security fixes until 2026-12-31.
   - **8.1 has been EOL since 2025-12-31.** It is kept as the minimum (S.9) and in CI.
   - Tool versions: PHPStan 2.3.2 (levels 0–10, where `max` = 10), php-cs-fixer 3.95.27, PHPUnit 13.4 (PHP 8.4+), 12 (8.3+), 11 (8.2+) and 10 (8.1). The `require-dev` range resolves the right one per PHP version.
-  - Laravel 13 (2026-03-17; PHP 8.3+). Laravel 12 has security fixes until 2027-02-24. Laravel 11 has been EOL since 2026-03-12, but stays in the range for slower upgraders.
+  - Laravel 13 (2026-03-17; PHP 8.3+). Laravel 12 has security fixes until 2027-02-24. Laravel 11 has been EOL since 2026-03-12; it stayed in the range for slower upgraders until 2.0.0 dropped it (see "clikgate-laravel 2.0.0 drops Laravel 11" below).
   - Package auto-discovery uses `extra.laravel` (laravel.com/docs/13.x/packages). `Router::aliasMiddleware` and the `Request` `Macroable` trait were checked in the 13.x source.
   - `cyclonedx/cyclonedx-php-composer` 6.2.0.
 - **Packagist** (packagist.org/about, packagist.com/docs/api/trusted-publishing):
@@ -606,3 +606,13 @@ the generated reason lists when the owner regenerates.
 - The guides tell assistants never to check names on the device, cache the setting or create goals from app code.
 - Rebuilt (`ai-guides/scripts/check.mjs`, `build.mjs`) and copied to the website with its `pnpm sync:ai-guides`.
   `api-surface.md` is generated from SDK sources and wasn't touched.
+
+## clikgate-laravel 2.0.0 drops Laravel 11 (2026-11-09)
+
+- **Decision (owner, 2026-11-09):** `clikgate/clikgate-laravel` 2.0.0 supports Laravel 12 and 13 only. This replaces
+  "Laravel 11 stays in the range for slower upgraders" above.
+- **Why:** every Laravel 11.x release now carries a security advisory (Laravel 11 has been EOL since 2026-03-12), so
+  Composer 2.9+ refuses to install any of them by default. A supported range nobody can install safely isn't support.
+- **Changes:** `illuminate/*` `^12.0 || ^13.0`, `orchestra/testbench` `^10.0 || ^11.0` (dev). The Laravel 11 CI row and its
+  `audit.block-insecure` override are gone; the Laravel 12 row runs on PHP 8.2, so the package's PHP minimum (8.2+,
+  Laravel 12's minimum too) is still tested. The core `clikgate/clikgate-php` keeps PHP 8.1+.

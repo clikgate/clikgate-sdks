@@ -1,6 +1,6 @@
 # Server SDK for PHP (server/php) and the Laravel package (server/php-laravel): static analysis (PHPStan max),
 # code style, unit tests and the cross-language conformance suite on every supported PHP plus the minimum
-# (8.1), on Linux and Windows; the Laravel package on Laravel 11, 12 and 13.
+# (8.1), on Linux and Windows; the Laravel package on Laravel 12 and 13.
 # PHP versions checked 2026-10-26 (docs/DECISIONS.md): 8.2-8.5 are supported; 8.1 (EOL 2025-12-31) stays
 # tested because S.9 makes it the documented minimum.
 name: server-php
@@ -83,8 +83,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { laravel: "11", testbench: "9", php: "8.2" }
-          - { laravel: "12", testbench: "10", php: "8.3" }
+          - { laravel: "12", testbench: "10", php: "8.2" }
           - { laravel: "13", testbench: "11", php: "8.3" }
           - { laravel: "13", testbench: "11", php: "8.5" }
     defaults:
@@ -99,11 +98,6 @@ jobs:
           coverage: none
       - name: Use the core package from this checkout
         run: composer config repositories.clikgate-php '{"type":"path","url":"../php","options":{"symlink":false,"versions":{"clikgate/clikgate-php":"2.0.0"}}}'
-      # Laravel 11 is EOL (2026-03-12) and every 11.x release now carries a security advisory, so Composer 2.9+
-      # refuses to resolve it. It stays in the supported range (docs/DECISIONS.md), so this test job still installs
-      # it to prove compatibility. Only this matrix row, only in CI; nothing published depends on it.
-      - if: matrix.laravel == '11'
-        run: composer config audit.block-insecure false
       - run: composer require --dev --no-update "orchestra/testbench:^${{ matrix.testbench }}.0"
       - run: composer update --no-interaction --no-progress --with-all-dependencies
       - run: vendor/bin/phpunit
