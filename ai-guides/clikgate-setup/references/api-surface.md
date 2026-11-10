@@ -7,7 +7,7 @@ Signatures are shown in each language's own syntax, with comments and bodies rem
 
 ## Mobile
 
-### Flutter: `clikgate_flutter` 1.5.1
+### Flutter: `clikgate_flutter` 2.0.0
 
 `import 'package:clikgate_flutter/clikgate_flutter.dart';` Every method is static on `Clikgate`.
 
@@ -56,7 +56,7 @@ class ClikgateDeepLink {
 }
 ```
 
-### React Native and Expo: `@clikgate/react-native` 1.6.1
+### React Native and Expo: `@clikgate/react-native` 2.0.0
 
 `import { Clikgate } from '@clikgate/react-native';`
 
@@ -132,7 +132,7 @@ type ClikgateLogLevel = 'verbose' | 'debug' | 'info' | 'warn' | 'error' | 'none'
 
 Expo config plugin props (`app.json` › `plugins` › `["@clikgate/react-native", {…}]`): `linkDomains` (live domains: the app link subdomain and custom domains, never a shared domain), `testLinkDomain` (the app test subdomain, e.g. `"yourapp.dev.ciz.to"`), `testVariants` (default `["development", "preview"]`), `uriScheme`, `enableBackgroundRemoteNotifications`, `enableWhatsAppSharing`.
 
-### Android: `com.clikgate:clikgate-android:1.5.1`
+### Android: `com.clikgate:clikgate-android:2.0.0`
 
 `import com.clikgate.Clikgate` (and `com.clikgate.ClikgateOptions`, `com.clikgate.Provider`, `com.clikgate.GoalStatus`). Every method is on the `Clikgate` object.
 
@@ -179,7 +179,7 @@ class Provider { companion object { val PAYSTACK: Provider; val FLUTTERWAVE: Pro
 data class ClikgateDeepLink(val url: String?, val path: String?, val data: Map<String, Any?>, val isDeferred: Boolean, val clickId: String?, val matchType: String?, val link: ClikgateLink?, val referral: Referral?, val blockMessage: String? = null)
 ```
 
-### iOS: pod `Clikgate` / Swift package `clikgate-ios-sdk` 1.5.1
+### iOS: pod `Clikgate` / Swift package `clikgate-ios-sdk` 2.0.0
 
 `import Clikgate`. `configure` is static; everything else is on `Clikgate.shared`.
 
