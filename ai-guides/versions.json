@@ -1,10 +1,10 @@
 {
   "$comment": "Current Clikgate SDK versions. The release workflow fills these in; scripts/build.mjs replaces {{versions.<key>}} in the guides with them.",
-  "setup": "1.1.1",
-  "flutter": "1.5.1",
-  "react_native": "1.6.1",
-  "android": "1.5.1",
-  "ios": "1.5.1",
-  "ios_pod": "1.5",
+  "setup": "2.0.0",
+  "flutter": "2.0.0",
+  "react_native": "2.0.0",
+  "android": "2.0.0",
+  "ios": "2.0.0",
+  "ios_pod": "2.0",
   "node": "2.0.0"
 }
