@@ -24,6 +24,9 @@ jobs:
         working-directory: server/dotnet
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      # Read by tests/Clikgate.Tests (MSBuild takes environment variables as properties), as in server-dotnet.yml. Not
+      # passed as -p:, because MSBuild reads the ";" in "-p:TestTfms=net8.0;net10.0" as a separator (error MSB1006).
+      TestTfms: "net8.0;net10.0"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -35,8 +38,8 @@ jobs:
         with:
           node-version: 24
       - run: scripts/check-version.sh
-      - run: dotnet build Clikgate.sln -c Release "-p:TestTfms=net8.0;net10.0"
-      - run: dotnet test --project tests/Clikgate.Tests -c Release --no-build "-p:TestTfms=net8.0;net10.0"
+      - run: dotnet build Clikgate.sln -c Release
+      - run: dotnet test --project tests/Clikgate.Tests -c Release --no-build
       - run: dotnet run --project tests/Clikgate.Conformance -c Release --no-build
       - run: dotnet pack src/Clikgate -c Release -o artifacts
       - run: dotnet pack src/Clikgate.AspNetCore -c Release -o artifacts
