@@ -247,8 +247,8 @@ class _PersonIdentifiedBase(TypedDict):
 
 class PersonIdentified(_PersonIdentifiedBase, total=False):
     """The answer of ``identify_user``. ``label_ignored``: ``"plan"`` (below Growth the label isn't stored) or
-    ``"lower_rank"`` (a label your team set was kept). ``customer_since_ignored`` (change 26): ``"unverified"`` or
-    ``"invalid"``. ``customer_id_warning`` (change 26 KC.1): ``looks_like_email``, ``looks_like_phone`` or
+    ``"lower_rank"`` (a label your team set was kept). ``customer_since_ignored``: ``"unverified"`` or
+    ``"invalid"``. ``customer_id_warning``: ``looks_like_email``, ``looks_like_phone`` or
     ``looks_like_national_id``: use your own user ID."""
 
     customer_since_ignored: Optional[str]
@@ -400,7 +400,7 @@ class Clikgate:
         self.links = Links(self._core)
         #: Clicks.
         self.clicks = Clicks(self._core)
-        #: Existing customers from before you added Clikgate: ``import_customers`` and ``remove`` (change 26).
+        #: Existing customers from before you added Clikgate: ``import_customers`` and ``remove``.
         self.known_customers = KnownCustomers(self._core)
         explicit = r.click_id_param
         #: Click-ID helpers using this client's ``click_id_param`` (or the organisation's, from config).
@@ -544,7 +544,7 @@ class Clikgate:
         links it to that customer. ``label`` is what your team sees instead of the click ID (1-80 characters, ``""``
         clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
         ``require_identity_token``. In private mode ``customer_id`` is refused locally and ``label`` needs "Allow
-        labels in private mode". ``customer_since`` (change 26) is when they became your customer (``"YYYY-MM-DD"``,
+        labels in private mode". ``customer_since`` is when they became your customer (``"YYYY-MM-DD"``,
         an ISO 8601 date-time, a ``date``, ``datetime`` or Unix seconds; needs ``customer_id``), so existing customers
         are never counted as referrals or new customers; Clikgate keeps the earliest date unless
         ``customer_since_replace=True``. Refused in private mode.
@@ -698,7 +698,7 @@ class AsyncClikgate:
         self.payments = AsyncPayments(self._core)
         self.links = AsyncLinks(self._core)
         self.clicks = AsyncClicks(self._core)
-        #: Existing customers from before you added Clikgate: ``import_customers`` and ``remove`` (change 26).
+        #: Existing customers from before you added Clikgate: ``import_customers`` and ``remove``.
         self.known_customers = AsyncKnownCustomers(self._core)
         explicit = r.click_id_param
         self.click_ids = ClickIds(lambda: explicit or (config.peek() or {}).get("click_id_param") or "cgid")
@@ -837,7 +837,7 @@ class AsyncClikgate:
         links it to that customer. ``label`` is what your team sees instead of the click ID (1-80 characters, ``""``
         clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
         ``require_identity_token``. In private mode ``customer_id`` is refused locally and ``label`` needs "Allow
-        labels in private mode". ``customer_since`` (change 26) is when they became your customer (``"YYYY-MM-DD"``,
+        labels in private mode". ``customer_since`` is when they became your customer (``"YYYY-MM-DD"``,
         an ISO 8601 date-time, a ``date``, ``datetime`` or Unix seconds; needs ``customer_id``), so existing customers
         are never counted as referrals or new customers; Clikgate keeps the earliest date unless
         ``customer_since_replace=True``. Refused in private mode.

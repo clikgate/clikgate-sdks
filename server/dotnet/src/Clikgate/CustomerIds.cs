@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace Clikgate;
 
 /// <summary>
-/// Your customer IDs in one canonical form (change 26 KC.1, R.24), the form the API stores and checks: Unicode NFC,
+/// Your customer IDs in one canonical form, the form the API stores and checks: Unicode NFC,
 /// trimmed of Unicode whitespace (and U+FEFF) at both ends, case kept. Warnings (first match wins): <c>empty</c>,
 /// <c>too_long</c> (more than 128 characters), <c>looks_like_email</c>, <c>looks_like_national_id</c> (exactly 11
 /// digits, unless <c>allow11DigitIds</c>), <c>looks_like_phone</c>. Use your own stable user ID (for example

@@ -199,7 +199,7 @@ public final class Clikgate implements AutoCloseable {
     return clicks;
   }
 
-  /** Existing customers from before you added Clikgate: {@code importCustomers} and {@code remove} (change 26). */
+  /** Existing customers from before you added Clikgate: {@code importCustomers} and {@code remove}. */
   public KnownCustomers knownCustomers() {
     return knownCustomers;
   }
@@ -280,7 +280,7 @@ public final class Clikgate implements AutoCloseable {
   }
 
   /**
-   * A version 2 identity token (change 26) that also carries when the person became your customer, so Clikgate can
+   * A version 2 identity token that also carries when the person became your customer, so Clikgate can
    * tell an existing customer from a new one. {@code appId} may be null.
    *
    * <pre>{@code
@@ -298,7 +298,7 @@ public final class Clikgate implements AutoCloseable {
    * links it to that customer. {@code label} is what your team sees instead of the click ID (1-80 characters,
    * {@code ""} clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
    * {@code require_identity_token}. In private mode {@code customerId} is refused locally and {@code label} needs
-   * "Allow labels in private mode". {@code customerSince} (change 26) is when they became your customer, so existing
+   * "Allow labels in private mode". {@code customerSince} is when they became your customer, so existing
    * customers are never counted as referrals or new customers; it is refused in private mode too.
    *
    * <p>Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads

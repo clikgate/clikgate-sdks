@@ -7,7 +7,7 @@ namespace Clikgate;
 use Clikgate\Exception\ConfigurationException;
 
 /**
- * Your customer IDs in one canonical form (change 26 KC.1, R.24), the form the API stores and checks:
+ * Your customer IDs in one canonical form, the form the API stores and checks:
  * Unicode NFC, trimmed of Unicode whitespace (and U+FEFF) at both ends, case kept.
  *
  * Warnings (first match wins): `empty`, `too_long` (more than 128 characters), `looks_like_email`,

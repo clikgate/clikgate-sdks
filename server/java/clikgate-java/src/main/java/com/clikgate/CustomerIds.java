@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Your customer IDs in one canonical form (change 26 KC.1, R.24), the form the API stores and checks: Unicode NFC,
+ * Your customer IDs in one canonical form, the form the API stores and checks: Unicode NFC,
  * trimmed of Unicode whitespace (and U+FEFF) at both ends, case kept.
  *
  * <p>Warnings (first match wins): {@code empty}, {@code too_long} (more than 128 characters),

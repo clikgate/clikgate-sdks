@@ -79,7 +79,7 @@ public final class IdentifyUserParams {
     }
 
     /**
-     * When this customer became your customer (change 26 KC.4). Needs {@link #customerId(String)}. Clikgate keeps the
+     * When this customer became your customer. Needs {@link #customerId(String)}. Clikgate keeps the
      * earliest date it gets. Refused in private mode.
      */
     public Builder customerSince(@Nullable Instant customerSince) {

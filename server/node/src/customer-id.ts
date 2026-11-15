@@ -1,5 +1,5 @@
 /**
- * Your customer IDs, in one canonical form (change 26 KC.1, R.24): the same form the API stores and checks, so an ID
+ * Your customer IDs, in one canonical form: the same form the API stores and checks, so an ID
  * sent from your server, an import and an identity token always match.
  *
  * - canonical form: Unicode NFC, trimmed of Unicode whitespace (and U+FEFF) at both ends, case kept;

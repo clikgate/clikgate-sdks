@@ -15,7 +15,7 @@ namespace Clikgate;
 /// Identity tokens (SDK spec 8.5): your server proves to Clikgate that a customer ID belongs to the
 /// person signed in to your app. The app passes the token to the mobile SDK's <c>identifyUser()</c>.
 /// <c>token = base64url_nopad(HMAC_SHA256(secret, customerId + "." + issuedAt)) + "." + issuedAt</c>, the signer
-/// Clikgate verifies with. With a <c>customerSince</c> (change 26) the token is version 2 and also carries when the
+/// Clikgate verifies with. With a <c>customerSince</c> the token is version 2 and also carries when the
 /// person became your customer: <c>signature.issuedAt.customerSince</c>, so Clikgate can tell an existing customer
 /// from a new one. No network call and no API key needed. Guide: https://clikgate.com/docs/identify-users
 /// </summary>
@@ -67,7 +67,7 @@ public static class IdentityTokens
         CreateWith(OnClientPlatform.Value, null, null, Environment.GetEnvironmentVariable, customerId, null, secret, issuedAtSeconds);
 
     /// <summary>
-    /// A version 2 token (change 26) carrying when the person became your customer, issued now, signed with
+    /// A version 2 token carrying when the person became your customer, issued now, signed with
     /// <paramref name="appId"/>'s secret (or <c>CLIKGATE_IDENTITY_SECRET</c> when null).
     /// </summary>
     /// <exception cref="InvalidRequestException">An account date before 1990 or after now (<c>invalid_argument</c>, param <c>customer_since</c>).</exception>
@@ -126,7 +126,7 @@ public static class IdentityTokens
     }
 
     /// <summary>
-    /// Version 2 (change 26 KC.5, R.13): the MAC input is
+    /// Version 2: the MAC input is
     /// <c>"v2\n" + utf8Length(cid) + ":" + cid + "\n" + issuedAt + "\n" + customerSince</c>, cid in canonical form.
     /// </summary>
     internal static string SignV2(string secret, string customerId, long issuedAt, long customerSince)

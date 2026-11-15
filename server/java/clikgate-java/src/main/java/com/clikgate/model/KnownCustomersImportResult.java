@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** The answer of {@code knownCustomers().importCustomers(...)}, summed over every batch (change 26 KC.3). */
+/** The answer of {@code knownCustomers().importCustomers(...)}, summed over every batch. */
 public final class KnownCustomersImportResult {
   private final long accepted;
   private final long refused;

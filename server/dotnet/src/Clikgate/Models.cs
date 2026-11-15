@@ -295,7 +295,7 @@ public sealed class IdentifyUserParams
     public string? Label { get; set; }
 
     /// <summary>
-    /// When this customer became your customer (change 26 KC.4). Needs <see cref="CustomerId"/>. Clikgate keeps the
+    /// When this customer became your customer. Needs <see cref="CustomerId"/>. Clikgate keeps the
     /// earliest date it gets. Refused in private mode.
     /// </summary>
     public DateTimeOffset? CustomerSince { get; set; }
@@ -313,9 +313,9 @@ public sealed class PersonIdentified(JsonObject? raw) : WireObject(raw)
     /// <summary><c>plan</c> (below Growth the label isn't stored), <c>lower_rank</c> (a label your team set was kept), or null.</summary>
     public string? LabelIgnored => String("label_ignored");
 
-    /// <summary>Why <c>CustomerSince</c> wasn't used: <c>unverified</c> or <c>invalid</c> (change 26), or null.</summary>
+    /// <summary>Why <c>CustomerSince</c> wasn't used: <c>unverified</c> or <c>invalid</c>, or null.</summary>
     public string? CustomerSinceIgnored => String("customer_since_ignored");
 
-    /// <summary><c>looks_like_email</c>, <c>looks_like_phone</c> or <c>looks_like_national_id</c> (change 26 KC.1): use your own user ID instead. Null otherwise.</summary>
+    /// <summary><c>looks_like_email</c>, <c>looks_like_phone</c> or <c>looks_like_national_id</c>: use your own user ID instead. Null otherwise.</summary>
     public string? CustomerIdWarning => String("customer_id_warning");
 }

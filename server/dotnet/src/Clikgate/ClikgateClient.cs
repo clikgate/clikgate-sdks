@@ -30,7 +30,7 @@ public interface IClikgateClient : IAsyncDisposable, IDisposable
     /// <summary>Clicks.</summary>
     Clicks Clicks { get; }
 
-    /// <summary>Existing customers from before you added Clikgate (change 26).</summary>
+    /// <summary>Existing customers from before you added Clikgate.</summary>
     KnownCustomers KnownCustomers { get; }
 
     /// <summary>Click-ID helpers using this client's parameter.</summary>
@@ -48,7 +48,7 @@ public interface IClikgateClient : IAsyncDisposable, IDisposable
     /// <summary>Creates an identity token for the signed-in user (no network call). See https://clikgate.com/docs/identify-users.</summary>
     string CreateIdentityToken(string customerId, string? appId = null);
 
-    /// <summary>Creates a version 2 identity token that also carries when the person became your customer (change 26).</summary>
+    /// <summary>Creates a version 2 identity token that also carries when the person became your customer.</summary>
     string CreateIdentityToken(string customerId, string? appId, DateTimeOffset customerSince);
 
     /// <summary>Tells Clikgate who a person is (<c>POST /v1/people/identify</c>).</summary>
@@ -200,7 +200,7 @@ public sealed class ClikgateClient : IClikgateClient
     /// <inheritdoc/>
     public Clicks Clicks { get; }
 
-    /// <summary>Existing customers from before you added Clikgate: <c>ImportAsync</c> and <c>RemoveAsync</c> (change 26).</summary>
+    /// <summary>Existing customers from before you added Clikgate: <c>ImportAsync</c> and <c>RemoveAsync</c>.</summary>
     public KnownCustomers KnownCustomers { get; }
 
     /// <inheritdoc/>
@@ -293,7 +293,7 @@ public sealed class ClikgateClient : IClikgateClient
         IdentityTokens.CreateWith(IdentityTokens.ClientPlatform, _identitySecret, _identitySecrets, Environment.GetEnvironmentVariable, customerId, appId, null, null);
 
     /// <summary>
-    /// Creates a version 2 identity token (change 26) that also carries when the person became your customer, so
+    /// Creates a version 2 identity token that also carries when the person became your customer, so
     /// Clikgate can tell an existing customer from a new one. <paramref name="appId"/> may be null.
     /// </summary>
     /// <example><code>clikgate.CreateIdentityToken(user.Id, null, user.CreatedAt)</code></example>
@@ -306,7 +306,7 @@ public sealed class ClikgateClient : IClikgateClient
     /// links it to that customer. <c>Label</c> is what your team sees instead of the click ID (1-80 characters, <c>""</c>
     /// clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
     /// <c>require_identity_token</c>. In private mode <c>CustomerId</c> is refused locally and <c>Label</c> needs
-    /// "Allow labels in private mode". <c>CustomerSince</c> (change 26) is when they became your customer, so existing
+    /// "Allow labels in private mode". <c>CustomerSince</c> is when they became your customer, so existing
     /// customers are never counted as referrals or new customers; it is refused in private mode too.
     /// <para>
     /// Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
