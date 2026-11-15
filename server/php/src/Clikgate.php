@@ -64,6 +64,8 @@ final class Clikgate
     public readonly Links $links;
     /** Clicks. */
     public readonly Clicks $clicks;
+    /** Existing customers from before you added Clikgate: `import()` and `remove()`. */
+    public readonly KnownCustomers $knownCustomers;
     /** Click-ID helpers using this client's `clickIdParam` (or the organisation's, from config). */
     public readonly ClickIds $clickIds;
     /** Every API-key operation, generated from openapi.json ("advanced"). */
@@ -156,6 +158,7 @@ final class Clikgate
         $this->payments = new Payments($this->core);
         $this->links = new Links($this->core);
         $this->clicks = new Clicks($this->core);
+        $this->knownCustomers = new KnownCustomers($this->core);
         $core = $this->core;
         $this->clickIds = new ClickIds(static function () use ($clickIdParam, $core): string {
             $fromConfig = $core->peekConfig()['click_id_param'] ?? null;
@@ -234,11 +237,16 @@ final class Clikgate
      * $clikgate->createIdentityToken((string) $user->id, ['appId' => 'app_…']);   // several apps
      * ```
      *
-     * @param array{appId?: ?string, issuedAt?: ?int} $options
+     * @param array{appId?: ?string, issuedAt?: ?int, customerSince?: \DateTimeInterface|int|null} $options
      */
     public function createIdentityToken(string $customerId, array $options = []): string
     {
-        return IdentityToken::createWith($customerId, ['appId' => $options['appId'] ?? null, 'issuedAt' => $options['issuedAt'] ?? null], $this->identitySecret, $this->identitySecrets);
+        return IdentityToken::createWith(
+            $customerId,
+            ['appId' => $options['appId'] ?? null, 'issuedAt' => $options['issuedAt'] ?? null, 'customerSince' => $options['customerSince'] ?? null],
+            $this->identitySecret,
+            $this->identitySecrets,
+        );
     }
 
     /**
@@ -247,6 +255,9 @@ final class Clikgate
      * that customer. `label` is what your team sees instead of the click ID (1-80 characters, `''` clears it; Growth
      * and up). Always verified (your server), so it also satisfies a referral program's `require_identity_token`.
      * In private mode `customerId` is refused locally and `label` needs "Allow labels in private mode".
+     * `customerSince` (`'YYYY-MM-DD'`, an ISO 8601 date-time, a `DateTimeInterface` or Unix seconds; needs
+     * `customerId`) is when they became your customer, so existing customers are never counted as referrals or new
+     * customers; Clikgate keeps the earliest date unless `customerSinceReplace` is true. Refused in private mode.
      *
      * Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
      * `getInstallationId()` and sends it in its sign-in request; your server calls this with `appId`,
@@ -261,10 +272,10 @@ final class Clikgate
      * }
      * ```
      *
-     * @param array{clickId?: ?string, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string} $params
+     * @param array{clickId?: ?string, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string, customerSince?: string|\DateTimeInterface|int|null, customerSinceReplace?: ?bool} $params
      * @param array<string, mixed> $requestOptions
      *
-     * @return array<string, mixed> `{object: "person_identified", person_id, label_ignored}`
+     * @return array<string, mixed> `{object: "person_identified", person_id, label_ignored, customer_since_ignored, customer_id_warning}`
      */
     public function identifyUser(array $params, array $requestOptions = []): array
     {
@@ -283,12 +294,37 @@ final class Clikgate
             'customer_id' => $params['customerId'] ?? null,
             'label' => $params['label'] ?? null,
         ], static fn(mixed $v): bool => null !== $v);
+        $since = $params['customerSince'] ?? null;
+        if (null !== $since) {
+            if (null === ($params['customerId'] ?? null)) {
+                throw ErrorMapper::local('invalid_request', 'customerSince needs customerId.', 'customer_since');
+            }
+            $body['customer_since'] = self::sinceWire($since);
+        }
+        if (true === ($params['customerSinceReplace'] ?? null)) {
+            $body['customer_since_replace'] = true;
+        }
         if ($this->core->guardState()[0]) {
             Guard::check('identify', $body);
         }
         [, $data] = $this->core->requester->request((new ApiRequest('POST', '/v1/people/identify'))->withBody($body)->withOptions($requestOptions));
 
         return Links::arr($data);
+    }
+
+    private static function sinceWire(mixed $value): string
+    {
+        if (\is_string($value) && 1 === preg_match('/^\d{4}-\d{2}-\d{2}(T.+)?$/D', $value)) {
+            return $value;
+        }
+        if ($value instanceof \DateTimeInterface) {
+            return \DateTimeImmutable::createFromInterface($value)->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\\TH:i:s\\Z');
+        }
+        if (\is_int($value)) {
+            return gmdate('Y-m-d\\TH:i:s\\Z', $value);
+        }
+
+        throw ErrorMapper::local('invalid_argument', "customerSince must be 'YYYY-MM-DD', an ISO 8601 date-time, a DateTimeInterface or Unix seconds.", 'customer_since');
     }
 
     /**

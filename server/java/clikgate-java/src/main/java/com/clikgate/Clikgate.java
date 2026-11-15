@@ -17,6 +17,7 @@ import com.clikgate.model.ServerSdkConfig;
 import com.clikgate.model.WebhookEvent;
 import java.net.URI;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,6 +56,7 @@ public final class Clikgate implements AutoCloseable {
   private final Payments payments;
   private final Links links;
   private final Clicks clicks;
+  private final KnownCustomers knownCustomers;
   private final ClickIds clickIds;
   private final ApiClient api;
   private final Clock clock;
@@ -136,6 +138,7 @@ public final class Clikgate implements AutoCloseable {
     this.payments = new Payments(core);
     this.links = new Links(core);
     this.clicks = new Clicks(core);
+    this.knownCustomers = new KnownCustomers(core);
     Core c = core;
     this.clickIds =
         new ClickIds(
@@ -194,6 +197,11 @@ public final class Clikgate implements AutoCloseable {
   /** Clicks. */
   public Clicks clicks() {
     return clicks;
+  }
+
+  /** Existing customers from before you added Clikgate: {@code importCustomers} and {@code remove}. */
+  public KnownCustomers knownCustomers() {
+    return knownCustomers;
   }
 
   /** Click-ID helpers using this client's {@code clickIdParam} (or the organisation's, from config). */
@@ -272,12 +280,26 @@ public final class Clikgate implements AutoCloseable {
   }
 
   /**
+   * A version 2 identity token that also carries when the person became your customer, so Clikgate can
+   * tell an existing customer from a new one. {@code appId} may be null.
+   *
+   * <pre>{@code
+   * response.put("clikgateIdentityToken", clikgate.createIdentityToken(user.getId(), null, user.getCreatedAt()));
+   * }</pre>
+   */
+  public String createIdentityToken(String customerId, @Nullable String appId, Instant customerSince) {
+    return IdentityTokens.createWith(
+        IdentityTokens.onAndroid(), identitySecret, identitySecrets, System::getenv, customerId, appId, null, null, customerSince.getEpochSecond());
+  }
+
+  /**
    * Tell Clikgate who a person is ({@code POST /v1/people/identify}): a click, an app installation ({@code appId} +
    * {@code installationId}) or your {@code customerId}, at least one. With a click or installation, {@code customerId}
    * links it to that customer. {@code label} is what your team sees instead of the click ID (1-80 characters,
    * {@code ""} clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
    * {@code require_identity_token}. In private mode {@code customerId} is refused locally and {@code label} needs
-   * "Allow labels in private mode".
+   * "Allow labels in private mode". {@code customerSince} is when they became your customer, so existing
+   * customers are never counted as referrals or new customers; it is refused in private mode too.
    *
    * <p>Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
    * {@code getInstallationId()} and sends it in its sign-in request; your server calls this with {@code appId},
@@ -311,6 +333,11 @@ public final class Clikgate implements AutoCloseable {
     if (params.installationId != null) body.put("installation_id", params.installationId);
     if (params.customerId != null) body.put("customer_id", params.customerId);
     if (params.label != null) body.put("label", params.label);
+    if (params.customerSince != null) {
+      if (params.customerId == null) throw ErrorMapper.local("invalid_request", "customerSince needs customerId.", "customer_since");
+      body.put("customer_since", params.customerSince);
+    }
+    if (params.customerSinceReplace) body.put("customer_since_replace", true);
     if (core.guardState().guard) {
       Guard.check("identify", body);
     }

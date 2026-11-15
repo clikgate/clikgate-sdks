@@ -33,6 +33,8 @@ export {
   type KeepResult,
 } from './click-ids.js';
 export { webhooks, type VerifyOptions, type RawBody } from './webhooks.js';
+export { canonicalCustomerId, customerIdWarning, CUSTOMER_ID_MAX_LENGTH, type CustomerIdWarning } from './customer-id.js';
+export { KNOWN_CUSTOMERS_BATCH, type KnownCustomers, type KnownCustomer, type KnownCustomerRefusal, type KnownCustomersImportResult } from './known-customers.js';
 export { createIdentityToken, IDENTITY_SECRET_ENV, IDENTITY_SECRETS_ENV, type IdentityTokenOptions } from './identity.js';
 export { formatValue, type MoneyInput } from './money.js';
 export { hashForAds, type HashForAdsInput, type HashedIdentifiers } from './ads-hashing.js';

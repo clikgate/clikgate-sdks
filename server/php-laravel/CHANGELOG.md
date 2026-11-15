@@ -2,6 +2,12 @@
 
 All notable changes to this package. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package uses [semantic versioning](https://semver.org/).
 
+## [2.0.1] - unreleased
+
+### Existing users
+
+- **Added:** `Clikgate::createIdentityToken($customerId, ['customerSince' => $user->created_at])` makes a version 2 token with the account date; `Clikgate::identifyUser()` takes `customerSince` and `customerSinceReplace`; `Clikgate::knownCustomers()` imports and removes existing customers. Requires `clikgate/clikgate-php` 2.0.1.
+
 ## [2.0.0] - unreleased
 
 ### Breaking: track() removed in favour of goal()

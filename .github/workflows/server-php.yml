@@ -97,7 +97,7 @@ jobs:
           extensions: curl, mbstring
           coverage: none
       - name: Use the core package from this checkout
-        run: composer config repositories.clikgate-php '{"type":"path","url":"../php","options":{"symlink":false,"versions":{"clikgate/clikgate-php":"2.0.0"}}}'
+        run: v=$(sed -n "s/.*VERSION = '\\([^']*\\)'.*/\\1/p" ../php/src/Version.php) && composer config repositories.clikgate-php "{\"type\":\"path\",\"url\":\"../php\",\"options\":{\"symlink\":false,\"versions\":{\"clikgate/clikgate-php\":\"$v\"}}}"
       - run: composer require --dev --no-update "orchestra/testbench:^${{ matrix.testbench }}.0"
       - run: composer update --no-interaction --no-progress --with-all-dependencies
       - run: vendor/bin/phpunit

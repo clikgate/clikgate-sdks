@@ -30,6 +30,9 @@ public interface IClikgateClient : IAsyncDisposable, IDisposable
     /// <summary>Clicks.</summary>
     Clicks Clicks { get; }
 
+    /// <summary>Existing customers from before you added Clikgate.</summary>
+    KnownCustomers KnownCustomers { get; }
+
     /// <summary>Click-ID helpers using this client's parameter.</summary>
     ClickIds ClickIds { get; }
 
@@ -44,6 +47,9 @@ public interface IClikgateClient : IAsyncDisposable, IDisposable
 
     /// <summary>Creates an identity token for the signed-in user (no network call). See https://clikgate.com/docs/identify-users.</summary>
     string CreateIdentityToken(string customerId, string? appId = null);
+
+    /// <summary>Creates a version 2 identity token that also carries when the person became your customer.</summary>
+    string CreateIdentityToken(string customerId, string? appId, DateTimeOffset customerSince);
 
     /// <summary>Tells Clikgate who a person is (<c>POST /v1/people/identify</c>).</summary>
     Task<PersonIdentified> IdentifyUserAsync(IdentifyUserParams parameters, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default);
@@ -159,6 +165,7 @@ public sealed class ClikgateClient : IClikgateClient
         Payments = new Payments(_core);
         Links = new Links(_core);
         Clicks = new Clicks(_core);
+        KnownCustomers = new KnownCustomers(_core);
         var core = _core;
         ClickIds = new ClickIds(() => explicitParam ?? core.PeekConfig()?.ClickIdParam ?? "cgid");
         Api = new Api.ApiClient(requester);
@@ -192,6 +199,9 @@ public sealed class ClikgateClient : IClikgateClient
 
     /// <inheritdoc/>
     public Clicks Clicks { get; }
+
+    /// <summary>Existing customers from before you added Clikgate: <c>ImportAsync</c> and <c>RemoveAsync</c>.</summary>
+    public KnownCustomers KnownCustomers { get; }
 
     /// <inheritdoc/>
     public ClickIds ClickIds { get; }
@@ -283,12 +293,21 @@ public sealed class ClikgateClient : IClikgateClient
         IdentityTokens.CreateWith(IdentityTokens.ClientPlatform, _identitySecret, _identitySecrets, Environment.GetEnvironmentVariable, customerId, appId, null, null);
 
     /// <summary>
+    /// Creates a version 2 identity token that also carries when the person became your customer, so
+    /// Clikgate can tell an existing customer from a new one. <paramref name="appId"/> may be null.
+    /// </summary>
+    /// <example><code>clikgate.CreateIdentityToken(user.Id, null, user.CreatedAt)</code></example>
+    public string CreateIdentityToken(string customerId, string? appId, DateTimeOffset customerSince) =>
+        IdentityTokens.CreateWith(IdentityTokens.ClientPlatform, _identitySecret, _identitySecrets, Environment.GetEnvironmentVariable, customerId, appId, null, null, customerSince.ToUnixTimeSeconds());
+
+    /// <summary>
     /// Tells Clikgate who a person is (<c>POST /v1/people/identify</c>): a click, an app installation (<c>AppId</c> +
     /// <c>InstallationId</c>) or your <c>CustomerId</c>, at least one. With a click or installation, <c>CustomerId</c>
     /// links it to that customer. <c>Label</c> is what your team sees instead of the click ID (1-80 characters, <c>""</c>
     /// clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
     /// <c>require_identity_token</c>. In private mode <c>CustomerId</c> is refused locally and <c>Label</c> needs
-    /// "Allow labels in private mode".
+    /// "Allow labels in private mode". <c>CustomerSince</c> is when they became your customer, so existing
+    /// customers are never counted as referrals or new customers; it is refused in private mode too.
     /// <para>
     /// Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
     /// <c>getInstallationId()</c> and sends it in its sign-in request; your server calls this with <c>AppId</c>,
@@ -319,6 +338,12 @@ public sealed class ClikgateClient : IClikgateClient
         if (p.InstallationId is not null) body["installation_id"] = p.InstallationId;
         if (p.CustomerId is not null) body["customer_id"] = p.CustomerId;
         if (p.Label is not null) body["label"] = p.Label;
+        if (p.CustomerSince is { } since)
+        {
+            if (p.CustomerId is null) throw Errors.Local("invalid_request", "CustomerSince needs CustomerId.", "customer_since");
+            body["customer_since"] = since.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture);
+        }
+        if (p.CustomerSinceReplace) body["customer_since_replace"] = true;
         if ((await _core.GuardStateAsync(cancellationToken).ConfigureAwait(false)).Guard)
         {
             Guard.Check("identify", body);
