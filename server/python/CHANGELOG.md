@@ -3,6 +3,16 @@
 All notable changes to this package. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package uses [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Python versions are dropped only after their end of life.
 
 
+## [2.0.1] - unreleased
+
+### Existing users
+
+- **Added:** `create_identity_token(customer_id, customer_since=...)` (also on both clients): with an account date (`datetime`, `date` or Unix seconds) the token is version 2, `signature.issued_at.customer_since`, so Clikgate can tell a customer from before you added Clikgate from a new one (referrals, new customers). Account dates before 1990 or after the issue time are a local `invalid_argument` (param `customer_since`). Tested against the shared version 2 vectors.
+- **Added:** `identify_user(customer_id=..., customer_since=..., customer_since_replace=True)`: the account date from your server (`"YYYY-MM-DD"`, an ISO 8601 date-time, `date`, `datetime` or Unix seconds). `PersonIdentified` gains `customer_since_ignored` and `customer_id_warning`.
+- **Added:** `clikgate.known_customers.import_customers(customers)` (batches of 10,000, counts summed; refused rows counted by reason, never returned) and `known_customers.remove(customer_id)`, sync and async.
+- **Added:** `canonical_customer_id()` and `customer_id_warning()`: the canonical customer ID (NFC, trimmed) and why an ID looks like an email, phone number or national ID, against the shared vectors.
+- Refused in private mode: the guard refuses `customer_since`, and known customers raise a conflict with code `private_mode_conflict` before any request. Customer IDs and dates are never logged. Guide: https://clikgate.com/docs/identify-users.
+
 ## [2.0.0] - unreleased
 
 ### Breaking: track() removed in favour of goal()

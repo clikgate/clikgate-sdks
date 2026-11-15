@@ -11,6 +11,7 @@ use Clikgate\Conversions;
 use Clikgate\Exception\ConfigurationException;
 use Clikgate\Generated\ApiClient;
 use Clikgate\Goals;
+use Clikgate\KnownCustomers;
 use Clikgate\Laravel\Jobs\SendGoal;
 use Clikgate\Links;
 use Clikgate\Payments;
@@ -99,6 +100,12 @@ final class ClikgateManager
         return $this->client()->clicks;
     }
 
+    /** Existing customers from before you added Clikgate: `import()` and `remove()` (change 26). */
+    public function knownCustomers(): KnownCustomers
+    {
+        return $this->client()->knownCustomers;
+    }
+
     public function clickIds(): ClickIds
     {
         return $this->client()->clickIds;
@@ -130,9 +137,11 @@ final class ClikgateManager
      *
      * ```php
      * return response()->json(['user' => $user, 'clikgateIdentityToken' => Clikgate::createIdentityToken((string) $user->id)]);
+     * // With the account date (version 2), so existing customers are never counted as referrals or new customers:
+     * Clikgate::createIdentityToken((string) $user->id, ['customerSince' => $user->created_at]);
      * ```
      *
-     * @param array{appId?: ?string, issuedAt?: ?int} $options
+     * @param array{appId?: ?string, issuedAt?: ?int, customerSince?: \DateTimeInterface|int|null} $options
      */
     public function createIdentityToken(string $customerId, array $options = []): string
     {
@@ -157,8 +166,11 @@ final class ClikgateManager
      * }
      * ```
      *
-     * @param array{clickId?: ?string, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string} $params
-     * @param array<string, mixed>                                                                                    $requestOptions
+     * `customerSince` (change 26) is when they became your customer; Clikgate keeps the earliest date unless
+     * `customerSinceReplace` is true.
+     *
+     * @param array{clickId?: ?string, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string, customerSince?: string|\DateTimeInterface|int|null, customerSinceReplace?: ?bool} $params
+     * @param array<string, mixed>                                                                                                                                                                       $requestOptions
      *
      * @return array<string, mixed>
      */

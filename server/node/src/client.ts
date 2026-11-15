@@ -10,6 +10,7 @@ import { GoalQueue, Goals, asClikgateError, buildGoalWire, checkBeforeSend, type
 import { Requester, systemClock, type Clock } from './http.js';
 import { consoleLogger, type Logger } from './logger.js';
 import { Payments } from './payments.js';
+import { KnownCustomers } from './known-customers.js';
 import { Clicks, Conversions, Links } from './resources.js';
 import { registerShutdown, unregisterShutdown } from './shutdown.js';
 import { fetchTransport, nodeTransport, type FetchLike, type Transport } from './transport.js';
@@ -29,6 +30,13 @@ export interface IdentifyUserParams {
   customerId?: string | null;
   /** A label your team sees instead of the click ID (1–80 characters, `''` clears it). */
   label?: string | null;
+  /**
+   * When this customer became your customer (change 26 KC.4): `'YYYY-MM-DD'`, an ISO 8601 date-time with offset, a
+   * `Date` or Unix seconds. Needs `customerId`. Clikgate keeps the earliest date it gets. Not in private mode.
+   */
+  customerSince?: string | Date | number | null;
+  /** `true` lets `customerSince` move a wrong date later (audit-logged). Default: the earliest date is kept. */
+  customerSinceReplace?: boolean | null;
 }
 
 /** The answer of `identifyUser()`. */
@@ -37,6 +45,21 @@ export interface PersonIdentified {
   person_id: string;
   /** `plan`: below Growth the label isn't stored; `lower_rank`: a label your team set was kept. */
   label_ignored: 'plan' | 'lower_rank' | null;
+  /** Why `customerSince` wasn't used: `unverified` or `invalid` (change 26). */
+  customer_since_ignored?: 'unverified' | 'invalid' | null;
+  /** The customer ID looks like an email, phone number or national ID: use your own user ID instead (change 26 KC.1). */
+  customer_id_warning?: 'looks_like_email' | 'looks_like_phone' | 'looks_like_national_id' | null;
+}
+
+/** @internal The wire form of identifyUser's customerSince. */
+function sinceWire(value: string | Date | number): string {
+  if (typeof value === 'string') {
+    if (!/^\d{4}-\d{2}-\d{2}(T.+)?$/.test(value)) throw localError('invalid_argument', "customerSince must be 'YYYY-MM-DD', an ISO 8601 date-time, a Date or Unix seconds.", 'customer_since');
+    return value;
+  }
+  const ms = value instanceof Date ? value.getTime() : typeof value === 'number' && Number.isSafeInteger(value) ? value * 1000 : Number.NaN;
+  if (!Number.isFinite(ms)) throw localError('invalid_argument', "customerSince must be 'YYYY-MM-DD', an ISO 8601 date-time, a Date or Unix seconds.", 'customer_since');
+  return new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
 export interface ClikgateOptions {
@@ -118,6 +141,8 @@ export class Clikgate {
   readonly links: Links;
   /** Clicks. */
   readonly clicks: Clicks;
+  /** Existing customers from before you added Clikgate: `import()` and `remove()` (change 26). */
+  readonly knownCustomers: KnownCustomers;
   /** Click-ID helpers using this client's `clickIdParam` (or the organisation's from config). */
   readonly clickIds: ClickIds;
   /** Every API-key operation, generated from openapi.json ("advanced"). */
@@ -180,6 +205,7 @@ export class Clikgate {
     this.payments = new Payments(this.core);
     this.links = new Links(this.core);
     this.clicks = new Clicks(this.core);
+    this.knownCustomers = new KnownCustomers(this.core);
     const explicitParam = options.clickIdParam;
     this.clickIds = new ClickIds(() => explicitParam ?? configCache.peek()?.click_id_param ?? 'cgid');
     this.api = new ApiClient(requester);
@@ -254,6 +280,8 @@ export class Clikgate {
    * customer. `label` is what your team sees instead of the click ID (1–80 characters, `''` clears it; Growth and
    * up). Always verified (your server), so it also satisfies a referral program's `require_identity_token`.
    * In private mode `customerId` is refused locally (the guard) and `label` needs "Allow labels in private mode".
+   * `customerSince` (change 26) is when they became your customer, so existing customers are never counted as
+   * referrals or new customers; it is refused in private mode too.
    *
    * Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
    * `getInstallationId()` and sends it in its sign-in request; your server calls this with
@@ -278,6 +306,11 @@ export class Clikgate {
     if (p.installationId != null) body.installation_id = p.installationId;
     if (p.customerId != null) body.customer_id = p.customerId;
     if (p.label != null) body.label = p.label;
+    if (p.customerSince != null) {
+      if (p.customerId == null) throw localError('invalid_request', 'customerSince needs customerId.', 'customer_since');
+      body.customer_since = sinceWire(p.customerSince);
+    }
+    if (p.customerSinceReplace === true) body.customer_since_replace = true;
     const state = await this.core.guardState();
     if (state.guard) guardPayload('identify', body);
     const { data } = await this.core.requester.request<PersonIdentified>({ method: 'POST', path: '/v1/people/identify', body, ...requestOptions });

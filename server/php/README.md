@@ -77,6 +77,18 @@ if ($installationId !== null) {
 }
 ```
 
+## Customers from before Clikgate
+
+Tell Clikgate who was already your customer before you added it, so they are never counted as a referral or a new customer. Send the account's creation date with the identity token (version 2) or from your server, and import the rest of your existing customers once. Use your own customer IDs, never emails or phone numbers: Clikgate stores a keyed fingerprint of each imported ID, not the ID itself. Not available in private mode. Guide: https://clikgate.com/docs/identify-users.
+
+```php
+$token = IdentityToken::create((string) $user->id, ['customerSince' => $user->created_at]); // version 2
+$clikgate->identifyUser(['appId' => 'app_…', 'installationId' => $installationId, 'customerId' => (string) $user->id, 'customerSince' => $user->created_at]);
+$result = $clikgate->knownCustomers->import([['customerId' => 'u_10482', 'customerSince' => '2024-03-02']]); // batches of 10,000
+```
+
+Non-ASCII customer IDs in version 2 tokens need the `intl` extension.
+
 ## People: identify a user and label them
 
 Link a click, an app installation or your customer ID to a person, and give them a label your team sees instead of the click ID (1-80 characters; Growth and up). From your server this is always verified. Goals take the same `label`, and `isFirst` from your server is what counts a new customer. Don't put information in labels that your customers wouldn't expect you to keep.

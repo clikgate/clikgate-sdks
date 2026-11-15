@@ -32,6 +32,7 @@ export type KnownErrorCode =
   | 'unexpected_status'
   | 'rate_limit_exceeded'
   | 'private_mode_field_rejected'
+  | 'private_mode_conflict'
   | 'link_locked'
   | 'idempotency_key_reused'
   | 'idempotency_request_in_progress'

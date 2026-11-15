@@ -1026,6 +1026,70 @@ identityToken)`.
   non-ASCII secret) and refuse every `invalid_customer_ids` entry.
 - **Verification reasons** (backend, R.22) the docs list: `expired`, `bad_signature`, `secret_rotated`, `no_secret_set`,
   `not_yet_valid` (issued more than 5 minutes ahead). The SDKs never verify tokens.
+- **Version 2: the account date** (change 26 KC.5, R.13). An optional `customer_since` (when the person became the
+  business's customer) makes a three-part token `signature.issued_at.customer_since`; without it the token is version 1,
+  unchanged. Both dates are whole UTC Unix seconds.
+  - MAC input: `"v2\n" + utf8_byte_length(cid) + ":" + cid + "\n" + issued_at + "\n" + customer_since`, where `cid` is
+    the **canonical** customer ID (section 27: NFC, trimmed). It can never equal a version 1 input (the forgery vectors
+    check both directions).
+  - Local check: `customer_since` from 631152000 (1990-01-01) to `issued_at + 300`; else `InvalidRequestError`
+    `invalid_argument`, param `customer_since`. An ID that is empty after canonicalisation is `invalid_customer_id`.
+  - Names (section 2 casing): Node `createIdentityToken(customerId, { customerSince })` (`Date` or Unix seconds);
+    Python `create_identity_token(customer_id, customer_since=…)` (`datetime`, `date` = midnight UTC, or Unix seconds;
+    also on both clients); PHP and Laravel `['customerSince' => DateTimeInterface|int]`; Java
+    `IdentityTokens.create(customerId, appId, Instant)`, `create(customerId, secret, issuedAtSeconds,
+    customerSinceSeconds)`, client `createIdentityToken(customerId, appId, Instant)`; .NET
+    `IdentityTokens.Create(customerId, appId, DateTimeOffset)`, `Create(customerId, secret, issuedAtSeconds,
+    customerSinceSeconds)`, client `CreateIdentityToken(customerId, appId, DateTimeOffset)` (also on `IClikgateClient`).
+  - Vectors: `v2`, `v2_invalid_customer_since` and `forgeries` in `identity-token-vectors.json` (the builder's reference
+    signer, cross-checked against the backend's `sign_identity_token_v2` when it exists). PHP needs the `intl` extension
+    only for non-ASCII customer IDs in version 2 (`ConfigurationException` `intl_required` otherwise).
+
+## 27. Existing customers: account dates and known customers (change 26)
+
+Clikgate tells people who were already the business's customers before it added Clikgate from new ones (referrals, new
+customers). The server SDKs send two kinds of evidence, both refused in private mode.
+
+- **The canonical customer ID** (KC.1, R.24), one form everywhere: Unicode NFC, then trimmed of Unicode White_Space
+  characters and U+FEFF at both ends, case kept. Helpers (pure, offline): Node `canonicalCustomerId(id)`,
+  `customerIdWarning(id, { allow11DigitIds })`; Python `canonical_customer_id`, `customer_id_warning(id, *,
+  allow_11_digit_ids=False)`; PHP `Clikgate\CustomerId::canonical`, `::warning($id, $allow11DigitIds = false)`; Java
+  `CustomerIds.canonical`, `CustomerIds.warning(id[, allow11DigitIds])`; .NET `CustomerIds.Canonical`,
+  `CustomerIds.Warning(id, allow11DigitIds = false)`. Warnings, first match wins: `empty`; `too_long` (more than 128 code
+  points); `looks_like_email` (an `@` with a `.` after the first `@`); `looks_like_national_id` (exactly 11 ASCII digits,
+  unless allowed); `looks_like_phone` (after removing spaces and `-`, an optional `+` then 10-15 ASCII digits). Vectors:
+  `server/conformance/vectors/customer-id-vectors.json` (`tools/build_customer_id_vectors.py [--check]`), also copied to
+  `clikgate_api/tests/fixtures`. The SDKs never refuse an ID locally with these: the API decides and answers counts.
+- **`identifyUser` account date** (KC.4): wire `customer_since` (`YYYY-MM-DD`, or an RFC 3339 UTC date-time
+  `YYYY-MM-DDTHH:MM:SSZ` made from a date-time value or Unix seconds; strings are passed through when they look like
+  either) and `customer_since_replace: true` (sent only when true; lets a wrong date move later, audit-logged). Local
+  check: `customer_since` needs `customer_id` (`invalid_request`, param `customer_since`); a malformed value is
+  `invalid_argument`. The answer may carry `customer_since_ignored` (`unverified` | `invalid`) and
+  `customer_id_warning` (`looks_like_email` | `looks_like_phone` | `looks_like_national_id`). Names: Node
+  `customerSince`, `customerSinceReplace`; Python `customer_since`, `customer_since_replace`; PHP `customerSince`,
+  `customerSinceReplace`; Java builder `customerSince(Instant | LocalDate)`, `customerSinceReplace(boolean)`, answer
+  `getCustomerSinceIgnored()`, `getCustomerIdWarning()`; .NET `CustomerSince` (`DateTimeOffset?`),
+  `CustomerSinceReplace`, answer `CustomerSinceIgnored`, `CustomerIdWarning`.
+- **Known customers** (KC.3), scope `people:write`:
+  - `import`: `POST /v1/known-customers/import {customers: [{customer_id, customer_since?: "YYYY-MM-DD"}]}`, at most
+    10,000 per call → `{accepted, refused, refused_by_reason: {reason: count}}`. The SDK splits any list into batches of
+    10,000 in order and sums the answers. A caller's idempotency key gets `-<batch index>` appended when there are
+    several batches (one batch keeps it as is). An empty list sends nothing and answers zeros. Dates are sent as the
+    UTC day. Names: Node `clikgate.knownCustomers.import(customers)` (`{customerId, customerSince?}`), Python
+    `known_customers.import_customers(customers)` (`import` is a keyword; dicts `{"customer_id", "customer_since"?}`;
+    sync and async), PHP `$clikgate->knownCustomers->import(iterable)` (`['customerId', 'customerSince'?]`; Laravel
+    `Clikgate::knownCustomers()`), Java `knownCustomers().importCustomers(List<KnownCustomer>)` →
+    `KnownCustomersImportResult` (`import` is a keyword), .NET `KnownCustomers.ImportAsync(IEnumerable<KnownCustomer>)`.
+  - `remove`: `POST /v1/known-customers/remove {customer_id}` (the ID only in the body) → `{removed}`. Node and Python
+    and PHP return the answer object; Java `remove(id)` and .NET `RemoveAsync(id)` return the boolean.
+- **Private mode** (R.19): `customer_since` and `customer_since_replace` are not in the `identify` allow-list, so the
+  guard refuses them (`PrivateModeFieldRejectedError`, as the API's `422 private_mode_field_rejected`). Known customers
+  are a switched-off feature: with the guard on, `import` and `remove` raise `ConflictError` (PHP, Java, .NET
+  `ConflictException`) with code `private_mode_conflict` and no HTTP status, before any request (the API answers
+  `409 private_mode_conflict`).
+- **Never logged:** customer IDs, account dates and imported rows appear in no log line or error message.
+- **Generated layer:** the operations appear in `clikgate.api.*` once the backend's `openapi.json` has them and the
+  generator runs (section 16); the hand-written methods above don't wait for that.
 
 
 ## 25. Hashed email and phone for ad network matching (change 19)

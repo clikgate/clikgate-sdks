@@ -102,5 +102,141 @@
       "name": "too_long_256",
       "customer_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
     }
+  ],
+  "v2_description": "Change 26 KC.5 / R.13 version 2 tokens: token = base64url_nopad(HMAC_SHA256(secret, msg)) + '.' + issued_at + '.' + customer_since, msg = 'v2\\n' + utf8_byte_length(cid) + ':' + cid + '\\n' + issued_at + '\\n' + customer_since, cid = the canonical customer ID (Unicode NFC, trimmed of Unicode White_Space and U+FEFF, case kept). Dates are whole UTC Unix seconds. createIdentityToken(customer_id, {issuedAt, customerSince}) must return `token` for each v2 vector and refuse every v2_invalid_customer_since entry. Version 1 (above) is unchanged. `forgeries`: forged_token must never verify (backend) and never equal real_token.",
+  "v2": [
+    {
+      "name": "v2_ascii",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "user_42",
+      "issued_at": 1767225600,
+      "customer_since": 1709370000,
+      "token": "qBG_O-Mdj1XJw1N-WtehwPjrdUgz4dvP9zG-eE0tVm8.1767225600.1709370000"
+    },
+    {
+      "name": "v2_dots_in_customer_id",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "acct.2026.0042",
+      "issued_at": 1767225600,
+      "customer_since": 1709370000,
+      "token": "OzvZeF4uFFWNlDqFcKj3TkOcvyVcLshUwjOYlR8HMEo.1767225600.1709370000"
+    },
+    {
+      "name": "v2_precomposed_e_acute",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "caf\u00e9",
+      "issued_at": 1767225600,
+      "customer_since": 1709370000,
+      "token": "E31UHdIEbWDGg31RVbodm-6qheAWIR3BebmtVSL6Jhg.1767225600.1709370000"
+    },
+    {
+      "name": "v2_decomposed_e_acute_signs_nfc",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "cafe\u0301",
+      "issued_at": 1767225600,
+      "customer_since": 1709370000,
+      "token": "E31UHdIEbWDGg31RVbodm-6qheAWIR3BebmtVSL6Jhg.1767225600.1709370000"
+    },
+    {
+      "name": "v2_surrounding_whitespace_trimmed",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": " \u00a0user_42\t\n",
+      "issued_at": 1767225600,
+      "customer_since": 1709370000,
+      "token": "qBG_O-Mdj1XJw1N-WtehwPjrdUgz4dvP9zG-eE0tVm8.1767225600.1709370000"
+    },
+    {
+      "name": "v2_yoruba",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "ad\u00e9b\u00e1y\u1ecd\u0300_01",
+      "issued_at": 1767225600,
+      "customer_since": 1709370000,
+      "token": "nQ-47hr0gWY1oq2Vxo_GUHLHigShEySebMuNxtahpsk.1767225600.1709370000"
+    },
+    {
+      "name": "v2_cjk",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "\u9867\u5ba2-8812",
+      "issued_at": 1767225600,
+      "customer_since": 1709370000,
+      "token": "cC05jWG6w1HZ7S1mtkxL2YrV4FxRqoJlFFlh4XRps68.1767225600.1709370000"
+    },
+    {
+      "name": "v2_emoji_outside_bmp",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "user_\ud83e\udd81_7",
+      "issued_at": 1767225600,
+      "customer_since": 1709370000,
+      "token": "g3qNwV6G_X2kinVce6T0tzfgnhPgSZ90SZQHkzMrAi0.1767225600.1709370000"
+    },
+    {
+      "name": "v2_customer_since_1990",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "user_42",
+      "issued_at": 1767225600,
+      "customer_since": 631152000,
+      "token": "JSvUkEdYqWCMcq0g7AKquTG5csKJkcqVXgJReo-xv20.1767225600.631152000"
+    },
+    {
+      "name": "v2_customer_since_equals_issued_at",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "user_42",
+      "issued_at": 1767225600,
+      "customer_since": 1767225600,
+      "token": "F2_GOGxel5EcuV3e_1MldKAzsqBNiGGEh9HworJSZNA.1767225600.1767225600"
+    },
+    {
+      "name": "v2_customer_since_within_clock_allowance",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "user_42",
+      "issued_at": 1767225600,
+      "customer_since": 1767225900,
+      "token": "JhZav9MG7In6gM88w5YyeBbECN9ith2unDJKZrQoSLY.1767225600.1767225900"
+    },
+    {
+      "name": "v2_other_app_secret",
+      "secret": "cgis_VectorOnlyOtherApp00000000000000000000",
+      "customer_id": "user_42",
+      "issued_at": 1767225600,
+      "customer_since": 1709370000,
+      "token": "x9IRW8RhciOtVYrj9-Q6YM2L8mCNvjerrGgb5xyrcDg.1767225600.1709370000"
+    }
+  ],
+  "v2_invalid_customer_since": [
+    {
+      "name": "before_1990",
+      "issued_at": 1767225600,
+      "customer_since": 631151999
+    },
+    {
+      "name": "after_issued_at_plus_300",
+      "issued_at": 1767225600,
+      "customer_since": 1767225901
+    },
+    {
+      "name": "negative",
+      "issued_at": 1767225600,
+      "customer_since": -1
+    }
+  ],
+  "forgeries": [
+    {
+      "name": "v1_token_relabelled_as_v2",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "user_42",
+      "issued_at": 1767225600,
+      "customer_since": 1709370000,
+      "real_token": "qBG_O-Mdj1XJw1N-WtehwPjrdUgz4dvP9zG-eE0tVm8.1767225600.1709370000",
+      "forged_token": "3Q79IdyJgeDx6rR9HqgVgFDjmg71wrDL3KkUNWuMqDc.1767225600.1709370000"
+    },
+    {
+      "name": "v2_token_cut_to_v1",
+      "secret": "cgis_VectorOnly0000000000000000000000000000",
+      "customer_id": "user_42",
+      "issued_at": 1767225600,
+      "customer_since": 1709370000,
+      "real_token": "qBG_O-Mdj1XJw1N-WtehwPjrdUgz4dvP9zG-eE0tVm8.1767225600.1709370000",
+      "forged_token": "qBG_O-Mdj1XJw1N-WtehwPjrdUgz4dvP9zG-eE0tVm8.1767225600"
+    }
   ]
 }

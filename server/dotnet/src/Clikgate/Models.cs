@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -292,6 +293,15 @@ public sealed class IdentifyUserParams
 
     /// <summary>A label your team sees instead of the click ID (1-80 characters, <c>""</c> clears it; Growth and up).</summary>
     public string? Label { get; set; }
+
+    /// <summary>
+    /// When this customer became your customer (change 26 KC.4). Needs <see cref="CustomerId"/>. Clikgate keeps the
+    /// earliest date it gets. Refused in private mode.
+    /// </summary>
+    public DateTimeOffset? CustomerSince { get; set; }
+
+    /// <summary><c>true</c> lets <see cref="CustomerSince"/> move a wrong date later (audit-logged). Default: the earliest date is kept.</summary>
+    public bool CustomerSinceReplace { get; set; }
 }
 
 /// <summary>The answer of <see cref="ClikgateClient.IdentifyUserAsync"/> (<c>object: "person_identified"</c>).</summary>
@@ -302,4 +312,10 @@ public sealed class PersonIdentified(JsonObject? raw) : WireObject(raw)
 
     /// <summary><c>plan</c> (below Growth the label isn't stored), <c>lower_rank</c> (a label your team set was kept), or null.</summary>
     public string? LabelIgnored => String("label_ignored");
+
+    /// <summary>Why <c>CustomerSince</c> wasn't used: <c>unverified</c> or <c>invalid</c> (change 26), or null.</summary>
+    public string? CustomerSinceIgnored => String("customer_since_ignored");
+
+    /// <summary><c>looks_like_email</c>, <c>looks_like_phone</c> or <c>looks_like_national_id</c> (change 26 KC.1): use your own user ID instead. Null otherwise.</summary>
+    public string? CustomerIdWarning => String("customer_id_warning");
 }

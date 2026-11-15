@@ -45,6 +45,8 @@ Goals (the end of the funnel) are in [references/goals.md](references/goals.md).
 
 The setup command `npx @clikgate/setup` (Node 18 or newer) does the whole app setup. It detects the platform, adds the SDK, adds app links (the app's link subdomain and custom domains; the test subdomain in debug builds only) and the start-up code, then checks the result.
 
+**Flutter apps don't need Node.js.** Add the plugin, then run the same command with `dart run` (it only finds packages already in `pubspec.yaml`): `flutter pub add clikgate_flutter`, then `dart run clikgate_flutter` (with fvm: `fvm dart run clikgate_flutter`). It takes the same flags, so in Flutter projects use `dart run clikgate_flutter` wherever this guide says `npx @clikgate/setup`, and `dart run clikgate_flutter:doctor` for `npx @clikgate/setup doctor`. The first run downloads the program once (about 41 MB; up to 55 MB on Linux and Windows) and checks its checksum. `npx @clikgate/setup` also works when Node.js is installed.
+
 There are two ways to run it. **Ask the user which one they want before running anything.**
 
 - **A. The user runs it in their own terminal (best).** Ask them to run `npx @clikgate/setup` in the project folder. It opens a browser where they approve the sign-in. It then picks or creates the Clikgate app, confirms the app's link subdomain if it isn't confirmed yet, sends the signing details, and asks about every change. If the user's account uses two-factor sign-in, the browser page asks for their authenticator code. You can't do this for them: it needs their browser and their answers.
@@ -91,7 +93,7 @@ If the app has no confirmed link subdomain yet, the user confirms it in the dash
    - Without `--yes` in a non-interactive shell, nothing is applied and the exit code is 2.
 3. Read the output. It ends with **"Clikgate sees every click. Setup complete."** Pass on to the user every line under **Manual steps:** and **Reminders:**, because offline mode can't do them (signing fingerprints, the Apple Team ID, the iOS Swift package).
 
-If the command can't be used (no Node 18+, or the user says no), follow the manual steps in the platform's reference file instead.
+If the command can't be used (no Node 18+ and, in a Flutter app, `dart run clikgate_flutter` fails; or the user says no), follow the manual steps in the platform's reference file instead.
 
 Exit codes: 0 success, 1 problems found or a step failed, 2 cancelled, 3 sign-in failed.
 
@@ -133,7 +135,7 @@ Release builds need the live SDK key. The setup summary prints the file and line
 ## Websites and servers
 
 - **Website:** one script tag with the publishable web key (`data-web-key`), then `Clikgate.goal(…)` for goals that allow browser goals, and `Clikgate.clickId()`. See [references/web.md](references/web.md).
-- **Sharing links from an app** (only when the user asks for share buttons, and only for apps without their own backend): the optional Engage add-on (`com.clikgate:clikgate-engage`, pod `Clikgate/Engage` or the `ClikgateEngage` Swift package product, `clikgate_engage`, `@clikgate/react-native-engage`) has `share.link(url, …)` and `share.referralLink(link, …)`. They open the phone's share menu, give each app its own version of the link and record the share. Never build or guess the link versions yourself; pass the link as it is, or the API's `share_urls`. React Native apps must be rebuilt after adding the package.
+- **Sharing links from an app** (only when the user asks for share buttons, and only for apps without their own backend): the SDK's Engage features (`ClikgateEngage`, part of the core package on every platform: nothing extra to install; on iOS `import ClikgateEngage` (Swift Package Manager) or `import Clikgate` (CocoaPods), in Flutter `package:clikgate_flutter/engage.dart`) have `share.link(url, …)` and `share.referralLink(link, …)`. They open the phone's share menu, give each app its own version of the link and record the share. Never build or guess the link versions yourself; pass the link as it is, or the API's `share_urls`. React Native apps must be rebuilt after installing `@clikgate/react-native` (the share menu is native).
 - **Identify users** (only when the user asks for sign-in identification, labels, or referrals and leaderboards that need a verified user): the app calls `identifyUser(label, customerId, identityToken)` after sign-in and at app open when signed in, and clears it on sign-out. **Path A (default):** the server adds one field to its sign-in and "current user" responses, made by `createIdentityToken(user.id)` (Node; the formula for other languages is in [references/server-sdks.md](references/server-sdks.md)) with `CLIKGATE_IDENTITY_SECRET` from the server's environment. **Path B** (no secret or token): the app sends `getInstallationId()` with its sign-in request and the server calls `identifyUser({ appId, installationId, customerId })`. See [references/goals.md](references/goals.md) and https://clikgate.com/docs/identify-users.
 - **Server:** `@clikgate/node` is available now. The Python, PHP, Java and .NET SDKs are **not available yet**. Use the HTTP API for those, as [references/server-sdks.md](references/server-sdks.md) shows. Don't invent package names or install lines.
 
