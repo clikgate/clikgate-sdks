@@ -3,6 +3,16 @@
 All notable changes to these artifacts, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the artifacts use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Java versions are dropped only after their end of life.
 
 
+## [2.0.1] - unreleased
+
+### Existing users
+
+- **Added:** `IdentityTokens.create(customerId, appId, Instant customerSince)`, `create(customerId, secret, issuedAtSeconds, customerSinceSeconds)` and `clikgate.createIdentityToken(customerId, appId, Instant)`: version 2 tokens, `signature.issuedAt.customerSince`, so Clikgate can tell a customer from before you added Clikgate from a new one (referrals, new customers). Account dates before 1990 or after the issue time are a local `invalid_argument` (param `customer_since`). Tested against the shared version 2 vectors.
+- **Added:** `IdentifyUserParams.Builder.customerSince(Instant | LocalDate)` and `customerSinceReplace(boolean)`; `PersonIdentified.getCustomerSinceIgnored()` and `getCustomerIdWarning()`.
+- **Added:** `clikgate.knownCustomers().importCustomers(List<KnownCustomer>)` → `KnownCustomersImportResult` (batches of 10,000, counts summed; refused rows counted by reason, never returned) and `knownCustomers().remove(customerId)`.
+- **Added:** `CustomerIds.canonical()` and `CustomerIds.warning()`: the canonical customer ID (NFC, trimmed) and why an ID looks like an email, phone number or national ID, against the shared vectors.
+- Refused in private mode: the guard refuses `customer_since`, and known customers raise a conflict with code `private_mode_conflict` before any request. Customer IDs and dates are never logged. Guide: https://clikgate.com/docs/identify-users.
+
 ## [2.0.0] - unreleased
 
 ### Breaking: track() removed in favour of goal()

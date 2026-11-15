@@ -20,4 +20,17 @@ public final class PersonIdentified extends WireObject {
   public @Nullable String getLabelIgnored() {
     return string("label_ignored");
   }
+
+  /** Why {@code customerSince} wasn't used: {@code unverified} or {@code invalid} (change 26), or null. */
+  public @Nullable String getCustomerSinceIgnored() {
+    return string("customer_since_ignored");
+  }
+
+  /**
+   * {@code looks_like_email}, {@code looks_like_phone} or {@code looks_like_national_id} when the customer ID looks
+   * like one (change 26 KC.1): use your own user ID instead. Null otherwise.
+   */
+  public @Nullable String getCustomerIdWarning() {
+    return string("customer_id_warning");
+  }
 }

@@ -12,7 +12,7 @@ Spring Boot 4 (Java 17+) auto-configuration for [`com.clikgate:clikgate-java`](.
 <dependency>
   <groupId>com.clikgate</groupId>
   <artifactId>clikgate-spring-boot-starter</artifactId>
-  <version>2.0.0</version>
+  <version>2.0.1</version>
 </dependency>
 ```
 
@@ -48,6 +48,15 @@ Map<String, Object> me(@AuthenticationPrincipal AppUser user) {
 ```
 
 **Path B (no secret or token):** the app sends `getInstallationId()` with its sign-in request, and your server calls `clikgate.identifyUser(...)` with `appId`, `installationId` and `customerId` after sign-in and at every signed-in app open (skip it when there's no installation ID). See the [Java SDK](../java/README.md#identify-your-users).
+
+## Customers from before Clikgate
+
+Tell Clikgate who was already your customer before you added it, so they are never counted as a referral or a new customer. Send the account's creation date with the identity token (version 2) or from your server, and import the rest of your existing customers once. Use your own customer IDs, never emails or phone numbers: Clikgate stores a keyed fingerprint of each imported ID, not the ID itself. Not available in private mode. Guide: https://clikgate.com/docs/identify-users.
+
+```java
+String token = clikgate.createIdentityToken(user.getId(), null, user.getCreatedAt()); // version 2 (an Instant)
+clikgate.knownCustomers().importCustomers(Collections.singletonList(KnownCustomer.of("u_10482", LocalDate.of(2024, 3, 2))));
+```
 
 ## Keep the click ID longer (Safari)
 

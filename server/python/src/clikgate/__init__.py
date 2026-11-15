@@ -27,6 +27,7 @@ from ._click_ids import (
 )
 from ._client import AsyncClikgate, Clikgate, PersonIdentified
 from ._core import ErrorContext, OnError
+from ._customer_id import CUSTOMER_ID_MAX_LENGTH, canonical_customer_id, customer_id_warning
 from ._enums import GoalKind, GoalStatus, Provider
 from ._errors import (
     AuthenticationError,
@@ -48,7 +49,8 @@ from ._errors import (
 )
 from ._goals import AsyncGoals, GoalBatchEvent, Goals
 from ._http import Clock, RequestOptions
-from ._identity import IDENTITY_SECRET_ENV, IDENTITY_SECRETS_ENV, create_identity_token
+from ._identity import IDENTITY_SECRET_ENV, IDENTITY_SECRETS_ENV, CustomerSince, create_identity_token
+from ._known_customers import KNOWN_CUSTOMERS_BATCH, AsyncKnownCustomers, KnownCustomers, KnownCustomersImportResult
 from ._money import MoneyInput, format_value
 from ._payments import AsyncPayments, Payments, build_from_flutterwave, build_from_monnify, build_from_paystack, build_from_stripe
 from ._resources import AsyncClicks, AsyncConversions, AsyncLinks, Clicks, Conversions, Links
@@ -91,6 +93,14 @@ WARNING_CODES = (
 
 __all__ = [
     "PersonIdentified",
+    "CUSTOMER_ID_MAX_LENGTH",
+    "KNOWN_CUSTOMERS_BATCH",
+    "AsyncKnownCustomers",
+    "CustomerSince",
+    "KnownCustomers",
+    "KnownCustomersImportResult",
+    "canonical_customer_id",
+    "customer_id_warning",
     "CLICK_ID_HEADER",
     "CLICK_ID_PATTERN",
     "VERSION",

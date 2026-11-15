@@ -61,6 +61,16 @@ if (installationId is not null)
     await clikgate.IdentifyUserAsync(new IdentifyUserParams { AppId = "app_…", InstallationId = installationId, CustomerId = user.Id });
 ```
 
+## Customers from before Clikgate
+
+Tell Clikgate who was already your customer before you added it, so they are never counted as a referral or a new customer. Send the account's creation date with the identity token (version 2) or from your server, and import the rest of your existing customers once. Use your own customer IDs, never emails or phone numbers: Clikgate stores a keyed fingerprint of each imported ID, not the ID itself. Not available in private mode. Guide: https://clikgate.com/docs/identify-users.
+
+```csharp
+var token = clikgate.CreateIdentityToken(user.Id, null, user.CreatedAt); // version 2 (a DateTimeOffset)
+await clikgate.IdentifyUserAsync(new IdentifyUserParams { AppId = "app_…", InstallationId = installationId, CustomerId = user.Id, CustomerSince = user.CreatedAt });
+var result = await clikgate.KnownCustomers.ImportAsync(new[] { new KnownCustomer("u_10482", new DateTimeOffset(2024, 3, 2, 0, 0, 0, TimeSpan.Zero)) }); // batches of 10,000
+```
+
 ## People: identify a user and label them
 
 Link a click, an app installation or your customer ID to a person, and give them a label your team sees instead of the click ID (1-80 characters; Growth and up). From your server this is always verified. Goals take the same `label`, and `isFirst` from your server is what counts a new customer. Don't put information in labels that your customers wouldn't expect you to keep.

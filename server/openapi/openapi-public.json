@@ -15560,6 +15560,140 @@
         }
       }
     },
+    "/v1/apps/{app_id}/iphone-deferred-match-rate": {
+      "get": {
+        "tags": [
+          "Apps"
+        ],
+        "summary": "Iphone Deferred Deep Link Match Rate",
+        "description": "iOS first launches in the period (rolling, ending now) and what the iOS SDK's pasteboard step found: `attempted` (the paste flow ran), `matched` (attributed by the pasteboard token), `match_rate` (matched / attempted, `null` when nothing was attempted) and the outcome breakdown. Measured, never estimated. iOS apps only: an Android app answers 422 `platform_not_ios`.",
+        "operationId": "iPhone_Deferred_Deep_Link_Match_Rate_v1_apps__app_id__iphone_deferred_match_rate_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "app_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "App Id"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/MatchRatePeriod",
+              "default": "30d"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeferredMatchRateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error (also `reserved_domain`, `invalid_url`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (invalid parameters, mode mismatch, ...)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope, role, feature or plan (e.g. `insufficient_scope`, `feature_disabled`, `plan_upgrade_required` with `required_plan`, `plan_limit_reached`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found (or not visible to the caller)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (duplicate, state conflict, idempotency key reuse; `slug_conflict`, `domain_in_use`, `domain_has_links`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (see `Retry-After`); `usage_limit_reached` when a plan meter is used up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-clikgate-auth": "api_key",
+        "x-audience": "public",
+        "x-clikgate-scopes": {
+          "all_of": [
+            "analytics:read"
+          ]
+        }
+      }
+    },
     "/v1/apps/{app_id}/sandbox/reset-installation": {
       "post": {
         "tags": [
@@ -95121,6 +95255,974 @@
         }
       }
     },
+    "/v1/public/trial-emails/stop": {
+      "get": {
+        "tags": [
+          "Free Trial"
+        ],
+        "summary": "Stop Trial Emails Page",
+        "operationId": "Stop_Trial_Emails_Page_v1_public_trial_emails_stop_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 10,
+              "maxLength": 1000,
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error (also `reserved_domain`, `invalid_url`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (invalid parameters, mode mismatch, ...)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope, role, feature or plan (e.g. `insufficient_scope`, `feature_disabled`, `plan_upgrade_required` with `required_plan`, `plan_limit_reached`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found (or not visible to the caller)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (duplicate, state conflict, idempotency key reuse; `slug_conflict`, `domain_in_use`, `domain_has_links`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (see `Retry-After`); `usage_limit_reached` when a plan meter is used up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-clikgate-auth": "public",
+        "x-audience": "public"
+      },
+      "post": {
+        "tags": [
+          "Free Trial"
+        ],
+        "summary": "Stop Trial Emails",
+        "operationId": "Stop_Trial_Emails_v1_public_trial_emails_stop_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 10,
+              "maxLength": 1000,
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StopEmailsResponse"
+                }
+              },
+              "text/html": {}
+            }
+          },
+          "422": {
+            "description": "Validation error (also `reserved_domain`, `invalid_url`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (invalid parameters, mode mismatch, ...)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope, role, feature or plan (e.g. `insufficient_scope`, `feature_disabled`, `plan_upgrade_required` with `required_plan`, `plan_limit_reached`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found (or not visible to the caller)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (duplicate, state conflict, idempotency key reuse; `slug_conflict`, `domain_in_use`, `domain_has_links`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (see `Retry-After`); `usage_limit_reached` when a plan meter is used up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-clikgate-auth": "public",
+        "x-audience": "public"
+      }
+    },
+    "/v1/public/trial-offer": {
+      "get": {
+        "tags": [
+          "Free Trial"
+        ],
+        "summary": "Fetch Trial Offer",
+        "operationId": "Fetch_Trial_Offer_v1_public_trial_offer_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrialOfferResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (invalid parameters, mode mismatch, ...)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope, role, feature or plan (e.g. `insufficient_scope`, `feature_disabled`, `plan_upgrade_required` with `required_plan`, `plan_limit_reached`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found (or not visible to the caller)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (duplicate, state conflict, idempotency key reuse; `slug_conflict`, `domain_in_use`, `domain_has_links`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error (also `reserved_domain`, `invalid_url`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (see `Retry-After`); `usage_limit_reached` when a plan meter is used up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-clikgate-auth": "public",
+        "x-audience": "public"
+      }
+    },
+    "/v1/known-customers/import": {
+      "post": {
+        "tags": [
+          "Known customers"
+        ],
+        "summary": "Import Known Customers",
+        "operationId": "Import_Known_Customers_v1_known_customers_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnownCustomersImportSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnownCustomersImportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error (also `reserved_domain`, `invalid_url`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (invalid parameters, mode mismatch, ...)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope, role, feature or plan (e.g. `insufficient_scope`, `feature_disabled`, `plan_upgrade_required` with `required_plan`, `plan_limit_reached`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found (or not visible to the caller)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (duplicate, state conflict, idempotency key reuse; `slug_conflict`, `domain_in_use`, `domain_has_links`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (see `Retry-After`); `usage_limit_reached` when a plan meter is used up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "x-clikgate-auth": "api_key",
+        "x-audience": "public",
+        "x-clikgate-scopes": {
+          "all_of": [
+            "people:write"
+          ]
+        }
+      }
+    },
+    "/v1/known-customers/remove": {
+      "post": {
+        "tags": [
+          "Known customers"
+        ],
+        "summary": "Remove Known Customer",
+        "operationId": "Remove_Known_Customer_v1_known_customers_remove_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnownCustomerRemoveSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnownCustomerRemoveResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error (also `reserved_domain`, `invalid_url`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (invalid parameters, mode mismatch, ...)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope, role, feature or plan (e.g. `insufficient_scope`, `feature_disabled`, `plan_upgrade_required` with `required_plan`, `plan_limit_reached`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found (or not visible to the caller)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (duplicate, state conflict, idempotency key reuse; `slug_conflict`, `domain_in_use`, `domain_has_links`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (see `Retry-After`); `usage_limit_reached` when a plan meter is used up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "x-clikgate-auth": "api_key",
+        "x-audience": "public",
+        "x-clikgate-scopes": {
+          "all_of": [
+            "people:write"
+          ]
+        }
+      }
+    },
+    "/v1/analytics/device-changes": {
+      "get": {
+        "tags": [
+          "Analytics"
+        ],
+        "summary": "Device Changes Report",
+        "operationId": "Device_Changes_Report_v1_analytics_device_changes_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "title": "To"
+            }
+          },
+          {
+            "name": "app_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "App Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceChangesReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error (also `reserved_domain`, `invalid_url`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (invalid parameters, mode mismatch, ...)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope, role, feature or plan (e.g. `insufficient_scope`, `feature_disabled`, `plan_upgrade_required` with `required_plan`, `plan_limit_reached`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found (or not visible to the caller)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (duplicate, state conflict, idempotency key reuse; `slug_conflict`, `domain_in_use`, `domain_has_links`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (see `Retry-After`); `usage_limit_reached` when a plan meter is used up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-clikgate-auth": "api_key",
+        "x-audience": "public",
+        "x-clikgate-scopes": {
+          "all_of": [
+            "analytics:read"
+          ]
+        }
+      }
+    },
+    "/v1/people/{person_id}/device-changes": {
+      "get": {
+        "tags": [
+          "People"
+        ],
+        "summary": "Fetch Person Device Changes",
+        "operationId": "Fetch_Person_Device_Changes_v1_people__person_id__device_changes_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Person Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceChangesListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error (also `reserved_domain`, `invalid_url`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (invalid parameters, mode mismatch, ...)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope, role, feature or plan (e.g. `insufficient_scope`, `feature_disabled`, `plan_upgrade_required` with `required_plan`, `plan_limit_reached`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found (or not visible to the caller)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (duplicate, state conflict, idempotency key reuse; `slug_conflict`, `domain_in_use`, `domain_has_links`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (see `Retry-After`); `usage_limit_reached` when a plan meter is used up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-clikgate-auth": "api_key",
+        "x-audience": "public",
+        "x-clikgate-scopes": {
+          "all_of": [
+            "people:read"
+          ]
+        }
+      }
+    },
+    "/v1/sdk/app-record": {
+      "post": {
+        "tags": [
+          "SDK protocol: SDK"
+        ],
+        "summary": "Sdk App Record",
+        "operationId": "SDK_App_Record_v1_sdk_app_record_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppRecordSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppRecordResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error (also `reserved_domain`, `invalid_url`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (invalid parameters, mode mismatch, ...)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope, role, feature or plan (e.g. `insufficient_scope`, `feature_disabled`, `plan_upgrade_required` with `required_plan`, `plan_limit_reached`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found (or not visible to the caller)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict (duplicate, state conflict, idempotency key reuse; `slug_conflict`, `domain_in_use`, `domain_has_links`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (see `Retry-After`); `usage_limit_reached` when a plan meter is used up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-clikgate-auth": "sdk_key",
+        "x-audience": "sdk"
+      }
+    },
     "/v1/sdk/config": {
       "get": {
         "tags": [
@@ -107567,6 +108669,42 @@
         ],
         "title": "AppPlatform"
       },
+      "AppRecordResponse": {
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accepted"
+        ],
+        "title": "AppRecordResponse"
+      },
+      "AppRecordSchema": {
+        "properties": {
+          "installation_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 8,
+            "title": "Installation Id"
+          },
+          "signed_record": {
+            "type": "string",
+            "maxLength": 65536,
+            "minLength": 20,
+            "title": "Signed Record"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "installation_id",
+          "signed_record"
+        ],
+        "title": "AppRecordSchema"
+      },
       "AppTokenResponse": {
         "properties": {
           "access_token": {
@@ -114582,6 +115720,29 @@
         "title": "CountMode",
         "description": "`once_per_click`: the first attributed event per (click, goal) counts; `every`: all count."
       },
+      "CountShare": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "share": {
+            "type": "number",
+            "title": "Share"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "count",
+          "share"
+        ],
+        "title": "CountShare"
+      },
       "CreateExportSchema": {
         "properties": {
           "datasets": {
@@ -116015,6 +117176,13 @@
             ],
             "title": "Home Dashboard Id"
           },
+          "sidebar_dashboard_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sidebar Dashboard Ids"
+          },
           "limit": {
             "anyOf": [
               {
@@ -116929,6 +118097,27 @@
             "type": "array",
             "title": "Redirects"
           },
+          "focus": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "business",
+              "creator",
+              "partners",
+              "links"
+            ],
+            "title": "Focus",
+            "default": "standard"
+          },
+          "view": {
+            "type": "string",
+            "enum": [
+              "focused",
+              "standard"
+            ],
+            "title": "View",
+            "default": "focused"
+          },
           "livemode": {
             "type": "boolean",
             "title": "Livemode",
@@ -116942,6 +118131,95 @@
           "livemode"
         ],
         "title": "DefaultDashboardsResponse"
+      },
+      "DeferredMatchRateResponse": {
+        "properties": {
+          "platform": {
+            "type": "string",
+            "const": "ios",
+            "title": "Platform",
+            "default": "ios"
+          },
+          "paste_flow_enabled": {
+            "type": "boolean",
+            "title": "Paste Flow Enabled",
+            "description": "The app's `pasteboard_matching` is `on_interstitial_tap`"
+          },
+          "period": {
+            "$ref": "#/components/schemas/MatchRatePeriodInfo"
+          },
+          "first_launches": {
+            "type": "integer",
+            "title": "First Launches",
+            "description": "iOS installs first opened in the period"
+          },
+          "attempted": {
+            "type": "integer",
+            "title": "Attempted",
+            "description": "First launches with a pasteboard outcome (the paste flow ran)"
+          },
+          "matched": {
+            "type": "integer",
+            "title": "Matched",
+            "description": "Attempted first launches attributed with match type `pasteboard`"
+          },
+          "match_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Match Rate",
+            "description": "matched / attempted, 4 decimals; null when attempted is 0"
+          },
+          "outcomes": {
+            "$ref": "#/components/schemas/PasteboardOutcomeCounts"
+          },
+          "other_matches": {
+            "$ref": "#/components/schemas/OtherMatchCounts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "paste_flow_enabled",
+          "period",
+          "first_launches",
+          "attempted",
+          "matched",
+          "match_rate",
+          "outcomes",
+          "other_matches"
+        ],
+        "title": "DeferredMatchRateResponse",
+        "description": "iOS first launches in the period and how the pasteboard step went. `match_rate` is `matched / attempted`\n(`null` when nothing was attempted); never estimated.",
+        "example": {
+          "attempted": 80,
+          "first_launches": 120,
+          "match_rate": 0.375,
+          "matched": 30,
+          "other_matches": {
+            "app_link": 12,
+            "organic": 70
+          },
+          "outcomes": {
+            "denied": 6,
+            "expired": 2,
+            "no_link": 35,
+            "no_token": 4,
+            "paste_control": 2,
+            "token_found": 31
+          },
+          "paste_flow_enabled": true,
+          "period": {
+            "from": "2026-10-14T12:00:00Z",
+            "key": "30d",
+            "to": "2026-11-13T12:00:00Z"
+          },
+          "platform": "ios"
+        }
       },
       "DeleteIdentitySignalsResponse": {
         "properties": {
@@ -117041,6 +118319,230 @@
           "error"
         ],
         "title": "DestinationStatus"
+      },
+      "DeviceChangeResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "app_id": {
+            "type": "string",
+            "title": "App Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "switch",
+              "second_device"
+            ],
+            "title": "Kind"
+          },
+          "from_platform": {
+            "type": "string",
+            "title": "From Platform"
+          },
+          "to_platform": {
+            "type": "string",
+            "title": "To Platform"
+          },
+          "from_device_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Device Model"
+          },
+          "to_device_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Device Model"
+          },
+          "from_last_seen_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Last Seen At"
+          },
+          "to_first_open_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "To First Open At"
+          },
+          "gap_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap Days"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "app_id",
+          "kind",
+          "from_platform",
+          "to_platform",
+          "from_device_model",
+          "to_device_model",
+          "from_last_seen_at",
+          "to_first_open_at",
+          "gap_days",
+          "created_at"
+        ],
+        "title": "DeviceChangeResponse"
+      },
+      "DeviceChangesListResponse": {
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "list",
+            "title": "Object",
+            "default": "list"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DeviceChangeResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "locked": {
+            "type": "boolean",
+            "title": "Locked",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DeviceChangesListResponse"
+      },
+      "DeviceChangesReportResponse": {
+        "properties": {
+          "locked": {
+            "type": "boolean",
+            "title": "Locked"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "lock_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lock Message"
+          },
+          "months": {
+            "items": {
+              "$ref": "#/components/schemas/MonthCount"
+            },
+            "type": "array",
+            "title": "Months",
+            "default": []
+          },
+          "platform_moves": {
+            "items": {
+              "$ref": "#/components/schemas/CountShare"
+            },
+            "type": "array",
+            "title": "Platform Moves",
+            "default": []
+          },
+          "top_from_models": {
+            "items": {
+              "$ref": "#/components/schemas/CountShare"
+            },
+            "type": "array",
+            "title": "Top From Models",
+            "default": []
+          },
+          "top_to_models": {
+            "items": {
+              "$ref": "#/components/schemas/CountShare"
+            },
+            "type": "array",
+            "title": "Top To Models",
+            "default": []
+          },
+          "gap_days_median": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap Days Median"
+          },
+          "gap_days_distribution": {
+            "items": {
+              "$ref": "#/components/schemas/CountShare"
+            },
+            "type": "array",
+            "title": "Gap Days Distribution",
+            "default": []
+          },
+          "phones_per_customer": {
+            "items": {
+              "$ref": "#/components/schemas/CountShare"
+            },
+            "type": "array",
+            "title": "Phones Per Customer",
+            "default": []
+          },
+          "old_phone_seen_again_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Phone Seen Again Share"
+          }
+        },
+        "type": "object",
+        "required": [
+          "locked",
+          "total"
+        ],
+        "title": "DeviceChangesReportResponse"
       },
       "DeviceCheckKeySchema": {
         "properties": {
@@ -121032,6 +122534,11 @@
             "type": "boolean",
             "title": "Block Existing Users",
             "default": true
+          },
+          "require_account_date": {
+            "type": "boolean",
+            "title": "Require Account Date",
+            "default": false
           },
           "block_reinstall_rereferral": {
             "type": "boolean",
@@ -125256,6 +126763,37 @@
             ],
             "title": "Label Ignored"
           },
+          "customer_since_ignored": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "unverified",
+                  "invalid"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Since Ignored"
+          },
+          "customer_id_warning": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "looks_like_phone",
+                  "looks_like_email",
+                  "looks_like_national_id"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Id Warning"
+          },
           "livemode": {
             "type": "boolean",
             "title": "Livemode",
@@ -125378,6 +126916,28 @@
               }
             ],
             "title": "Label Ignored"
+          },
+          "customer_since_ignored": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Since Ignored"
+          },
+          "customer_id_warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Id Warning"
           }
         },
         "type": "object",
@@ -126800,6 +128360,16 @@
             "type": "string",
             "title": "Attribution Status"
           },
+          "install_kind": {
+            "type": "string",
+            "title": "Install Kind",
+            "default": "new"
+          },
+          "new_phone_of_existing_customer": {
+            "type": "boolean",
+            "title": "New Phone Of Existing Customer",
+            "default": false
+          },
           "match_type": {
             "anyOf": [
               {
@@ -127345,6 +128915,24 @@
             ],
             "title": "Pasteboard Token"
           },
+          "pasteboard_outcome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "token_found",
+                  "no_link",
+                  "no_token",
+                  "denied",
+                  "paste_control"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pasteboard Outcome"
+          },
           "push": {
             "anyOf": [
               {
@@ -127466,6 +129054,168 @@
               }
             ],
             "title": "Is Rooted"
+          },
+          "install_channel": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "app_store",
+                  "testflight",
+                  "xcode",
+                  "store",
+                  "sideload",
+                  "debug"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Install Channel"
+          },
+          "debuggable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Debuggable"
+          },
+          "preinstalled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preinstalled"
+          },
+          "platform_installed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform Installed At"
+          },
+          "platform_installed_source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "android_first_install_time",
+                  "play_install_begin_server",
+                  "ios_container_created"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform Installed Source"
+          },
+          "android_last_update_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Android Last Update At"
+          },
+          "android_updated_since_install": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Android Updated Since Install"
+          },
+          "android_version_code": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 4.611686018427388e+18,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Android Version Code"
+          },
+          "device_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Time"
+          },
+          "existing_user_hint": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing User Hint"
+          },
+          "installed_before_start": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installed Before Start"
+          },
+          "keychain_restored_from_other_device": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keychain Restored From Other Device"
+          },
+          "android_device_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Android Device Key"
           }
         },
         "additionalProperties": false,
@@ -127556,6 +129306,11 @@
             "type": "boolean",
             "title": "Debug View",
             "default": false
+          },
+          "install_kind": {
+            "type": "string",
+            "title": "Install Kind",
+            "default": "new"
           }
         },
         "type": "object",
@@ -127782,6 +129537,104 @@
           "finished_at"
         ],
         "title": "JobInfoResponse"
+      },
+      "KnownCustomerRemoveResponse": {
+        "properties": {
+          "removed": {
+            "type": "boolean",
+            "title": "Removed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "removed"
+        ],
+        "title": "KnownCustomerRemoveResponse"
+      },
+      "KnownCustomerRemoveSchema": {
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Customer Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "customer_id"
+        ],
+        "title": "KnownCustomerRemoveSchema",
+        "example": {
+          "customer_id": "user_10482"
+        }
+      },
+      "KnownCustomersImportResponse": {
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "known_customers_import",
+            "title": "Object",
+            "default": "known_customers_import"
+          },
+          "accepted": {
+            "type": "integer",
+            "title": "Accepted"
+          },
+          "refused": {
+            "type": "integer",
+            "title": "Refused"
+          },
+          "refused_by_reason": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Refused By Reason"
+          },
+          "livemode": {
+            "type": "boolean",
+            "title": "Livemode",
+            "description": "true for live-environment data, false for test mode."
+          }
+        },
+        "type": "object",
+        "required": [
+          "accepted",
+          "refused",
+          "refused_by_reason",
+          "livemode"
+        ],
+        "title": "KnownCustomersImportResponse"
+      },
+      "KnownCustomersImportSchema": {
+        "properties": {
+          "customers": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "maxItems": 10000,
+            "minItems": 1,
+            "title": "Customers"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "customers"
+        ],
+        "title": "KnownCustomersImportSchema",
+        "example": {
+          "customers": [
+            {
+              "customer_id": "user_10482",
+              "customer_since": "2024-03-02"
+            }
+          ]
+        }
       },
       "LabelHistoryEntry": {
         "properties": {
@@ -133847,6 +135700,44 @@
         ],
         "title": "MatchQualityResponse"
       },
+      "MatchRatePeriod": {
+        "type": "string",
+        "enum": [
+          "7d",
+          "30d",
+          "90d"
+        ],
+        "title": "MatchRatePeriod",
+        "description": "iPhone deferred deep link match rate: the rolling window ending now."
+      },
+      "MatchRatePeriodInfo": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "7d",
+              "30d",
+              "90d"
+            ],
+            "title": "Key"
+          },
+          "from": {
+            "type": "string",
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "title": "To"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "from",
+          "to"
+        ],
+        "title": "MatchRatePeriodInfo"
+      },
       "MatchRejection": {
         "properties": {
           "reason": {
@@ -134328,6 +136219,29 @@
           "currency"
         ],
         "title": "Money"
+      },
+      "MonthCount": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "switches": {
+            "type": "integer",
+            "title": "Switches"
+          },
+          "second_phones": {
+            "type": "integer",
+            "title": "Second Phones"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "switches",
+          "second_phones"
+        ],
+        "title": "MonthCount"
       },
       "MonthlyClicksRange": {
         "type": "string",
@@ -135213,10 +137127,11 @@
           "campaign",
           "link",
           "app",
-          "goal"
+          "goal",
+          "panel"
         ],
         "title": "NoteScope",
-        "description": "What a note is about: the whole organisation, or one campaign, link, app or goal."
+        "description": "What a note is about: the whole organisation, or one campaign, link, app or goal. `panel` (owner, 2026-11-11): a\nnote written on one dashboard panel, shown on that panel only."
       },
       "NoteSource": {
         "type": "string",
@@ -136415,6 +138330,22 @@
           ]
         }
       },
+      "OtherMatchCounts": {
+        "properties": {
+          "app_link": {
+            "type": "integer",
+            "title": "App Link",
+            "default": 0
+          },
+          "organic": {
+            "type": "integer",
+            "title": "Organic",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "OtherMatchCounts"
+      },
       "OveragePrice": {
         "properties": {
           "per": {
@@ -137113,6 +139044,29 @@
               }
             ],
             "title": "Explore"
+          },
+          "funnel_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^fnl_[0-9A-HJKMNP-TV-Z]{26}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Funnel Id"
+          },
+          "hide_stuck": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hide Stuck"
           }
         },
         "additionalProperties": false,
@@ -138272,6 +140226,43 @@
           "on_interstitial_tap"
         ],
         "title": "PasteboardMatching"
+      },
+      "PasteboardOutcomeCounts": {
+        "properties": {
+          "token_found": {
+            "type": "integer",
+            "title": "Token Found",
+            "default": 0
+          },
+          "no_link": {
+            "type": "integer",
+            "title": "No Link",
+            "default": 0
+          },
+          "no_token": {
+            "type": "integer",
+            "title": "No Token",
+            "default": 0
+          },
+          "denied": {
+            "type": "integer",
+            "title": "Denied",
+            "default": 0
+          },
+          "paste_control": {
+            "type": "integer",
+            "title": "Paste Control",
+            "default": 0
+          },
+          "expired": {
+            "type": "integer",
+            "title": "Expired",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PasteboardOutcomeCounts",
+        "description": "First launches by what the iOS SDK's pasteboard step found (`expired` is derived by the server)."
       },
       "PauseLinkSchema": {
         "properties": {
@@ -139491,6 +141482,24 @@
             ],
             "title": "Label",
             "description": "Optional label you choose for this person, 1-80 characters after trimming; an empty string clears it. Shown to your team instead of the click ID. Don't put information in labels that your customers wouldn't expect you to keep."
+          },
+          "customer_since": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Since"
+          },
+          "customer_since_replace": {
+            "type": "boolean",
+            "title": "Customer Since Replace",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -139500,6 +141509,7 @@
         "example": {
           "click_id": "clk_01JAB0000000000000000000000",
           "customer_id": "user_42",
+          "customer_since": "2024-03-02",
           "label": "Ada (VIP)"
         }
       },
@@ -139547,8 +141557,20 @@
           "q": {
             "type": "string",
             "maxLength": 200,
-            "minLength": 1,
-            "title": "Q"
+            "title": "Q",
+            "default": ""
+          },
+          "segment": {
+            "type": "string",
+            "enum": [
+              "all",
+              "new_installs",
+              "uninstalled",
+              "referrers",
+              "referred"
+            ],
+            "title": "Segment",
+            "default": "all"
           },
           "cursor": {
             "anyOf": [
@@ -139572,11 +141594,8 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "q"
-        ],
         "title": "PeopleSearchSchema",
-        "description": "Search text goes in the body, never in the URL, and is never logged.",
+        "description": "Search text goes in the body, never in the URL, and is never logged. Empty: the most recently active people.",
         "example": {
           "q": "Ada"
         }
@@ -139812,6 +141831,57 @@
           "challenge"
         ],
         "title": "PeriodType"
+      },
+      "PersonAppSummary": {
+        "properties": {
+          "app_id": {
+            "type": "string",
+            "title": "App Id"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "installed_at": {
+            "type": "string",
+            "title": "Installed At"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "installed",
+              "uninstalled",
+              "unknown"
+            ],
+            "title": "Status"
+          },
+          "uninstalled_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uninstalled At"
+          },
+          "reinstall": {
+            "type": "boolean",
+            "title": "Reinstall"
+          }
+        },
+        "type": "object",
+        "required": [
+          "app_id",
+          "platform",
+          "installed_at",
+          "status",
+          "uninstalled_at",
+          "reinstall"
+        ],
+        "title": "PersonAppSummary",
+        "description": "The person's latest install of your apps."
       },
       "PersonInfoResponse": {
         "properties": {
@@ -140052,6 +142122,171 @@
         "title": "PersonRef",
         "description": "`person` on clicks, installs, goals, exports and webhooks. `label` is null when unset, hidden or not permitted."
       },
+      "PersonReferralSummary": {
+        "properties": {
+          "program_id": {
+            "type": "string",
+            "title": "Program Id"
+          },
+          "program_name": {
+            "type": "string",
+            "title": "Program Name"
+          },
+          "referrer_id": {
+            "type": "string",
+            "title": "Referrer Id"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "installs": {
+            "type": "integer",
+            "title": "Installs"
+          },
+          "qualified": {
+            "type": "integer",
+            "title": "Qualified"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank"
+          },
+          "rank_board": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank Board"
+          },
+          "rank_board_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank Board Id"
+          },
+          "shares": {
+            "type": "integer",
+            "title": "Shares"
+          },
+          "shares_by_app": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Shares By App"
+          }
+        },
+        "type": "object",
+        "required": [
+          "program_id",
+          "program_name",
+          "referrer_id",
+          "code",
+          "status",
+          "installs",
+          "qualified",
+          "rank",
+          "rank_board",
+          "rank_board_id",
+          "shares",
+          "shares_by_app"
+        ],
+        "title": "PersonReferralSummary",
+        "description": "The referral programme the person refers in (the one with the most qualified friends)."
+      },
+      "PersonReferredBySummary": {
+        "properties": {
+          "program_id": {
+            "type": "string",
+            "title": "Program Id"
+          },
+          "program_name": {
+            "type": "string",
+            "title": "Program Name"
+          },
+          "referrer_id": {
+            "type": "string",
+            "title": "Referrer Id"
+          },
+          "referrer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referrer Name"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "program_id",
+          "program_name",
+          "referrer_id",
+          "referrer_name",
+          "code",
+          "channel",
+          "status"
+        ],
+        "title": "PersonReferredBySummary",
+        "description": "Who brought the person in, when they installed through a referral."
+      },
       "PersonSummaryResponse": {
         "properties": {
           "object": {
@@ -140120,13 +142355,72 @@
             "title": "Goal Value Minor"
           },
           "matched_on": {
-            "type": "string",
-            "enum": [
-              "label",
-              "customer_id",
-              "click_id"
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "label",
+                  "customer_id",
+                  "click_id"
+                ]
+              },
+              {
+                "type": "null"
+              }
             ],
             "title": "Matched On"
+          },
+          "app": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonAppSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "joined_via": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Joined Via"
+          },
+          "joined_campaign_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Joined Campaign Id"
+          },
+          "referrer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonReferralSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "referred_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonReferredBySummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "livemode": {
             "type": "boolean",
@@ -146087,6 +148381,28 @@
             ],
             "title": "Reason"
           },
+          "reason_detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Detail"
+          },
+          "reason_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Message"
+          },
           "fraud_flags": {
             "items": {
               "type": "string"
@@ -151325,6 +153641,16 @@
             "type": "boolean",
             "title": "Allow Labels",
             "default": true
+          },
+          "existing_users": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SdkExistingUsersConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -151425,6 +153751,35 @@
         ],
         "title": "SdkConsentRequestSchema",
         "description": "`POST /v1/sdk/consent` (shared/schemas/consent_request.schema.json)."
+      },
+      "SdkExistingUsersConfig": {
+        "properties": {
+          "start_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start At"
+          },
+          "device_key_salt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Key Salt"
+          }
+        },
+        "type": "object",
+        "title": "SdkExistingUsersConfig",
+        "description": "The app's Clikgate start date for this platform and environment (null until set), so the SDK can send\n`installed_before_start` when tracking consent is denied, and the per-app key for `android_device_key`."
       },
       "SdkFirebaseForwarding": {
         "properties": {
@@ -152441,7 +154796,8 @@
           "skipped_disputed",
           "skipped_window_passed",
           "skipped_partner_handles_app",
-          "skipped_business_messaging"
+          "skipped_business_messaging",
+          "skipped_existing_user"
         ],
         "title": "SendStatus"
       },
@@ -154907,6 +157263,19 @@
         "title": "SplitSchema",
         "description": "An A/B test of one destination: the default (`rule_id` null) or a rule whose `destination_type` is `split`.\nSend `id` to edit a running test (its id is kept); without it a new test starts (two to five versions, and the\nactive versions' weights add up to one hundred percent; one running test per destination)."
       },
+      "StopEmailsResponse": {
+        "properties": {
+          "stopped": {
+            "type": "boolean",
+            "title": "Stopped"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stopped"
+        ],
+        "title": "StopEmailsResponse"
+      },
       "StreamType": {
         "type": "string",
         "enum": [
@@ -156860,6 +159229,28 @@
         "title": "TravelledResponse",
         "description": "How the link travelled: clicks per (Clicked on, Shared as) pair."
       },
+      "TrialOfferResponse": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "plans": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Plans"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "plans"
+        ],
+        "title": "TrialOfferResponse",
+        "description": "`GET /v1/public/trial-offer`: whether a new free trial can start now, and on which plans (for the website)."
+      },
       "TrophyBand": {
         "properties": {
           "key": {
@@ -157059,15 +159450,38 @@
             "title": "Installs",
             "description": "Installs whose first open is in the period (the cohort)"
           },
+          "existing_user_uninstalls": {
+            "type": "integer",
+            "title": "Existing User Uninstalls",
+            "default": 0
+          },
           "tracked_installs": {
             "type": "integer",
             "title": "Tracked Installs",
             "description": "Cohort installs Clikgate can check (push token, not opted out)"
           },
+          "coverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage",
+            "description": "Checked installs \u00f7 installs (0-1, 4 dp): the share of the cohort the rates cover; null with no installs"
+          },
           "uninstalls": {
             "type": "integer",
             "title": "Uninstalls",
             "description": "Uninstalls detected in the period"
+          },
+          "uninstalls_reverted": {
+            "type": "integer",
+            "title": "Uninstalls Reverted",
+            "description": "Cohort installs whose uninstall was later reversed because the app opened again (a reinstall that kept the installation id, or a stale push token)",
+            "default": 0
           },
           "uninstall_rate_d1": {
             "anyOf": [
@@ -157348,15 +159762,38 @@
             "title": "Installs",
             "description": "Installs whose first open is in the period (the cohort)"
           },
+          "existing_user_uninstalls": {
+            "type": "integer",
+            "title": "Existing User Uninstalls",
+            "default": 0
+          },
           "tracked_installs": {
             "type": "integer",
             "title": "Tracked Installs",
             "description": "Cohort installs Clikgate can check (push token, not opted out)"
           },
+          "coverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage",
+            "description": "Checked installs \u00f7 installs (0-1, 4 dp): the share of the cohort the rates cover; null with no installs"
+          },
           "uninstalls": {
             "type": "integer",
             "title": "Uninstalls",
             "description": "Uninstalls detected in the period"
+          },
+          "uninstalls_reverted": {
+            "type": "integer",
+            "title": "Uninstalls Reverted",
+            "description": "Cohort installs whose uninstall was later reversed because the app opened again (a reinstall that kept the installation id, or a stale push token)",
+            "default": 0
           },
           "uninstall_rate_d1": {
             "anyOf": [
@@ -166298,6 +168735,19 @@
             "default": null,
             "title": "Customer Id"
           },
+          "customer_since": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Customer Since"
+          },
           "web_key": {
             "anyOf": [
               {
@@ -166718,6 +169168,12 @@
       "name": "Targets"
     },
     {
+      "name": "Free Trial"
+    },
+    {
+      "name": "Known customers"
+    },
+    {
       "name": "SDK protocol: Snippet",
       "description": "> **Use the Clikgate SDK instead.** These endpoints are documented for platforms we don't have an SDK for yet. The SDKs handle install IDs, retries, offline queues, consent, deep link timing and fraud checks for you; calling these endpoints yourself can count installs wrongly, miss attribution, or get your app's traffic flagged as suspicious. Use an `cg_sdk_test_*` key until your integration passes \"See it live\".\n>\n> [See the SDKs](/docs/sdks) \u00b7 [Request an SDK](/docs/sdks#request-an-sdk)",
       "x-sdk-protocol": true
@@ -166821,7 +169277,9 @@
         "Help",
         "Ad Creatives",
         "Chart Notes",
-        "Targets"
+        "Targets",
+        "Free Trial",
+        "Known customers"
       ]
     },
     {

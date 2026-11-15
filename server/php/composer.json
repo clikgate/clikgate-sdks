@@ -44,6 +44,7 @@
         "cyclonedx/cyclonedx-php-composer": "^6.2"
     },
     "suggest": {
+        "ext-intl": "Unicode NFC for customer IDs with non-ASCII characters (identity token version 2 and CustomerId); ASCII IDs need nothing.",
         "ext-curl": "The built-in transport (timeouts, proxies). Without it, any PSR-18 client found by php-http/discovery is used.",
         "psr/http-server-middleware": "For Clikgate\\Psr15\\ClikgateMiddleware and the /cg/keep handler (clickIds->keepRoute()).",
         "clikgate/clikgate-laravel": "Laravel integration: service provider, facade, middleware and queued sending."

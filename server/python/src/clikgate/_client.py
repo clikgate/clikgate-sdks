@@ -11,7 +11,7 @@ import re
 import threading
 import weakref
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime, timezone
 from typing import Any, Callable, Dict, Literal, Mapping, Optional, Sequence, TypedDict, Union
 from urllib.parse import urlsplit
 
@@ -26,7 +26,9 @@ from ._errors import ConfigurationError, as_clikgate_error, local_error
 from ._goals import AsyncGoals, AsyncSender, Goals, SyncSender, build_goal_wire, check_before_send, send_request
 from ._guard import guard_payload
 from ._http import ApiRequest, AsyncRequester, Clock, Requester, RequestOptions, Settings
+from ._identity import CustomerSince
 from ._identity import _create as _create_identity_token
+from ._known_customers import AsyncKnownCustomers, KnownCustomers
 from ._money import MoneyInput
 from ._payments import AsyncPayments, Payments
 from ._resources import AsyncClicks, AsyncConversions, AsyncLinks, Clicks, Conversions, Links
@@ -237,23 +239,68 @@ def _shown(core: _CoreBase, key: Any, reference: Any) -> dict[str, str]:
     return {"goal": str(key), "reference": core.shown_reference(reference)}
 
 
-class PersonIdentified(TypedDict):
-    """The answer of ``identify_user``. ``label_ignored``: ``"plan"`` (below Growth the label isn't stored) or
-    ``"lower_rank"`` (a label your team set was kept)."""
-
+class _PersonIdentifiedBase(TypedDict):
     object: str
     person_id: str
     label_ignored: Optional[str]
 
 
+class PersonIdentified(_PersonIdentifiedBase, total=False):
+    """The answer of ``identify_user``. ``label_ignored``: ``"plan"`` (below Growth the label isn't stored) or
+    ``"lower_rank"`` (a label your team set was kept). ``customer_since_ignored`` (change 26): ``"unverified"`` or
+    ``"invalid"``. ``customer_id_warning`` (change 26 KC.1): ``looks_like_email``, ``looks_like_phone`` or
+    ``looks_like_national_id``: use your own user ID."""
+
+    customer_since_ignored: Optional[str]
+    customer_id_warning: Optional[str]
+
+
+_SINCE = re.compile(r"\d{4}-\d{2}-\d{2}(T.+)?")
+_SINCE_MESSAGE = "customer_since must be 'YYYY-MM-DD', an ISO 8601 date-time, a date, a datetime or Unix seconds."
+
+
+def _since_wire(value: Union[str, date, datetime, int]) -> str:
+    """identify_user's customer_since on the wire: ``YYYY-MM-DD`` or an ISO 8601 date-time with offset."""
+    if isinstance(value, str):
+        if not _SINCE.fullmatch(value):
+            raise local_error("invalid_argument", _SINCE_MESSAGE, "customer_since")
+        return value
+    if isinstance(value, datetime):
+        moment = value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
+        return moment.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise local_error("invalid_argument", _SINCE_MESSAGE, "customer_since")
+    return datetime.fromtimestamp(value, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+
+
 def _identify_body(
-    click_id: Optional[str], app_id: Optional[str], installation_id: Optional[str], customer_id: Optional[str], label: Optional[str]
+    click_id: Optional[str],
+    app_id: Optional[str],
+    installation_id: Optional[str],
+    customer_id: Optional[str],
+    label: Optional[str],
+    customer_since: Union[str, date, datetime, int, None] = None,
+    customer_since_replace: Optional[bool] = None,
 ) -> Dict[str, Any]:
     if (app_id is None) != (installation_id is None):
         raise local_error("invalid_request", "Send app_id and installation_id together.", "app_id" if app_id is None else "installation_id")
     if click_id is None and installation_id is None and customer_id is None:
         raise local_error("invalid_request", "Send click_id, app_id + installation_id, or customer_id.", "click_id")
-    body = {"click_id": click_id, "app_id": app_id, "installation_id": installation_id, "customer_id": customer_id, "label": label}
+    body: Dict[str, Any] = {
+        "click_id": click_id,
+        "app_id": app_id,
+        "installation_id": installation_id,
+        "customer_id": customer_id,
+        "label": label,
+    }
+    if customer_since is not None:
+        if customer_id is None:
+            raise local_error("invalid_request", "customer_since needs customer_id.", "customer_since")
+        body["customer_since"] = _since_wire(customer_since)
+    if customer_since_replace is True:
+        body["customer_since_replace"] = True
     return {k: v for k, v in body.items() if v is not None}
 
 
@@ -353,6 +400,8 @@ class Clikgate:
         self.links = Links(self._core)
         #: Clicks.
         self.clicks = Clicks(self._core)
+        #: Existing customers from before you added Clikgate: ``import_customers`` and ``remove`` (change 26).
+        self.known_customers = KnownCustomers(self._core)
         explicit = r.click_id_param
         #: Click-ID helpers using this client's ``click_id_param`` (or the organisation's, from config).
         self.click_ids = ClickIds(lambda: explicit or (config.peek() or {}).get("click_id_param") or "cgid")
@@ -451,7 +500,14 @@ class Clikgate:
         except Exception:  # goal() never raises, whatever happens
             pass
 
-    def create_identity_token(self, customer_id: str, *, app_id: Optional[str] = None, issued_at: Optional[int] = None) -> str:
+    def create_identity_token(
+        self,
+        customer_id: str,
+        *,
+        app_id: Optional[str] = None,
+        issued_at: Optional[int] = None,
+        customer_since: Optional[CustomerSince] = None,
+    ) -> str:
         """Create an identity token for the signed-in user (path A of
         https://clikgate.com/docs/identify-users). Uses ``identity_secret`` / ``identity_secrets`` from the options,
         else ``CLIKGATE_IDENTITY_SECRET`` / ``CLIKGATE_IDENTITY_SECRETS``. No network call (also on
@@ -466,6 +522,7 @@ class Clikgate:
             app_id=app_id,
             secret=None,
             issued_at=issued_at,
+            customer_since=customer_since,
             own_secret=self._identity_secret,
             own_secrets=self._identity_secrets,
         )
@@ -478,6 +535,8 @@ class Clikgate:
         installation_id: Optional[str] = None,
         customer_id: Optional[str] = None,
         label: Optional[str] = None,
+        customer_since: Union[str, date, datetime, int, None] = None,
+        customer_since_replace: Optional[bool] = None,
         request_options: Optional[RequestOptions] = None,
     ) -> PersonIdentified:
         """Tell Clikgate who a person is (``POST /v1/people/identify``): a click, an app installation (``app_id`` +
@@ -485,7 +544,10 @@ class Clikgate:
         links it to that customer. ``label`` is what your team sees instead of the click ID (1-80 characters, ``""``
         clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
         ``require_identity_token``. In private mode ``customer_id`` is refused locally and ``label`` needs "Allow
-        labels in private mode".
+        labels in private mode". ``customer_since`` (change 26) is when they became your customer (``"YYYY-MM-DD"``,
+        an ISO 8601 date-time, a ``date``, ``datetime`` or Unix seconds; needs ``customer_id``), so existing customers
+        are never counted as referrals or new customers; Clikgate keeps the earliest date unless
+        ``customer_since_replace=True``. Refused in private mode.
 
         Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
         ``getInstallationId()`` and sends it in its sign-in request; your server calls this with ``app_id``,
@@ -499,7 +561,7 @@ class Clikgate:
             if installation_id:
                 clikgate.identify_user(app_id="app_…", installation_id=installation_id, customer_id=str(user.id))
         """
-        body = _identify_body(click_id, app_id, installation_id, customer_id, label)
+        body = _identify_body(click_id, app_id, installation_id, customer_id, label, customer_since, customer_since_replace)
         if self._core.guard_state().guard:
             guard_payload("identify", body)
         _s, data, _h = self._core.requester.request(ApiRequest("POST", "/v1/people/identify", body=body).with_options(request_options))
@@ -636,6 +698,8 @@ class AsyncClikgate:
         self.payments = AsyncPayments(self._core)
         self.links = AsyncLinks(self._core)
         self.clicks = AsyncClicks(self._core)
+        #: Existing customers from before you added Clikgate: ``import_customers`` and ``remove`` (change 26).
+        self.known_customers = AsyncKnownCustomers(self._core)
         explicit = r.click_id_param
         self.click_ids = ClickIds(lambda: explicit or (config.peek() or {}).get("click_id_param") or "cgid")
         self.api = AsyncApiClient(requester)
@@ -729,7 +793,14 @@ class AsyncClikgate:
         except Exception:
             pass
 
-    def create_identity_token(self, customer_id: str, *, app_id: Optional[str] = None, issued_at: Optional[int] = None) -> str:
+    def create_identity_token(
+        self,
+        customer_id: str,
+        *,
+        app_id: Optional[str] = None,
+        issued_at: Optional[int] = None,
+        customer_since: Optional[CustomerSince] = None,
+    ) -> str:
         """Create an identity token for the signed-in user (path A of
         https://clikgate.com/docs/identify-users). Uses ``identity_secret`` / ``identity_secrets`` from the options,
         else ``CLIKGATE_IDENTITY_SECRET`` / ``CLIKGATE_IDENTITY_SECRETS``. No network call (also on
@@ -744,6 +815,7 @@ class AsyncClikgate:
             app_id=app_id,
             secret=None,
             issued_at=issued_at,
+            customer_since=customer_since,
             own_secret=self._identity_secret,
             own_secrets=self._identity_secrets,
         )
@@ -756,6 +828,8 @@ class AsyncClikgate:
         installation_id: Optional[str] = None,
         customer_id: Optional[str] = None,
         label: Optional[str] = None,
+        customer_since: Union[str, date, datetime, int, None] = None,
+        customer_since_replace: Optional[bool] = None,
         request_options: Optional[RequestOptions] = None,
     ) -> PersonIdentified:
         """Tell Clikgate who a person is (``POST /v1/people/identify``): a click, an app installation (``app_id`` +
@@ -763,7 +837,10 @@ class AsyncClikgate:
         links it to that customer. ``label`` is what your team sees instead of the click ID (1-80 characters, ``""``
         clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
         ``require_identity_token``. In private mode ``customer_id`` is refused locally and ``label`` needs "Allow
-        labels in private mode".
+        labels in private mode". ``customer_since`` (change 26) is when they became your customer (``"YYYY-MM-DD"``,
+        an ISO 8601 date-time, a ``date``, ``datetime`` or Unix seconds; needs ``customer_id``), so existing customers
+        are never counted as referrals or new customers; Clikgate keeps the earliest date unless
+        ``customer_since_replace=True``. Refused in private mode.
 
         Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
         ``getInstallationId()`` and sends it in its sign-in request; your server calls this with ``app_id``,
@@ -777,7 +854,7 @@ class AsyncClikgate:
             if installation_id:
                 await clikgate.identify_user(app_id="app_…", installation_id=installation_id, customer_id=str(user.id))
         """
-        body = _identify_body(click_id, app_id, installation_id, customer_id, label)
+        body = _identify_body(click_id, app_id, installation_id, customer_id, label, customer_since, customer_since_replace)
         if (await self._core.guard_state()).guard:
             guard_payload("identify", body)
         _s, data, _h = await self._core.requester.request(

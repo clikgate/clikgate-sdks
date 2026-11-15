@@ -2,6 +2,12 @@
 
 All notable changes to these artifacts, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the artifacts use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Java versions are dropped only after their end of life.
 
+## [2.0.1] - unreleased
+
+### Existing users
+
+- **Changed:** depends on `clikgate-java` 2.0.1: the `Clikgate` bean gains version 2 identity tokens (`createIdentityToken(customerId, appId, Instant customerSince)`), `customerSince` on `identifyUser` and `knownCustomers()`.
+
 ## [2.0.0] - unreleased
 
 ### Breaking: track() removed in favour of goal()

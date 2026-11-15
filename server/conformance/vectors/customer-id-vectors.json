@@ -1,0 +1,251 @@
+{
+  "description": "Change 26 KC.1 / R.24 customer-ID vectors. canonical = Unicode NFC, then trimmed of Unicode White_Space and U+FEFF at both ends (case kept). warning (first match wins): empty; too_long (more than 128 code points); looks_like_email (an '@' with a '.' after the first '@'); looks_like_national_id (exactly 11 ASCII digits, unless allow_11_digit_ids, which makes them valid); looks_like_phone (after removing spaces and '-', an optional '+' then 10-15 ASCII digits); else null. Built by server/conformance/tools/build_customer_id_vectors.py. The API and every server SDK must agree on `canonical` and `warning` for each vector. Every ID is invented. Non-ASCII text is written as \\u escapes.",
+  "max_length": 128,
+  "vectors": [
+    {
+      "name": "plain",
+      "input": "user_42",
+      "allow_11_digit_ids": false,
+      "canonical": "user_42",
+      "warning": null
+    },
+    {
+      "name": "prefixed_numeric",
+      "input": "u_10482",
+      "allow_11_digit_ids": false,
+      "canonical": "u_10482",
+      "warning": null
+    },
+    {
+      "name": "short_number",
+      "input": "10482",
+      "allow_11_digit_ids": false,
+      "canonical": "10482",
+      "warning": null
+    },
+    {
+      "name": "case_kept",
+      "input": "User_ABC",
+      "allow_11_digit_ids": false,
+      "canonical": "User_ABC",
+      "warning": null
+    },
+    {
+      "name": "inner_space_kept",
+      "input": "user 42",
+      "allow_11_digit_ids": false,
+      "canonical": "user 42",
+      "warning": null
+    },
+    {
+      "name": "nfd_to_nfc",
+      "input": "cafe\u0301",
+      "allow_11_digit_ids": false,
+      "canonical": "caf\u00e9",
+      "warning": null
+    },
+    {
+      "name": "already_nfc",
+      "input": "caf\u00e9",
+      "allow_11_digit_ids": false,
+      "canonical": "caf\u00e9",
+      "warning": null
+    },
+    {
+      "name": "yoruba_marks",
+      "input": "ad\u00e9b\u00e1y\u1ecd\u0300_01",
+      "allow_11_digit_ids": false,
+      "canonical": "ad\u00e9b\u00e1y\u1ecd\u0300_01",
+      "warning": null
+    },
+    {
+      "name": "trim_ascii_whitespace",
+      "input": "  user_42\t\n",
+      "allow_11_digit_ids": false,
+      "canonical": "user_42",
+      "warning": null
+    },
+    {
+      "name": "trim_nbsp_and_bom",
+      "input": "\ufeff\u00a0user_42\u3000",
+      "allow_11_digit_ids": false,
+      "canonical": "user_42",
+      "warning": null
+    },
+    {
+      "name": "whitespace_only",
+      "input": " \t\u00a0",
+      "allow_11_digit_ids": false,
+      "canonical": "",
+      "warning": "empty"
+    },
+    {
+      "name": "empty",
+      "input": "",
+      "allow_11_digit_ids": false,
+      "canonical": "",
+      "warning": "empty"
+    },
+    {
+      "name": "emoji_outside_bmp",
+      "input": "user_\ud83e\udd81_7",
+      "allow_11_digit_ids": false,
+      "canonical": "user_\ud83e\udd81_7",
+      "warning": null
+    },
+    {
+      "name": "cjk",
+      "input": "\u9867\u5ba2-8812",
+      "allow_11_digit_ids": false,
+      "canonical": "\u9867\u5ba2-8812",
+      "warning": null
+    },
+    {
+      "name": "length_128",
+      "input": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\u00e9",
+      "allow_11_digit_ids": false,
+      "canonical": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\u00e9",
+      "warning": null
+    },
+    {
+      "name": "length_129",
+      "input": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "allow_11_digit_ids": false,
+      "canonical": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "warning": "too_long"
+    },
+    {
+      "name": "length_128_after_nfc",
+      "input": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccce\u0301",
+      "allow_11_digit_ids": false,
+      "canonical": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\u00e9",
+      "warning": null
+    },
+    {
+      "name": "email",
+      "input": "ada@example.com",
+      "allow_11_digit_ids": false,
+      "canonical": "ada@example.com",
+      "warning": "looks_like_email"
+    },
+    {
+      "name": "email_with_spaces_trimmed",
+      "input": " ada.obi@mail.example.ng ",
+      "allow_11_digit_ids": false,
+      "canonical": "ada.obi@mail.example.ng",
+      "warning": "looks_like_email"
+    },
+    {
+      "name": "at_without_dot_after",
+      "input": "ada@localhost",
+      "allow_11_digit_ids": false,
+      "canonical": "ada@localhost",
+      "warning": null
+    },
+    {
+      "name": "dot_only_before_at",
+      "input": "a.b@c",
+      "allow_11_digit_ids": false,
+      "canonical": "a.b@c",
+      "warning": null
+    },
+    {
+      "name": "trailing_at",
+      "input": "user@",
+      "allow_11_digit_ids": false,
+      "canonical": "user@",
+      "warning": null
+    },
+    {
+      "name": "national_id_11_digits",
+      "input": "22212345678",
+      "allow_11_digit_ids": false,
+      "canonical": "22212345678",
+      "warning": "looks_like_national_id"
+    },
+    {
+      "name": "national_id_allowed",
+      "input": "22212345678",
+      "allow_11_digit_ids": true,
+      "canonical": "22212345678",
+      "warning": null
+    },
+    {
+      "name": "phone_local_11_digits_with_spaces",
+      "input": "0803 123 4567",
+      "allow_11_digit_ids": false,
+      "canonical": "0803 123 4567",
+      "warning": "looks_like_phone"
+    },
+    {
+      "name": "phone_local_11_digits_with_spaces_allowed_flag",
+      "input": "0803 123 4567",
+      "allow_11_digit_ids": true,
+      "canonical": "0803 123 4567",
+      "warning": "looks_like_phone"
+    },
+    {
+      "name": "phone_international",
+      "input": "+2348031234567",
+      "allow_11_digit_ids": false,
+      "canonical": "+2348031234567",
+      "warning": "looks_like_phone"
+    },
+    {
+      "name": "phone_dashes",
+      "input": "234-803-123-4567",
+      "allow_11_digit_ids": false,
+      "canonical": "234-803-123-4567",
+      "warning": "looks_like_phone"
+    },
+    {
+      "name": "phone_10_digits",
+      "input": "8031234567",
+      "allow_11_digit_ids": false,
+      "canonical": "8031234567",
+      "warning": "looks_like_phone"
+    },
+    {
+      "name": "phone_15_digits",
+      "input": "+123456789012345",
+      "allow_11_digit_ids": false,
+      "canonical": "+123456789012345",
+      "warning": "looks_like_phone"
+    },
+    {
+      "name": "digits_16_not_phone",
+      "input": "1234567890123456",
+      "allow_11_digit_ids": false,
+      "canonical": "1234567890123456",
+      "warning": null
+    },
+    {
+      "name": "digits_9_not_phone",
+      "input": "803123456",
+      "allow_11_digit_ids": false,
+      "canonical": "803123456",
+      "warning": null
+    },
+    {
+      "name": "plus_11_digits_is_phone",
+      "input": "+23480312345",
+      "allow_11_digit_ids": false,
+      "canonical": "+23480312345",
+      "warning": "looks_like_phone"
+    },
+    {
+      "name": "arabic_indic_digits_not_phone",
+      "input": "\u0660\u0668\u0660\u0663\u0661\u0662\u0663\u0664\u0665\u0666\u0667",
+      "allow_11_digit_ids": false,
+      "canonical": "\u0660\u0668\u0660\u0663\u0661\u0662\u0663\u0664\u0665\u0666\u0667",
+      "warning": null
+    },
+    {
+      "name": "letters_and_digits",
+      "input": "a8031234567",
+      "allow_11_digit_ids": false,
+      "canonical": "a8031234567",
+      "warning": null
+    }
+  ]
+}

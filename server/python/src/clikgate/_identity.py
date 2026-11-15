@@ -2,8 +2,9 @@
 
 Your server proves to Clikgate that a customer ID belongs to the person signed in to your app; the app passes the
 token to the mobile SDK's ``identifyUser()``. ``token = base64url_nopad(HMAC_SHA256(secret, customer_id + "." +
-issued_at)) + "." + issued_at``: the signer Clikgate verifies with. No network call.
-Guide: https://clikgate.com/docs/identify-users
+issued_at)) + "." + issued_at``: the signer Clikgate verifies with. With ``customer_since`` (change 26) the token
+is version 2 and also carries when the person became your customer: ``signature.issued_at.customer_since``. No network
+call. Guide: https://clikgate.com/docs/identify-users
 
 Browser and mobile builds: a normal Python server can't be bundled into a website or an app, so the usual
 risk (a secret shipped to customers' devices) only exists in Pyodide / Emscripten / WASI builds and in CPython's
@@ -20,8 +21,10 @@ import json
 import os
 import sys
 import time
-from typing import Mapping, Optional
+from datetime import date, datetime, timezone
+from typing import Mapping, Optional, Union
 
+from ._customer_id import canonical_customer_id
 from ._errors import ClikgateServerOnlyError, ConfigurationError, local_error
 
 __all__ = ["IDENTITY_SECRETS_ENV", "IDENTITY_SECRET_ENV", "create_identity_token"]
@@ -32,6 +35,13 @@ IDENTITY_SECRET_ENV = "CLIKGATE_IDENTITY_SECRET"  # noqa: S105 (a variable name,
 IDENTITY_SECRETS_ENV = "CLIKGATE_IDENTITY_SECRETS"
 
 _MAX_CUSTOMER_ID = 255
+# 1990-01-01: earlier account dates are refused
+_MIN_CUSTOMER_SINCE = 631152000
+# The clock allowance for an account date after issued_at
+_CLOCK_ALLOWANCE = 300
+
+#: An account date: a ``datetime`` (naive means UTC), a ``date`` (midnight UTC) or Unix seconds.
+CustomerSince = Union[datetime, date, int]
 _CLIENT_PLATFORMS = frozenset({"emscripten", "wasi", "ios", "android"})
 
 
@@ -87,12 +97,33 @@ def _sign(secret: str, customer_id: str, issued_at: int) -> str:
     return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii") + f".{issued_at}"
 
 
+def _sign_v2(secret: str, customer_id: str, issued_at: int, customer_since: int) -> str:
+    """Version 2 (change 26 KC.5, R.13): MAC over ``"v2\\n" + utf8_len(cid) + ":" + cid + "\\n" + issued_at + "\\n" +
+    customer_since``, cid in canonical form."""
+    cid = canonical_customer_id(customer_id)
+    msg = f"v2\n{len(cid.encode())}:{cid}\n{issued_at}\n{customer_since}"
+    digest = hmac.new(secret.encode(), msg.encode(), hashlib.sha256).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii") + f".{issued_at}.{customer_since}"
+
+
+def _since_seconds(value: CustomerSince) -> int:
+    if isinstance(value, datetime):
+        moment = value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
+        return int(moment.timestamp() // 1)
+    if isinstance(value, date):
+        return int(datetime(value.year, value.month, value.day, tzinfo=timezone.utc).timestamp())
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise local_error("invalid_argument", "customer_since must be a datetime, a date or whole Unix seconds.", "customer_since")
+    return value
+
+
 def _create(
     customer_id: str,
     *,
     app_id: Optional[str],
     secret: Optional[str],
     issued_at: Optional[int],
+    customer_since: Optional[CustomerSince] = None,
     own_secret: Optional[str] = None,
     own_secrets: Optional[Mapping[str, str]] = None,
 ) -> str:
@@ -112,7 +143,19 @@ def _create(
     issued = int(time.time()) if issued_at is None else issued_at
     if isinstance(issued, bool) or not isinstance(issued, int) or issued < 0:
         raise local_error("invalid_argument", "issued_at must be whole Unix seconds.", "issued_at")
-    return _sign(_resolve_secret(secret, app_id, own_secret, own_secrets), customer_id, issued)
+    if customer_since is None:
+        return _sign(_resolve_secret(secret, app_id, own_secret, own_secrets), customer_id, issued)
+    since = _since_seconds(customer_since)
+    if since < _MIN_CUSTOMER_SINCE or since > issued + _CLOCK_ALLOWANCE:
+        raise local_error("invalid_argument", "customer_since must be between 1990 and the time the token is issued.", "customer_since")
+    cid = canonical_customer_id(customer_id)
+    if not cid:
+        raise local_error(
+            "invalid_customer_id",
+            "customer_id must be your own user ID as a string of 1-255 characters (never an email or phone number).",
+            "customer_id",
+        )
+    return _sign_v2(_resolve_secret(secret, app_id, own_secret, own_secrets), cid, issued, since)
 
 
 def create_identity_token(
@@ -121,20 +164,24 @@ def create_identity_token(
     app_id: Optional[str] = None,
     secret: Optional[str] = None,
     issued_at: Optional[int] = None,
+    customer_since: Optional[CustomerSince] = None,
 ) -> str:
     """Create an identity token for the signed-in user (path A of https://clikgate.com/docs/identify-users).
 
     Return it in your sign-in and "current user" responses; the app passes it to ``identifyUser()``. Reads
     ``CLIKGATE_IDENTITY_SECRET``, or with ``app_id`` that app's secret from ``CLIKGATE_IDENTITY_SECRETS`` (a JSON
     object of app IDs to secrets). ``secret`` overrides both; ``issued_at`` (Unix seconds) defaults to now. No network
-    call and no API key needed.
+    call and no API key needed. ``customer_since`` (when the person became your customer: a ``datetime``, ``date`` or
+    Unix seconds) makes a version 2 token, so Clikgate can tell an existing customer from a new one.
 
     Raises :class:`ClikgateServerOnlyError` in browser or mobile Python builds, :class:`ConfigurationError` when no
-    secret is set, and :class:`InvalidRequestError` (``invalid_customer_id``) for an empty or over-long customer ID.
+    secret is set, :class:`InvalidRequestError` (``invalid_customer_id``) for an empty or over-long customer ID, and
+    :class:`InvalidRequestError` (``invalid_argument``, param ``customer_since``) for an account date before 1990 or
+    after the token's issue time.
 
     Example::
 
         from clikgate import create_identity_token
-        return {"user": user, "clikgate_identity_token": create_identity_token(str(user.id))}
+        return {"user": user, "clikgate_identity_token": create_identity_token(str(user.id), customer_since=user.created_at)}
     """
-    return _create(customer_id, app_id=app_id, secret=secret, issued_at=issued_at)
+    return _create(customer_id, app_id=app_id, secret=secret, issued_at=issued_at, customer_since=customer_since)

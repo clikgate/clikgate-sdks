@@ -69,6 +69,15 @@ if ($request->filled('installation_id')) {
 }
 ```
 
+## Customers from before Clikgate
+
+Tell Clikgate who was already your customer before you added it, so they are never counted as a referral or a new customer. Send the account's creation date with the identity token (version 2) or from your server, and import the rest of your existing customers once. Use your own customer IDs, never emails or phone numbers: Clikgate stores a keyed fingerprint of each imported ID, not the ID itself. Not available in private mode. Guide: https://clikgate.com/docs/identify-users.
+
+```php
+Clikgate::createIdentityToken((string) $user->id, ['customerSince' => $user->created_at]); // version 2
+Clikgate::knownCustomers()->import([['customerId' => 'u_10482', 'customerSince' => '2024-03-02']]);
+```
+
 ## Queued sending (recommended)
 
 Set `CLIKGATE_QUEUE=redis` (any queue connection) and, optionally, `CLIKGATE_QUEUE_NAME`.
