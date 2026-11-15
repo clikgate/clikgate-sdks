@@ -15,11 +15,14 @@ namespace Clikgate;
 /// Identity tokens (SDK spec 8.5): your server proves to Clikgate that a customer ID belongs to the
 /// person signed in to your app. The app passes the token to the mobile SDK's <c>identifyUser()</c>.
 /// <c>token = base64url_nopad(HMAC_SHA256(secret, customerId + "." + issuedAt)) + "." + issuedAt</c>, the signer
-/// Clikgate verifies with. No network call and no API key needed. Guide: https://clikgate.com/docs/identify-users
+/// Clikgate verifies with. With a <c>customerSince</c> the token is version 2 and also carries when the
+/// person became your customer: <c>signature.issuedAt.customerSince</c>, so Clikgate can tell an existing customer
+/// from a new one. No network call and no API key needed. Guide: https://clikgate.com/docs/identify-users
 /// </summary>
 /// <example><code>
 /// var token = IdentityTokens.Create(user.Id);              // CLIKGATE_IDENTITY_SECRET
 /// var token = IdentityTokens.Create(user.Id, "app_…");     // that app's secret from CLIKGATE_IDENTITY_SECRETS
+/// var token = IdentityTokens.Create(user.Id, null, user.CreatedAt);   // version 2, with the account date
 /// </code></example>
 public static class IdentityTokens
 {
@@ -30,6 +33,12 @@ public static class IdentityTokens
     public const string SecretsEnv = "CLIKGATE_IDENTITY_SECRETS";
 
     private const int MaxCustomerId = 255;
+
+    // 1990-01-01: earlier account dates are refused
+    private const long MinCustomerSince = 631_152_000L;
+
+    // The clock allowance for an account date after issuedAt
+    private const long ClockAllowance = 300L;
 
     // MAUI / Xamarin. Exact names: Microsoft.Maui.Graphics alone also runs on servers.
     private static readonly string[] ClientAssemblies =
@@ -57,6 +66,18 @@ public static class IdentityTokens
     public static string Create(string customerId, string secret, long issuedAtSeconds) =>
         CreateWith(OnClientPlatform.Value, null, null, Environment.GetEnvironmentVariable, customerId, null, secret, issuedAtSeconds);
 
+    /// <summary>
+    /// A version 2 token carrying when the person became your customer, issued now, signed with
+    /// <paramref name="appId"/>'s secret (or <c>CLIKGATE_IDENTITY_SECRET</c> when null).
+    /// </summary>
+    /// <exception cref="InvalidRequestException">An account date before 1990 or after now (<c>invalid_argument</c>, param <c>customer_since</c>).</exception>
+    public static string Create(string customerId, string? appId, DateTimeOffset customerSince) =>
+        CreateWith(OnClientPlatform.Value, null, null, Environment.GetEnvironmentVariable, customerId, appId, null, null, customerSince.ToUnixTimeSeconds());
+
+    /// <summary>A version 2 token signed with an explicit secret, issue time and account date (Unix seconds).</summary>
+    public static string Create(string customerId, string secret, long issuedAtSeconds, long customerSinceSeconds) =>
+        CreateWith(OnClientPlatform.Value, null, null, Environment.GetEnvironmentVariable, customerId, null, secret, issuedAtSeconds, customerSinceSeconds);
+
     internal static bool ClientPlatform => OnClientPlatform.Value;
 
     internal static bool IsClientPlatform(Func<string, bool> isOsPlatform, IEnumerable<string> loadedAssemblies) =>
@@ -70,7 +91,8 @@ public static class IdentityTokens
         string? customerId,
         string? appId,
         string? secret,
-        long? issuedAt)
+        long? issuedAt,
+        long? customerSince = null)
     {
         if (clientPlatform)
         {
@@ -87,7 +109,35 @@ public static class IdentityTokens
         {
             throw Errors.Local("invalid_argument", "issuedAt must be whole Unix seconds.", "issued_at");
         }
-        return Sign(ResolveSecret(secret, appId, ownSecret, ownSecrets, env), customerId!, issued);
+        if (customerSince is not { } since)
+        {
+            return Sign(ResolveSecret(secret, appId, ownSecret, ownSecrets, env), customerId!, issued);
+        }
+        if (since < MinCustomerSince || since > issued + ClockAllowance)
+        {
+            throw Errors.Local("invalid_argument", "customerSince must be between 1990 and the time the token is issued.", "customer_since");
+        }
+        var cid = CustomerIds.Canonical(customerId!);
+        if (cid.Length == 0)
+        {
+            throw Errors.Local("invalid_customer_id", "customerId must be your own user ID as a string of 1-255 characters (never an email or phone number).", "customer_id");
+        }
+        return SignV2(ResolveSecret(secret, appId, ownSecret, ownSecrets, env), cid, issued, since);
+    }
+
+    /// <summary>
+    /// Version 2: the MAC input is
+    /// <c>"v2\n" + utf8Length(cid) + ":" + cid + "\n" + issuedAt + "\n" + customerSince</c>, cid in canonical form.
+    /// </summary>
+    internal static string SignV2(string secret, string customerId, long issuedAt, long customerSince)
+    {
+        var cid = CustomerIds.Canonical(customerId);
+        var stamp = issuedAt.ToString(CultureInfo.InvariantCulture);
+        var since = customerSince.ToString(CultureInfo.InvariantCulture);
+        var message = "v2\n" + Encoding.UTF8.GetByteCount(cid).ToString(CultureInfo.InvariantCulture) + ":" + cid + "\n" + stamp + "\n" + since;
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
+        var digest = hmac.ComputeHash(Encoding.UTF8.GetBytes(message));
+        return Convert.ToBase64String(digest).TrimEnd('=').Replace('+', '-').Replace('/', '_') + "." + stamp + "." + since;
     }
 
     internal static string Sign(string secret, string customerId, long issuedAt)

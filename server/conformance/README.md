@@ -17,7 +17,10 @@ conformance/
   schema/case.schema.json JSON Schema of a case file
   vectors/payment-helper-vectors.json  copy of clikgate_api/docs/payment-helper-vectors.json (change 11 helper vectors; --check fails on drift)
   vectors/identity-token-vectors.json  createIdentityToken() vectors made by the backend's sign_identity_token (change 22;
-                                       tools/build_identity_token_vectors.py [--check]); each SDK's unit tests read it
+                                       tools/build_identity_token_vectors.py [--check]); each SDK's unit tests read it.
+                                       Change 26 adds version 2 tokens (`v2`, `v2_invalid_customer_since`, `forgeries`)
+  vectors/customer-id-vectors.json     change 26 KC.1 / R.24 canonical customer ID and validator warnings
+                                       (tools/build_customer_id_vectors.py [--check]); copied to clikgate_api/tests/fixtures
 ```
 
 Commands:

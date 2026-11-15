@@ -13,11 +13,11 @@ It supports Java 8+ (bytecode 52, for banks still on Java 8) and has one runtime
 <dependency>
   <groupId>com.clikgate</groupId>
   <artifactId>clikgate-java</artifactId>
-  <version>2.0.0</version>
+  <version>2.0.1</version>
 </dependency>
 ```
 
-Gradle: `implementation("com.clikgate:clikgate-java:2.0.0")`.
+Gradle: `implementation("com.clikgate:clikgate-java:2.0.1")`.
 
 ```java
 Clikgate clikgate = Clikgate.fromEnv();   // reads CLIKGATE_API_KEY (cg_live_… or cg_test_…)
@@ -72,6 +72,17 @@ IdentityTokens.create(user.getId(), "app_…");                                 
 if (installationId != null) {
   clikgate.identifyUser(IdentifyUserParams.builder().appId("app_…").installationId(installationId).customerId(user.getId()).build());
 }
+```
+
+## Customers from before Clikgate
+
+Tell Clikgate who was already your customer before you added it, so they are never counted as a referral or a new customer. Send the account's creation date with the identity token (version 2) or from your server, and import the rest of your existing customers once. Use your own customer IDs, never emails or phone numbers: Clikgate stores a keyed fingerprint of each imported ID, not the ID itself. Not available in private mode. Guide: https://clikgate.com/docs/identify-users.
+
+```java
+String token = clikgate.createIdentityToken(user.getId(), null, user.getCreatedAt()); // version 2 (an Instant)
+clikgate.identifyUser(IdentifyUserParams.builder().appId("app_…").installationId(installationId).customerId(user.getId()).customerSince(user.getCreatedAt()).build());
+KnownCustomersImportResult result = clikgate.knownCustomers().importCustomers(
+    Collections.singletonList(KnownCustomer.of("u_10482", LocalDate.of(2024, 3, 2)))); // batches of 10,000
 ```
 
 ## People: identify a user and label them

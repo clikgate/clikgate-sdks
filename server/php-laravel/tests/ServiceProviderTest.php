@@ -200,6 +200,15 @@ final class ServiceProviderTest extends TestCase
         $this->app->forgetInstance(Client::class);
         self::assertSame($a['token'], Clikgate::createIdentityToken('user_42', ['issuedAt' => $a['issued_at']]));
         self::assertSame($other['token'], Clikgate::createIdentityToken('user_42', ['appId' => 'app_rider', 'issuedAt' => $other['issued_at']]));
+        // Change 26: version 2 with the account date
+        self::assertIsArray($doc['v2']);
+        foreach ($doc['v2'] as $v) {
+            self::assertIsArray($v);
+            if ('v2_ascii' === $v['name']) {
+                self::assertSame($v['token'], Clikgate::createIdentityToken('user_42', ['issuedAt' => $v['issued_at'], 'customerSince' => $v['customer_since']]));
+            }
+        }
+        self::assertInstanceOf(\Clikgate\KnownCustomers::class, Clikgate::knownCustomers());
     }
 
     public function testMalformedIdentitySecretsFailOnlyWhenTokensAreCreated(): void

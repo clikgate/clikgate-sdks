@@ -2,7 +2,9 @@
 
 Package: `clikgate_flutter` ^{{versions.flutter}}. It requires Flutter 3.24+, Android minSdk 21 and iOS 13.
 
-## What `npx @clikgate/setup` changes
+Run the setup without Node.js: `flutter pub add clikgate_flutter`, then `dart run clikgate_flutter` (same flags as `npx @clikgate/setup`; `dart run clikgate_flutter:doctor` for doctor). It leaves the dependency `flutter pub add` wrote as it is.
+
+## What `dart run clikgate_flutter` (or `npx @clikgate/setup`) changes
 
 | File | Change |
 |---|---|
@@ -86,7 +88,7 @@ Inserted code sits between `// clikgate-setup:start` and `// clikgate-setup:end`
 
 ## Check
 
-- `npx @clikgate/setup doctor --json --domain acme.ciz.to,go.acme.com`
+- `dart run clikgate_flutter:doctor --json --domain acme.ciz.to,go.acme.com` (or `npx @clikgate/setup doctor …`)
 - On a device: `adb shell pm get-app-links <applicationId>` should show each live domain as `verified`.
 
 Goals: [goals.md](goals.md). Methods: [api-surface.md](api-surface.md).

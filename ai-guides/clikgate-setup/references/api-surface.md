@@ -7,7 +7,7 @@ Signatures are shown in each language's own syntax, with comments and bodies rem
 
 ## Mobile
 
-### Flutter: `clikgate_flutter` 2.0.0
+### Flutter: `clikgate_flutter` 2.1.1
 
 `import 'package:clikgate_flutter/clikgate_flutter.dart';` Every method is static on `Clikgate`.
 
@@ -16,7 +16,7 @@ class Clikgate {
   static const String pluginVersion;
   static const ClikgateReferrals referrals;
   static Future<bool> isFeatureEnabled(String key);
-  static Future<void> configure({required String sdkKey, List<String> linkDomains = const [], String? apiBaseUrl, ClikgateLogLevel logLevel = ClikgateLogLevel.warn, ClikgateEnvironment environment = ClikgateEnvironment.production, ClikgateAttestation attestation = ClikgateAttestation.off, ClikgatePasteboardMode pasteboardMode = ClikgatePasteboardMode.off, bool waitForATT = false, Duration deferredDeepLinkTimeout = const Duration(seconds: 5), bool platformDomainBrowserFallback = true});
+  static Future<void> configure({required String sdkKey, List<String> linkDomains = const [], String? apiBaseUrl, ClikgateLogLevel logLevel = ClikgateLogLevel.warn, ClikgateEnvironment environment = ClikgateEnvironment.production, ClikgateAttestation attestation = ClikgateAttestation.off, ClikgatePasteboardMode pasteboardMode = ClikgatePasteboardMode.off, bool waitForATT = false, Duration deferredDeepLinkTimeout = const Duration(seconds: 5), bool platformDomainBrowserFallback = true, bool automaticPushToken = true, bool existingUser = false, DateTime? debugPlatformInstalledAt});
   static Stream<ClikgateDeepLink> get onDeepLink;
   static Stream<ClikgateBrowserHandoff> get onBrowserHandoff;
   static Future<ClikgateAttribution> getAttribution();
@@ -56,7 +56,7 @@ class ClikgateDeepLink {
 }
 ```
 
-### React Native and Expo: `@clikgate/react-native` 2.0.0
+### React Native and Expo: `@clikgate/react-native` 2.1.1
 
 `import { Clikgate } from '@clikgate/react-native';`
 
@@ -100,6 +100,9 @@ interface ClikgateConfig {
   waitForATT?: boolean;
   deferredDeepLinkTimeoutMs?: number;
   platformDomainBrowserFallback?: boolean;
+  automaticPushToken?: boolean;
+  existingUser?: boolean;
+  debugPlatformInstalledAt?: Date;
 }
 interface GoalOptions {
   value?: number | string | null;
@@ -132,7 +135,7 @@ type ClikgateLogLevel = 'verbose' | 'debug' | 'info' | 'warn' | 'error' | 'none'
 
 Expo config plugin props (`app.json` › `plugins` › `["@clikgate/react-native", {…}]`): `linkDomains` (live domains: the app link subdomain and custom domains, never a shared domain), `testLinkDomain` (the app test subdomain, e.g. `"yourapp.dev.ciz.to"`), `testVariants` (default `["development", "preview"]`), `uriScheme`, `enableBackgroundRemoteNotifications`, `enableWhatsAppSharing`.
 
-### Android: `com.clikgate:clikgate-android:2.0.0`
+### Android: `com.clikgate:clikgate-android:2.1.1`
 
 `import com.clikgate.Clikgate` (and `com.clikgate.ClikgateOptions`, `com.clikgate.Provider`, `com.clikgate.GoalStatus`). Every method is on the `Clikgate` object.
 
@@ -171,7 +174,7 @@ object ClikgateReferrals { // Clikgate.referrals
     suspend fun awaitReferredBy(): ReferredBy
 }
 
-data class ClikgateOptions(val linkDomains: List<String> = emptyList(), val logLevel: LogLevel = LogLevel.WARN, val environment: Environment = Environment.PRODUCTION, val attestation: Attestation = Attestation.OFF, val apiBaseUrl: String = DEFAULT_API_BASE_URL, val deferredDeepLinkTimeoutMs: Long = 5_000, val cloudProjectNumber: Long? = null, val platformDomainBrowserFallback: Boolean = true)
+data class ClikgateOptions(val linkDomains: List<String> = emptyList(), val logLevel: LogLevel = LogLevel.WARN, val environment: Environment = Environment.PRODUCTION, val attestation: Attestation = Attestation.OFF, val apiBaseUrl: String = DEFAULT_API_BASE_URL, val deferredDeepLinkTimeoutMs: Long = 5_000, val cloudProjectNumber: Long? = null, val platformDomainBrowserFallback: Boolean = true, val automaticPushToken: Boolean = true, val existingUser: Boolean = false, val debugPlatformInstalledAt: java.util.Date? = null)
 data class GoalResult(val status: GoalStatus, val reason: String?, val goalKind: GoalKind?, val valueIgnored: Boolean)
 enum class GoalStatus(val value: String) { COUNTED, WAITING, RECEIVED, REFUSED }
 enum class GoalKind(val value: String) { STANDARD, PAYMENT }
@@ -179,7 +182,7 @@ class Provider { companion object { val PAYSTACK: Provider; val FLUTTERWAVE: Pro
 data class ClikgateDeepLink(val url: String?, val path: String?, val data: Map<String, Any?>, val isDeferred: Boolean, val clickId: String?, val matchType: String?, val link: ClikgateLink?, val referral: Referral?, val blockMessage: String? = null)
 ```
 
-### iOS: pod `Clikgate` / Swift package `clikgate-ios-sdk` 2.0.0
+### iOS: pod `Clikgate` / Swift package `clikgate-ios-sdk` 2.1.1
 
 `import Clikgate`. `configure` is static; everything else is on `Clikgate.shared`.
 
@@ -216,7 +219,7 @@ final class Clikgate {
 }
 
 struct ClikgateOptions {
-    init(apiBaseUrl: URL = ClikgateOptions.defaultApiBaseUrl, linkDomains: [String] = [], logLevel: LogLevel = .warning, environment: Environment = .production, pasteboardMode: PasteboardMode = .off, waitForATT: Bool = false, attestation: Attestation = .off, deferredDeepLinkTimeout: TimeInterval = 5, platformDomainBrowserFallback: Bool = true)
+    init(apiBaseUrl: URL = ClikgateOptions.defaultApiBaseUrl, linkDomains: [String] = [], logLevel: LogLevel = .warning, environment: Environment = .production, pasteboardMode: PasteboardMode = .off, waitForATT: Bool = false, attestation: Attestation = .off, deferredDeepLinkTimeout: TimeInterval = 5, platformDomainBrowserFallback: Bool = true, automaticPushToken: Bool = true, existingUser: Bool = false, debugPlatformInstalledAt: Date? = nil)
 }
 
 struct ClikgateDeepLinkResult {
@@ -256,7 +259,7 @@ Constants: `Clikgate.GoalStatus` (`COUNTED`, `WAITING`, `REFUSED`); `Clikgate.Pr
 
 ## Server
 
-### Node.js: `@clikgate/node` 2.0.0
+### Node.js: `@clikgate/node` 2.0.1
 
 `import { Clikgate, webhooks } from '@clikgate/node';` Add-ons: `@clikgate/node/express` (`clikgateMiddleware`), `@clikgate/node/fastify` (`clikgatePlugin`), `@clikgate/node/next` (`applyClikgate`, `createClikgateProxy`, `clikgateProxy`, `clikgateMiddleware`, `getClickId`, `keepRoute`).
 
@@ -268,6 +271,7 @@ class Clikgate {
   readonly payments: Payments;
   readonly links: Links;
   readonly clicks: Clicks;
+  readonly knownCustomers: KnownCustomers;
   readonly clickIds: ClickIds;
   readonly api: ApiClient;
   readonly webhooks: {verify: typeof webhooks.verify; verifyAny: typeof webhooks.verifyAny;};

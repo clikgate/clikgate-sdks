@@ -1,5 +1,8 @@
 package com.clikgate;
 
+import com.clikgate.internal.Dates;
+import java.time.Instant;
+import java.time.LocalDate;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -16,6 +19,8 @@ public final class IdentifyUserParams {
   final @Nullable String installationId;
   final @Nullable String customerId;
   final @Nullable String label;
+  final @Nullable String customerSince;
+  final boolean customerSinceReplace;
 
   private IdentifyUserParams(Builder b) {
     clickId = b.clickId;
@@ -23,6 +28,8 @@ public final class IdentifyUserParams {
     installationId = b.installationId;
     customerId = b.customerId;
     label = b.label;
+    customerSince = b.customerSince;
+    customerSinceReplace = b.customerSinceReplace;
   }
 
   public static Builder builder() {
@@ -36,6 +43,8 @@ public final class IdentifyUserParams {
     private @Nullable String installationId;
     private @Nullable String customerId;
     private @Nullable String label;
+    private @Nullable String customerSince;
+    private boolean customerSinceReplace;
 
     Builder() {}
 
@@ -66,6 +75,27 @@ public final class IdentifyUserParams {
     /** A label your team sees instead of the click ID (1-80 characters, {@code ""} clears it; Growth and up). */
     public Builder label(@Nullable String label) {
       this.label = label;
+      return this;
+    }
+
+    /**
+     * When this customer became your customer. Needs {@link #customerId(String)}. Clikgate keeps the
+     * earliest date it gets. Refused in private mode.
+     */
+    public Builder customerSince(@Nullable Instant customerSince) {
+      this.customerSince = customerSince == null ? null : Dates.format(customerSince);
+      return this;
+    }
+
+    /** {@link #customerSince(Instant)} as a day. */
+    public Builder customerSince(@Nullable LocalDate customerSince) {
+      this.customerSince = customerSince == null ? null : customerSince.toString();
+      return this;
+    }
+
+    /** {@code true} lets the account date move a wrong date later (audit-logged). Default: the earliest date is kept. */
+    public Builder customerSinceReplace(boolean replace) {
+      this.customerSinceReplace = replace;
       return this;
     }
 
