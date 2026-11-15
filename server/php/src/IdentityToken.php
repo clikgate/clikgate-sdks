@@ -12,7 +12,7 @@ use Clikgate\Exception\ErrorMapper;
  * person signed in to your app. The app passes the token to the mobile SDK's `identifyUser()`.
  *
  * `token = base64url_nopad(HMAC_SHA256(secret, customerId . "." . issuedAt)) . "." . issuedAt`, the signer Clikgate
- * verifies with. With `customerSince` (change 26) the token is version 2 and also carries when the person became your
+ * verifies with. With `customerSince` the token is version 2 and also carries when the person became your
  * customer: `signature.issuedAt.customerSince`. No network call. Guide: https://clikgate.com/docs/identify-users
  *
  * Browser and mobile builds: PHP has no browser or mobile build, so there is nothing to refuse; the
@@ -101,7 +101,7 @@ final class IdentityToken
     }
 
     /**
-     * @internal Version 2 (change 26 KC.5, R.13): the MAC input is
+     * @internal Version 2: the MAC input is
      * `"v2\n" . strlen(cid) . ":" . cid . "\n" . issuedAt . "\n" . customerSince`, cid in canonical form
      */
     public static function signV2(string $secret, string $customerId, int $issuedAt, int $customerSince): string

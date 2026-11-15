@@ -7,7 +7,7 @@ import { ClikgateServerOnlyError, ConfigurationError, localError } from './error
  * person signed in to your app. The app passes the token to the mobile SDK's `identifyUser()`.
  *
  * `token = base64url_nopad(HMAC_SHA256(secret, customerId + "." + issuedAt)) + "." + issuedAt`, the same signer
- * Clikgate verifies with. With `customerSince` (change 26) the token is version 2 and also carries the date the
+ * Clikgate verifies with. With `customerSince` the token is version 2 and also carries the date the
  * person became your customer: `signature.issuedAt.customerSince`. No network call.
  * Guide: https://clikgate.com/docs/identify-users
  */
@@ -98,7 +98,7 @@ export function signIdentityToken(secret: string, customerId: string, issuedAt: 
 }
 
 /**
- * @internal Version 2 (change 26 KC.5, R.13): the MAC input is
+ * @internal Version 2: the MAC input is
  * `"v2\n" + utf8Length(cid) + ":" + cid + "\n" + issuedAt + "\n" + customerSince`, cid in canonical form.
  */
 export function signIdentityTokenV2(secret: string, customerId: string, issuedAt: number, customerSince: number): string {

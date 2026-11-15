@@ -2,7 +2,7 @@
 
 Your server proves to Clikgate that a customer ID belongs to the person signed in to your app; the app passes the
 token to the mobile SDK's ``identifyUser()``. ``token = base64url_nopad(HMAC_SHA256(secret, customer_id + "." +
-issued_at)) + "." + issued_at``: the signer Clikgate verifies with. With ``customer_since`` (change 26) the token
+issued_at)) + "." + issued_at``: the signer Clikgate verifies with. With ``customer_since`` the token
 is version 2 and also carries when the person became your customer: ``signature.issued_at.customer_since``. No network
 call. Guide: https://clikgate.com/docs/identify-users
 
@@ -98,7 +98,7 @@ def _sign(secret: str, customer_id: str, issued_at: int) -> str:
 
 
 def _sign_v2(secret: str, customer_id: str, issued_at: int, customer_since: int) -> str:
-    """Version 2 (change 26 KC.5, R.13): MAC over ``"v2\\n" + utf8_len(cid) + ":" + cid + "\\n" + issued_at + "\\n" +
+    """Version 2: MAC over ``"v2\\n" + utf8_len(cid) + ":" + cid + "\\n" + issued_at + "\\n" +
     customer_since``, cid in canonical form."""
     cid = canonical_customer_id(customer_id)
     msg = f"v2\n{len(cid.encode())}:{cid}\n{issued_at}\n{customer_since}"

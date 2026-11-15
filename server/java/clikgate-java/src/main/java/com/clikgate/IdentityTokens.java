@@ -21,7 +21,7 @@ import org.jspecify.annotations.Nullable;
  * person signed in to your app. The app passes the token to the mobile SDK's {@code identifyUser()}.
  *
  * <p>{@code token = base64url_nopad(HMAC_SHA256(secret, customerId + "." + issuedAt)) + "." + issuedAt}, the signer
- * Clikgate verifies with. With a {@code customerSince} (change 26) the token is version 2 and also carries when the
+ * Clikgate verifies with. With a {@code customerSince} the token is version 2 and also carries when the
  * person became your customer: {@code signature.issuedAt.customerSince}, so Clikgate can tell an existing customer from
  * a new one. No network call and no API key needed. Guide: https://clikgate.com/docs/identify-users
  *
@@ -67,7 +67,7 @@ public final class IdentityTokens {
   }
 
   /**
-   * A version 2 token (change 26) carrying when the person became your customer, issued now, signed with
+   * A version 2 token carrying when the person became your customer, issued now, signed with
    * {@code appId}'s secret (or {@code CLIKGATE_IDENTITY_SECRET} when {@code appId} is null).
    */
   public static String create(String customerId, @Nullable String appId, Instant customerSince) {
@@ -146,7 +146,7 @@ public final class IdentityTokens {
   }
 
   /**
-   * Version 2 (change 26 KC.5, R.13): the MAC input is
+   * Version 2: the MAC input is
    * {@code "v2\n" + utf8Length(cid) + ":" + cid + "\n" + issuedAt + "\n" + customerSince}, cid in canonical form.
    */
   static String signV2(String secret, String customerId, long issuedAt, long customerSince) {

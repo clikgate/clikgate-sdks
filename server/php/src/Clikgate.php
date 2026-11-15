@@ -64,7 +64,7 @@ final class Clikgate
     public readonly Links $links;
     /** Clicks. */
     public readonly Clicks $clicks;
-    /** Existing customers from before you added Clikgate: `import()` and `remove()` (change 26). */
+    /** Existing customers from before you added Clikgate: `import()` and `remove()`. */
     public readonly KnownCustomers $knownCustomers;
     /** Click-ID helpers using this client's `clickIdParam` (or the organisation's, from config). */
     public readonly ClickIds $clickIds;
@@ -255,7 +255,7 @@ final class Clikgate
      * that customer. `label` is what your team sees instead of the click ID (1-80 characters, `''` clears it; Growth
      * and up). Always verified (your server), so it also satisfies a referral program's `require_identity_token`.
      * In private mode `customerId` is refused locally and `label` needs "Allow labels in private mode".
-     * `customerSince` (change 26: `'YYYY-MM-DD'`, an ISO 8601 date-time, a `DateTimeInterface` or Unix seconds; needs
+     * `customerSince` (`'YYYY-MM-DD'`, an ISO 8601 date-time, a `DateTimeInterface` or Unix seconds; needs
      * `customerId`) is when they became your customer, so existing customers are never counted as referrals or new
      * customers; Clikgate keeps the earliest date unless `customerSinceReplace` is true. Refused in private mode.
      *

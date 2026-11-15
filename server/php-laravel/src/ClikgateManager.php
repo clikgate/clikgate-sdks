@@ -100,7 +100,7 @@ final class ClikgateManager
         return $this->client()->clicks;
     }
 
-    /** Existing customers from before you added Clikgate: `import()` and `remove()` (change 26). */
+    /** Existing customers from before you added Clikgate: `import()` and `remove()`. */
     public function knownCustomers(): KnownCustomers
     {
         return $this->client()->knownCustomers;
@@ -166,7 +166,7 @@ final class ClikgateManager
      * }
      * ```
      *
-     * `customerSince` (change 26) is when they became your customer; Clikgate keeps the earliest date unless
+     * `customerSince` is when they became your customer; Clikgate keeps the earliest date unless
      * `customerSinceReplace` is true.
      *
      * @param array{clickId?: ?string, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string, customerSince?: string|\DateTimeInterface|int|null, customerSinceReplace?: ?bool} $params

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Known customers (change 26 KC.3): people who were already your customers before you added Clikgate. Clikgate uses
+ * Known customers: people who were already your customers before you added Clikgate. Clikgate uses
  * them so an existing customer is never counted as a referral or a new customer. It stores a keyed fingerprint of each
  * ID, not the ID itself. Not available in private mode. Scope {@code people:write}.
  */

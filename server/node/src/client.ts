@@ -31,7 +31,7 @@ export interface IdentifyUserParams {
   /** A label your team sees instead of the click ID (1–80 characters, `''` clears it). */
   label?: string | null;
   /**
-   * When this customer became your customer (change 26 KC.4): `'YYYY-MM-DD'`, an ISO 8601 date-time with offset, a
+   * When this customer became your customer: `'YYYY-MM-DD'`, an ISO 8601 date-time with offset, a
    * `Date` or Unix seconds. Needs `customerId`. Clikgate keeps the earliest date it gets. Not in private mode.
    */
   customerSince?: string | Date | number | null;
@@ -45,9 +45,9 @@ export interface PersonIdentified {
   person_id: string;
   /** `plan`: below Growth the label isn't stored; `lower_rank`: a label your team set was kept. */
   label_ignored: 'plan' | 'lower_rank' | null;
-  /** Why `customerSince` wasn't used: `unverified` or `invalid` (change 26). */
+  /** Why `customerSince` wasn't used: `unverified` or `invalid`. */
   customer_since_ignored?: 'unverified' | 'invalid' | null;
-  /** The customer ID looks like an email, phone number or national ID: use your own user ID instead (change 26 KC.1). */
+  /** The customer ID looks like an email, phone number or national ID: use your own user ID instead. */
   customer_id_warning?: 'looks_like_email' | 'looks_like_phone' | 'looks_like_national_id' | null;
 }
 
@@ -141,7 +141,7 @@ export class Clikgate {
   readonly links: Links;
   /** Clicks. */
   readonly clicks: Clicks;
-  /** Existing customers from before you added Clikgate: `import()` and `remove()` (change 26). */
+  /** Existing customers from before you added Clikgate: `import()` and `remove()`. */
   readonly knownCustomers: KnownCustomers;
   /** Click-ID helpers using this client's `clickIdParam` (or the organisation's from config). */
   readonly clickIds: ClickIds;
@@ -280,7 +280,7 @@ export class Clikgate {
    * customer. `label` is what your team sees instead of the click ID (1–80 characters, `''` clears it; Growth and
    * up). Always verified (your server), so it also satisfies a referral program's `require_identity_token`.
    * In private mode `customerId` is refused locally (the guard) and `label` needs "Allow labels in private mode".
-   * `customerSince` (change 26) is when they became your customer, so existing customers are never counted as
+   * `customerSince` is when they became your customer, so existing customers are never counted as
    * referrals or new customers; it is refused in private mode too.
    *
    * Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
