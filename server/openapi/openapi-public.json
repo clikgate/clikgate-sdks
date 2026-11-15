@@ -103529,7 +103529,7 @@
             "maxLength": 2000,
             "minLength": 4,
             "title": "Link Url",
-            "description": "The Clikgate link, e.g. https://clk.ng/abc"
+            "description": "The Clikgate link, e.g. https://ciz.ng/abc"
           },
           "reason": {
             "$ref": "#/components/schemas/ReportReason"
@@ -103582,7 +103582,7 @@
         "example": {
           "captcha_token": "0.turnstile-token",
           "details": "Pretends to be my bank and asks for my PIN",
-          "link_url": "https://clk.ng/abc123",
+          "link_url": "https://ciz.ng/abc123",
           "reason": "scam",
           "reporter_email": "ada@example.com"
         }

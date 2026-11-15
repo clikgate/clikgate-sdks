@@ -51,7 +51,7 @@ The Clikgate dashboard (Apps › the app › SDK setup › "Set up with AI") giv
 ## What the guide tells the assistant not to do
 
 - put a live SDK key or any API key in app code;
-- put a test link domain (`yourapp.dev.ciz.to`) in a release build, or a shared domain (`ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to`) in any build;
+- put a test link domain (`yourapp.dev.ciz.to`) in a release build, or a shared domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`) in any build;
 - add fingerprinting, tracking prompts or IDFA collection (Clikgate needs none of them);
 - put customer data in goal calls;
 - remove existing deep-link handling;

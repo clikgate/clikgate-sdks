@@ -101,7 +101,7 @@ Dated decisions and documentation findings for this repository (server SDKs in `
 ### Workspace decisions applied (2026-10-26)
 
 - **Location:** `ai-guides/` at the root of `clikgate_sdks` (the spec's `sdks/ai-guides/`). The skill is `ai-guides/clikgate-setup/`. **Licence:** MIT.
-- **Link domains:** `ciz.to`, `clk.ng`, `clkg.to` (shared) and `dev.ciz.to` (test, debug builds only).
+- **Link domains:** `ciz.to`, `ciz.ng` (shared) and `dev.ciz.to` (test, debug builds only).
 - **Server SDKs:** only `@clikgate/node` is available. The guides mark Python, PHP, Java and .NET as **not available yet** (coordinator, 2026-10-26), and give the HTTP API instead of inventing install lines.
 
 ### Documentation findings (checked 2026-10-26)
@@ -440,8 +440,8 @@ Built 2026-10-26, in that order. .NET was added after the .NET SDK (10.0.403) wa
 ## Change 09: AI guides (2026-10-27)
 
 - **App link subdomains (N.1, contract B2):** the guides teach `<link_subdomain>.ciz.to` (release) and
-  `<link_subdomain>.dev.ciz.to` (debug) plus verified custom domains, and never a shared domain (`ciz.to`, `clk.ng`,
-  `clkg.to`, `dev.ciz.to`). The shared-domain opt-in is gone (the backend ignores `shared_domain_app_links`).
+  `<link_subdomain>.dev.ciz.to` (debug) plus verified custom domains, and never a shared domain (`ciz.to`, `ciz.ng`,
+  `dev.ciz.to`). The shared-domain opt-in is gone (the backend ignores `shared_domain_app_links`).
   Examples use `acme.ciz.to` / `acme.dev.ciz.to` next to `go.acme.com`.
 - **Web goals (N.2, contract B3):** `web.md` uses the publishable web key (`data-web-key`, `cgw_test_…`) on
   `sdk.clikgate.com`; `data-site-key` is no longer used by `clikgate.js`. Goals sent from a browser need "Allow
