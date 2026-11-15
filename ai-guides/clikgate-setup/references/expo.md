@@ -24,7 +24,7 @@ Package: `@clikgate/react-native` ^{{versions.react_native}}, with its config pl
 }
 ```
 
-- `linkDomains`: the **live** domains only. Putting a `*.dev.ciz.to` test host in `linkDomains` is an error (doctor check `expo.plugin` fails), and a shared domain (`ciz.to`, `clk.ng`, `clkg.to`, `dev.ciz.to`) gets the warning `expo.shared_domains`.
+- `linkDomains`: the **live** domains only. Putting a `*.dev.ciz.to` test host in `linkDomains` is an error (doctor check `expo.plugin` fails), and a shared domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`) gets the warning `expo.shared_domains`.
 - `testLinkDomain`: added to Android debug source sets and the iOS Debug configuration only.
 - `testVariants` (default `["development", "preview"]`): builds whose `APP_VARIANT` (else EAS Build's `EAS_BUILD_PROFILE`) is listed get the test domain in every configuration, so internal preview builds open test links too. Set the variant per profile in `eas.json`:
 
