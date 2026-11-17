@@ -1,7 +1,7 @@
 {
   "$schema": "../schema/case.schema.json",
   "suite": "webhooks",
-  "description": "Webhook signature verification (SPEC 14, backend spec 13.3)",
+  "description": "Webhook signature verification (SPEC 14)",
   "cases": [
     {
       "id": "webhooks.valid",

@@ -29,7 +29,7 @@ if src != version:
 if tag and tag != version:
     problems.append(f"tag says {tag}, pyproject.toml says {version}")
 if [re.split(r"[<>=!~ ;\[]", d)[0] for d in deps] != ["httpx"]:
-    problems.append(f"the only runtime dependency must be httpx (S.13), got {deps}")
+    problems.append(f"the only runtime dependency must be httpx, got {deps}")
 if problems:
     sys.exit("\n".join(problems))
 print(f"version {version} ok")

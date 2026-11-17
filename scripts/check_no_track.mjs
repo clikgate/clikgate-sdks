@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Fail if the removed app-event API creeps back into this repository, and check that every
-// server SDK reference page links to the "Identify your users" guide (I.8).
+// server SDK reference page links to the "Identify your users" guide.
 //
 //   node scripts/check_no_track.mjs              # scan the repository (git-tracked and new, non-ignored files)
 //   node scripts/check_no_track.mjs --self-test  # prove the patterns match what they should, and only that

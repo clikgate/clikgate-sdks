@@ -1,4 +1,4 @@
-# Release clikgate/clikgate-php and clikgate/clikgate-laravel on tags server-php-v<semver> (S.17).
+# Release clikgate/clikgate-php and clikgate/clikgate-laravel on tags server-php-v<semver>.
 # Packagist has no trusted publishing for public packages and needs each package at the root of its own
 # repository, so CI splits server/php and server/php-laravel (git subtree split) into the read-only public
 # repositories, tags them v<semver>, and Packagist updates through its GitHub hook. Each push uses a

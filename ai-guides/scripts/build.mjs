@@ -4,7 +4,7 @@
 //   dist/clikgate-skills/                    the public repository clikgate/clikgate-skills
 //     skills/clikgate-setup/…                (found by `npx skills add clikgate/clikgate-skills`)
 //     README.md, AGENTS.md, LICENSE
-//   dist/website/                            files for clikgate.com (W.2)
+//   dist/website/                            files for clikgate.com
 //     docs/ai/setup.md                       the whole skill as one page (SKILL.md + every reference)
 //     docs/ai/setup/<reference>.md           each reference on its own
 //     .well-known/agent-skills/index.json    skills-installer discovery (`npx skills add https://clikgate.com`)

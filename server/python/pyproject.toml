@@ -30,7 +30,7 @@ classifiers = [
   "Framework :: FastAPI",
   "Typing :: Typed",
 ]
-# The one runtime dependency (S.13). Framework add-ons use extras and never add core dependencies.
+# The one runtime dependency. Framework add-ons use extras and never add core dependencies.
 dependencies = ["httpx>=0.27,<1"]
 
 [project.optional-dependencies]

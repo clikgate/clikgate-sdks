@@ -1,7 +1,7 @@
-# Drift check for the generated API layer (S.16) and the shared enums (GoalKind, GoalStatus, Provider):
+# Drift check for the generated API layer and the shared enums (GoalKind, GoalStatus, Provider):
 # regenerate from the vendored openapi.json with the pinned OpenAPI Generator and fail if the committed output
 # differs, or if a file is no longer generated. To update after the backend
-# changes: node server/codegen/generate.mjs --from ../clikgate_api, then commit. Covers every configured
+# changes: node server/codegen/generate.mjs --from <path to the backend repository>, then commit. Covers every configured
 # language (Node, Python, PHP, Java, .NET).
 name: server-codegen
 

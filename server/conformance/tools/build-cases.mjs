@@ -1762,7 +1762,7 @@ const wh = (id, description, args, expectation, call = 'webhooks.verify') => ({
 const verified = { result: { id: event.id, type: 'goal.completed', data: { object: { goal: 'account_opened' } } } };
 const sigErr = (code) => ({ error: { class: 'SignatureVerificationError', code, message_excludes: [SECRET, sig(SECRET, NOW_S)] } });
 const UNICODE = JSON.stringify({ ...event, data: { object: { note: 'Ọjà ₦ 東京 😀' } } });
-// subscription.updated (backend C10 B2.8): sent when a Growth add-on is activated, set to end at renewal, or kept.
+// subscription.updated : sent when a Growth add-on is activated, set to end at renewal, or kept.
 // data.object is the subscription with add_ons[]; data.change is add_on.activated | add_on.remove_at_renewal.
 const SUB_EVENT = JSON.stringify({
   id: 'evt_01JCK8Z9V7Q4M2N6P8R0S2T4SU',
@@ -1784,7 +1784,7 @@ const SUB_EVENT = JSON.stringify({
     add_on_key: 'domains_pack',
   },
 });
-// link.destination_changed (backend src/links/services/link_change_requests.py): data.object is the link,
+// link.destination_changed: data.object is the link,
 // plus from, to, actor {type, id, api_key_prefix, requested_by?, change_request_id?}, actor_type and api_key_prefix
 const DEST_EVENT = JSON.stringify({
   id: 'evt_01JCK8Z9V7Q4M2N6P8R0S2T4DC',
@@ -1804,7 +1804,7 @@ const DEST_EVENT = JSON.stringify({
     api_key_prefix: null,
   },
 });
-add('webhooks', 'Webhook signature verification (SPEC 14, backend spec 13.3)', [
+add('webhooks', 'Webhook signature verification (SPEC 14)', [
   wh('valid', 'A valid signature returns the parsed event', { raw_body: BODY, header: hdr(NOW_S, sig(SECRET, NOW_S)), secret: SECRET }, verified),
   wh('valid.bytes', 'A byte buffer body works the same', { raw_body: { $bytes_base64: Buffer.from(BODY).toString('base64') }, header: hdr(NOW_S, sig(SECRET, NOW_S)), secret: SECRET }, verified),
   wh('valid.unicode', 'Multi-byte UTF-8 is signed over its bytes', { raw_body: UNICODE, header: hdr(NOW_S, sig(SECRET, NOW_S, UNICODE)), secret: SECRET }, { result: { id: event.id, data: { object: { note: 'Ọjà ₦ 東京 😀' } } } }),
@@ -2021,11 +2021,11 @@ add('click_ids', 'Keeping the click ID: validation, extraction, cookies, payment
 
 // ---------------------------------------------------------------------------------------------
 // payments.confirm and the gateway helpers (SPEC 22).
-// The helper vectors are a copy of clikgate_api/docs/payment-helper-vectors.json (../vectors/).
+// The helper vectors are a copy of the backend's docs/payment-helper-vectors.json (../vectors/).
 const VECTORS = JSON.parse(readFileSync(join(here, '..', 'vectors', 'payment-helper-vectors.json'), 'utf8'));
-// --check also fails when the copy drifts from the backend's file (when clikgate_api is checked out next to clikgate_sdks).
-const BACKEND_VECTORS = join(here, '..', '..', '..', '..', 'clikgate_api', 'docs', 'payment-helper-vectors.json');
-if (check && existsSync(BACKEND_VECTORS) && readFileSync(BACKEND_VECTORS, 'utf8') !== readFileSync(join(here, '..', 'vectors', 'payment-helper-vectors.json'), 'utf8')) {
+// --check also fails when the copy drifts from the backend's file, when CLIKGATE_BACKEND_PAYMENT_VECTORS names it.
+const BACKEND_VECTORS = process.env.CLIKGATE_BACKEND_PAYMENT_VECTORS || '';
+if (check && BACKEND_VECTORS && existsSync(BACKEND_VECTORS) && readFileSync(BACKEND_VECTORS, 'utf8') !== readFileSync(join(here, '..', 'vectors', 'payment-helper-vectors.json'), 'utf8')) {
   console.error(`server/conformance/vectors/payment-helper-vectors.json differs from ${BACKEND_VECTORS}: copy it over and rebuild the cases.`);
   process.exit(1);
 }
@@ -2091,7 +2091,7 @@ const body = (provider, reference, status, over = {}) => ({ provider, reference,
 const paystackVector = VECTORS.helpers.find((v) => v.helper === 'fromPaystack');
 const stripeVector = VECTORS.helpers.find((v) => v.helper === 'fromStripe');
 
-add('payments', 'Payments confirmed by the business server: payments.confirm and the gateway helpers (SPEC 22; backend C11 B2.2, B2.3)', [
+add('payments', 'Payments confirmed by the business server: payments.confirm and the gateway helpers (SPEC 22)', [
   // payments.confirm ---------------------------------------------------------------------------
   {
     id: 'payments.confirm.full',
@@ -2505,7 +2505,7 @@ add('people', 'identifyUser() and goal labels (SPEC 24)', [
 
 // ---------------------------------------------------------------------------------------------
 // Hashed email and phone for ad network matching (SPEC 25; backend
-// goal_event_schemas.py / report_conversion_schema.py). Vectors: clikgate_website apps/www/samples/ads-hashing/.
+// goal_event_schemas.py / report_conversion_schema.py). Vectors: the website's ads-hashing samples.
 const H_EMAIL = '0f096d5de5ccb3a1e50f34246aab7d9c539de7bd63498d5fae420ecfba31aaed'; // "  Ada.Obi@Example.com "
 const H_E164 = '6b39248188406864f30420963a3e793bf8571e2fa733f767889f9fa882b5d14c'; // "+2348031234567"
 const H_DIGITS = 'fe144b034b54f22ea55473f479fe83b2ccbc55af8cdb280ef65ef280bcd4bf17'; // "2348031234567"

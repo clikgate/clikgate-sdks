@@ -199,7 +199,7 @@ class ClientTest {
     query.put("metadata", Collections.singletonMap("seller_id", "sel ada"));
     Map<String, Object> page = (Map<String, Object>) c.api().analytics().analyticsSummary(query);
     assertTrue(r.requests.get(0).getUrl().endsWith("/v1/analytics/summary?group_by=metadata.product_id&metadata%5Bseller_id%5D=sel%20ada"), r.requests.get(0).getUrl());
-    // end_goal_value stays a decimal string per currency, next to end_goal_value_minor (X.E10).
+    // end_goal_value stays a decimal string per currency, next to end_goal_value_minor.
     Map<String, Object> row = (Map<String, Object>) ((List<Object>) page.get("data")).get(0);
     assertEquals("18500.00", ((Map<String, Object>) row.get("end_goal_value")).get("NGN"));
 

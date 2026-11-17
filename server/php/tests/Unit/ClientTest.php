@@ -184,7 +184,7 @@ final class ClientTest extends TestCase
         $c = $this->client($http, ['privateMode' => false]);
         $res = $c->api->analytics->analyticsSummary(groupBy: 'metadata.product_id', metadata: ['seller_id' => 'sel_ada']);
         self::assertSame('group_by=metadata.product_id&metadata%5Bseller_id%5D=sel_ada', $http->requests[0]->getUri()->getQuery());
-        // end_goal_value is decimal strings per currency, next to end_goal_value_minor (X.E10).
+        // end_goal_value is decimal strings per currency, next to end_goal_value_minor.
         self::assertIsArray($res);
         self::assertIsArray($res['data']);
         $row = $res['data'][0];

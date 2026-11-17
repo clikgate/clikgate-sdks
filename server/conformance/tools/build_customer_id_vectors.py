@@ -109,7 +109,7 @@ def build() -> str:
     ]
     doc = {
         "description": (
-            "Change 26 KC.1 / R.24 customer-ID vectors. canonical = Unicode NFC, then trimmed of Unicode White_Space and"
+            "Customer-ID vectors. canonical = Unicode NFC, then trimmed of Unicode White_Space and"
             " U+FEFF at both ends (case kept). warning (first match wins): empty; too_long (more than 128 code points);"
             " looks_like_email (an '@' with a '.' after the first '@'); looks_like_national_id (exactly 11 ASCII digits,"
             " unless allow_11_digit_ids, which makes them valid); looks_like_phone (after removing spaces and '-', an"

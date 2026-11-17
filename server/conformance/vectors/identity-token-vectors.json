@@ -1,5 +1,5 @@
 {
-  "description": "Change 22 I.1 / R.27 identity-token vectors. token = base64url_nopad(HMAC_SHA256(secret, customer_id + '.' + issued_at)) + '.' + issued_at, with secret and message encoded as UTF-8 and no Unicode normalisation (the precomposed and decomposed e-acute vectors differ). Built by server/conformance/tools/build_identity_token_vectors.py from clikgate_api/src/sdk/utils/identity_tokens.py sign_identity_token. Every server SDK's createIdentityToken() must return `token` for each vector, and refuse every invalid_customer_ids entry (customer IDs are 1-255 characters, counted as Unicode code points, as the backend's identify schema does). The secrets and customer IDs are invented. Non-ASCII text is written as \\u escapes so no editor can normalise it.",
+  "description": "Identity-token vectors. token = base64url_nopad(HMAC_SHA256(secret, customer_id + '.' + issued_at)) + '.' + issued_at, with secret and message encoded as UTF-8 and no Unicode normalisation (the precomposed and decomposed e-acute vectors differ). Built by server/conformance/tools/build_identity_token_vectors.py with the backend's own sign_identity_token. Every server SDK's createIdentityToken() must return `token` for each vector, and refuse every invalid_customer_ids entry (customer IDs are 1-255 characters, counted as Unicode code points, as the backend's identify schema does). The secrets and customer IDs are invented. Non-ASCII text is written as \\u escapes so no editor can normalise it.",
   "vectors": [
     {
       "name": "ascii",
@@ -103,7 +103,7 @@
       "customer_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
     }
   ],
-  "v2_description": "Change 26 KC.5 / R.13 version 2 tokens: token = base64url_nopad(HMAC_SHA256(secret, msg)) + '.' + issued_at + '.' + customer_since, msg = 'v2\\n' + utf8_byte_length(cid) + ':' + cid + '\\n' + issued_at + '\\n' + customer_since, cid = the canonical customer ID (Unicode NFC, trimmed of Unicode White_Space and U+FEFF, case kept). Dates are whole UTC Unix seconds. createIdentityToken(customer_id, {issuedAt, customerSince}) must return `token` for each v2 vector and refuse every v2_invalid_customer_since entry. Version 1 (above) is unchanged. `forgeries`: forged_token must never verify (backend) and never equal real_token.",
+  "v2_description": "Version 2 tokens: token = base64url_nopad(HMAC_SHA256(secret, msg)) + '.' + issued_at + '.' + customer_since, msg = 'v2\\n' + utf8_byte_length(cid) + ':' + cid + '\\n' + issued_at + '\\n' + customer_since, cid = the canonical customer ID (Unicode NFC, trimmed of Unicode White_Space and U+FEFF, case kept). Dates are whole UTC Unix seconds. createIdentityToken(customer_id, {issuedAt, customerSince}) must return `token` for each v2 vector and refuse every v2_invalid_customer_since entry. Version 1 (above) is unchanged. `forgeries`: forged_token must never verify (backend) and never equal real_token.",
   "v2": [
     {
       "name": "v2_ascii",

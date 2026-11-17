@@ -1,6 +1,6 @@
 #!/bin/sh
 # Every POM version, Version.java and (on a tag) server-java-v<version> must agree; the core's only
-# non-optional runtime dependency is jackson-databind (S.13).
+# non-optional runtime dependency is jackson-databind.
 set -eu
 cd "$(dirname "$0")/.."
 version=$(sed -n 's/.*public static final String VERSION = "\(.*\)";/\1/p' clikgate-java/src/main/java/com/clikgate/Version.java)
