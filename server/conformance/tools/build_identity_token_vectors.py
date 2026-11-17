@@ -1,7 +1,7 @@
 """Build server/conformance/vectors/identity-token-vectors.json (versions 1 and 2).
 
 Every token is made by the backend's own signer, ``sign_identity_token`` in
-``clikgate_api/src/sdk/utils/identity_tokens.py`` (loaded from the sibling checkout by file path), so every server
+the backend's ``src/sdk/utils/identity_tokens.py`` (loaded from the sibling checkout by file path), so every server
 SDK's ``createIdentityToken()`` is tested against the exact function Clikgate verifies with.
 
     python3 server/conformance/tools/build_identity_token_vectors.py           # rewrite the vectors
@@ -71,7 +71,7 @@ V2_INVALID_CUSTOMER_SINCE = [
     {"name": "negative", "issued_at": 1767225600, "customer_since": -1},
 ]
 
-# Cross-version forgery (R.13): a version 1 token whose customer ID smuggles the dates must never verify as version 2,
+# Cross-version forgery: a version 1 token whose customer ID smuggles the dates must never verify as version 2,
 # and a version 2 token cut to two parts must never verify as version 1. `forged_token` != the real token; the backend
 # must refuse `forged_token` for (customer_id, issued_at, customer_since).
 FORGERY_CASES = [
@@ -85,12 +85,12 @@ INVALID_CUSTOMER_IDS = [
 ]
 
 
-# Unicode White_Space plus U+FEFF (the byte-order mark): trimmed from both ends by every SDK (KC.1)
+# Unicode White_Space plus U+FEFF (the byte-order mark): trimmed from both ends by every SDK
 TRIM = "\t\n\x0b\x0c\r \x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000\ufeff"
 
 
 def canonical_customer_id(customer_id: str) -> str:
-    """KC.1: Unicode NFC, trimmed (TRIM), case kept."""
+    """The canonical customer ID: Unicode NFC, trimmed (TRIM), case kept."""
     return unicodedata.normalize("NFC", customer_id).strip(TRIM)
 
 
@@ -123,7 +123,7 @@ def build() -> str:
                 theirs = backend_v2(secret, cid, customer_since=since, issued_at=issued)
             except ImportError:
                 # The backend signer imports from its package (loaded here by file path): its own tests compare it
-                # with these vectors instead (clikgate_api/tests/fixtures/identity-token-vectors.json).
+                # with these vectors instead (the backend's tests/fixtures/identity-token-vectors.json).
                 print("note: backend sign_identity_token_v2 needs its package; not cross-checked here", file=sys.stderr)
                 backend_v2 = None
                 return token
@@ -151,17 +151,17 @@ def build() -> str:
     ]
     doc = {
         "description": (
-            "Change 22 I.1 / R.27 identity-token vectors. token = base64url_nopad(HMAC_SHA256(secret, customer_id + '.' + issued_at))"
+            "Identity-token vectors. token = base64url_nopad(HMAC_SHA256(secret, customer_id + '.' + issued_at))"
             " + '.' + issued_at, with secret and message encoded as UTF-8 and no Unicode normalisation (the precomposed and"
             " decomposed e-acute vectors differ). Built by server/conformance/tools/build_identity_token_vectors.py from"
-            " clikgate_api/src/sdk/utils/identity_tokens.py sign_identity_token. Every server SDK's createIdentityToken() must"
+            " the backend's src/sdk/utils/identity_tokens.py sign_identity_token. Every server SDK's createIdentityToken() must"
             " return `token` for each vector, and refuse every invalid_customer_ids entry (customer IDs are 1-255 characters,"
             " counted as Unicode code points, as the backend's identify schema does). The secrets and customer IDs are invented. Non-ASCII text is written as \\u escapes so no editor can normalise it."
         ),
         "vectors": vectors,
         "invalid_customer_ids": INVALID_CUSTOMER_IDS,
         "v2_description": (
-            "Change 26 KC.5 / R.13 version 2 tokens: token = base64url_nopad(HMAC_SHA256(secret, msg)) + '.' + issued_at +"
+            "Version 2 tokens: token = base64url_nopad(HMAC_SHA256(secret, msg)) + '.' + issued_at +"
             " '.' + customer_since, msg = 'v2\\n' + utf8_byte_length(cid) + ':' + cid + '\\n' + issued_at + '\\n' +"
             " customer_since, cid = the canonical customer ID (Unicode NFC, trimmed of Unicode White_Space and U+FEFF, case"
             " kept). Dates are whole UTC Unix seconds. createIdentityToken(customer_id, {issuedAt, customerSince}) must"

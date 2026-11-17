@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Release scan (change 12, S.4): a released package carries no internal comments, TODO/FIXME notes, debug code,
+// Release scan: a released package carries no internal comments, TODO/FIXME notes, debug code,
 // internal or staff URLs, or staff-only references. Run it on what is published: the npm tarball, the wheel and
 // sdist, the Composer archive, the jars (including -sources and -javadoc) and the nupkg/snupkg.
 //

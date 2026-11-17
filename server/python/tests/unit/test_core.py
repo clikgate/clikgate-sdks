@@ -240,7 +240,7 @@ def test_metadata_filter_and_end_goal_value(recorder: Recorder) -> None:
     c = client(recorder)
     res = c.api.analytics.analytics_summary(group_by="metadata.product_id", metadata={"seller_id": "sel_ada"})
     assert recorder.requests[0].url.raw_path == b"/v1/analytics/summary?group_by=metadata.product_id&metadata%5Bseller_id%5D=sel_ada"
-    # end_goal_value is decimal strings per currency, next to end_goal_value_minor (X.E10).
+    # end_goal_value is decimal strings per currency, next to end_goal_value_minor.
     assert res["data"][0]["end_goal_value"] == {"NGN": "18500.00"}
     c.links.list_page(metadata={"seller_id": "sel ada"}, limit=5)
     assert recorder.requests[1].url.raw_path == b"/v1/links?metadata%5Bseller_id%5D=sel%20ada&limit=5"

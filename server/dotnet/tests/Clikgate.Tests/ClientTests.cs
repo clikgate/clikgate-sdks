@@ -182,7 +182,7 @@ public class ClientTests
             ["metadata"] = new Dictionary<string, string> { ["seller_id"] = "sel ada" },
         });
         Assert.EndsWith("/v1/analytics/summary?group_by=metadata.product_id&metadata%5Bseller_id%5D=sel%20ada", r.Requests.Single().Request.RequestUri!.OriginalString, StringComparison.Ordinal);
-        // end_goal_value stays a decimal string per currency, next to end_goal_value_minor (X.E10).
+        // end_goal_value stays a decimal string per currency, next to end_goal_value_minor.
         Assert.Equal("18500.00", (string?)page!["data"]![0]!["end_goal_value"]!["NGN"]);
 
         r.Body = "{\"object\":\"link\",\"id\":\"lnk_1\",\"external_reference\":\"sel_ada:prd_1\",\"metadata\":{\"seller_id\":\"sel_ada\"}}";

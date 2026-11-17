@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { hashForAds, InvalidRequestError, PrivateModeFieldRejectedError } from '../../src/index.js';
 import { capture, client } from './helpers.js';
 
-// The website's vectors (clikgate_website apps/www/samples/ads-hashing/, SPEC 25)
+// The website's vectors (the ads-hashing samples, SPEC 25)
 const H_EMAIL = '0f096d5de5ccb3a1e50f34246aab7d9c539de7bd63498d5fae420ecfba31aaed';
 const H_E164 = '6b39248188406864f30420963a3e793bf8571e2fa733f767889f9fa882b5d14c';
 const H_DIGITS = 'fe144b034b54f22ea55473f479fe83b2ccbc55af8cdb280ef65ef280bcd4bf17';

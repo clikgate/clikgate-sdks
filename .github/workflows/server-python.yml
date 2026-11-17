@@ -1,7 +1,7 @@
 # Server SDK for Python (server/python): lint, types, unit tests and the cross-language conformance
 # suite (sync and async clients) on every supported Python plus the minimum (3.9), on Linux and Windows.
 # Python versions checked 2026-10-26: 3.11-3.15 are supported; 3.9 (EOL 2025-10)
-# and 3.10 (EOL 2026-10) stay tested because S.9 makes 3.9 the documented minimum.
+# and 3.10 (EOL 2026-10) stay tested because the SDK spec makes 3.9 the documented minimum.
 name: server-python
 
 on:

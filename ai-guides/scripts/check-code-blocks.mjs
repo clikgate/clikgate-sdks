@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Compiles every code block tagged ```<lang> clikgate-check in the AI guides against the SDK sources (S.7 "Kept
+// Compiles every code block tagged ```<lang> clikgate-check in the AI guides against the SDK sources ("Kept
 // accurate"). Untagged blocks are fragments (manifest lines, one method) and aren't compiled.
 //
 //   node ai-guides/scripts/check-code-blocks.mjs --mobile <clikgate_mobile_sdk> [--require ts,swift,dart,kotlin]

@@ -1,5 +1,5 @@
 # Publish com.clikgate:clikgate-java, clikgate-servlet-javax, clikgate-servlet-jakarta and
-# clikgate-spring-boot-starter (and the parent POM) to Maven Central on tags server-java-v<semver> (S.17),
+# clikgate-spring-boot-starter (and the parent POM) to Maven Central on tags server-java-v<semver>,
 # through the Sonatype Central Portal (central-publishing-maven-plugin) with GPG signatures and checksums,
 # plus a CycloneDX SBOM per artifact attached to the GitHub release. Maven Central has no OIDC trusted
 # publishing, so the Portal user token and the signing key are secrets of the environment maven-central

@@ -1,4 +1,4 @@
-# Publish clikgate (Python) on tags server-python-v<semver> (S.17), with PyPI trusted publishing (OIDC,
+# Publish clikgate (Python) on tags server-python-v<semver>, with PyPI trusted publishing (OIDC,
 # no token) and PEP 740 attestations (on by default in pypa/gh-action-pypi-publish), plus a CycloneDX SBOM
 # attached to the GitHub release. PyPI side: a pending publisher for project
 # clikgate, repository clikgate/clikgate-sdks, workflow server-python-release.yml, environment pypi.

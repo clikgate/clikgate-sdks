@@ -1,7 +1,7 @@
 {
   "$schema": "../schema/case.schema.json",
   "suite": "payments",
-  "description": "Payments confirmed by the business server: payments.confirm and the gateway helpers (SPEC 22; backend C11 B2.2, B2.3)",
+  "description": "Payments confirmed by the business server: payments.confirm and the gateway helpers (SPEC 22)",
   "cases": [
     {
       "id": "payments.confirm.full",

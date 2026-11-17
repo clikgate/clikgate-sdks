@@ -48,7 +48,7 @@ Contents:
 | C# / .NET | `Clikgate` (+ `Clikgate.AspNetCore`) | `server/dotnet/` | .NET Standard 2.0 and .NET 8 | `dotnet` | `dotnet` |
 
 - Licence: MIT, everywhere.
-- Runtime dependencies (S.13):
+- Runtime dependencies:
   - Node: none.
   - Python: `httpx` only.
   - PHP: PSR interfaces + `php-http/discovery`.
@@ -115,7 +115,7 @@ Every request carries these headers:
 | `Content-Type` | `application/json` (only when there is a body) |
 | `Idempotency-Key` | on POST and PATCH only (section 7) |
 
-- **User-Agent** (backend B.6 parses it; nothing else is sent, no telemetry):
+- **User-Agent** (the backend parses it; nothing else is sent, no telemetry):
 
   ```
   clikgate-<sdk>/<sdk version> (<runtime> <runtime version>; <os> <arch>)
@@ -145,7 +145,7 @@ Every request carries these headers:
 
 Every error extends `ClikgateError`, which exposes `http_status` (int or null), `code` (string), `message`, `request_id` (string or null), `param` (string or null) and `type` (the envelope's type, or null for local errors). The raw error object is available as `body`/`raw` (Node `error.raw`).
 
-The backend envelope (backend spec 6.2), from `src/core/errors.py`:
+The backend envelope, from `src/core/errors.py`:
 
 ```json
 {"error": {"type": "invalid_request", "code": "invalid_value", "message": "…", "param": "value", "request_id": "req_…"}}
@@ -204,7 +204,7 @@ ClikgateError
   | `test_link_limit_reached` | 403 → `PermissionError` | `limit` → `limit` | `src/test_links/services/test_link_policy.py` |
   | `domain_mode_mismatch` | 422 → `InvalidRequestError` (param `domain`) | — | `src/domains/services/domain_service.py` |
   | `plan_limit_reached` | 403 → `PermissionError` (`param` = the allowance key) | `required_plan` → `requiredPlan` | `src/billing/utils/errors.py` |
-  | `plan_upgrade_required`, `feature_disabled` | 403 → `PermissionError` | `required_plan` → `requiredPlan` | backend spec 6.2 (feature gates such as exports and summaries) |
+  | `plan_upgrade_required`, `feature_disabled` | 403 → `PermissionError` | `required_plan` → `requiredPlan` | feature gates such as exports and summaries |
   | `plan_feature_unavailable` | 403 → `PermissionError` | `required_plan` → `requiredPlan` (`starter`); `feature` (`payment_goals`) stays in `raw` | Payment goals, payment reports and `payments.confirm` need Starter or above (`src/payments/services/plan_gate.py`) |
   | `cli_scope` | 403 → `PermissionError` | — (a setup-command token was used; server SDKs need an API key) | `src/cli/utils/allowlist.py` |
   | `link_locked` | 409 → `LinkLockedError` (`param` = the first locked field) | — | `src/links/services/link_service.py` |
@@ -261,7 +261,7 @@ ClikgateError
 | GET, DELETE | none |
 
 - Every POST/PATCH method takes an optional `idempotency_key` request option, which overrides the default.
-- **Why goal keys are random (since 1.1.0):** the backend dedupes goal events by `(organization, goal, reference_hash)` itself (X.E1), in every mode, so a resend after a crash, with a new key, returns `200` with the stored event and is never counted twice. A Payment goal sent by the server (section 23) is deduplicated by `(provider, reference)` the same way. The key only makes the retries of one call safe. Versions before 1.1.0 (never released) sent `sha256_hex(goal + ":" + reference)`; no SDK computes that key any more.
+- **Why goal keys are random (since 1.1.0):** the backend dedupes goal events by `(organization, goal, reference_hash)` itself, in every mode, so a resend after a crash, with a new key, returns `200` with the stored event and is never counted twice. A Payment goal sent by the server (section 23) is deduplicated by `(provider, reference)` the same way. The key only makes the retries of one call safe. Versions before 1.1.0 (never released) sent `sha256_hex(goal + ":" + reference)`; no SDK computes that key any more.
 - **Same goal and reference, different body:** the backend returns the stored event (`200`); a goal can't be "corrected" by resending. Use `goals.reverse`. Batch items say the same with `status: 200` on the item.
 - **Reversals use random keys** because two identical partial refunds are legitimate.
 - **Backend behaviour** (`src/core/idempotency/idempotent_route.py`):
@@ -417,8 +417,8 @@ ClikgateError
 - **Link fields the SDK relies on:**
   - `warnings[]`.
   - `domain_badge`: `"premium"` on `ciz.to` links, else `null` (`src/links/schemas/response/link_info_response.py`).
-  - `locked`, `locked_by`, `locked_at` (B.10). Locking is `POST /v1/links/{id}/lock` (`links:write`, generated `api.links.*`); unlocking needs `org:manage`.
-- **Test links** (test-mode keys only; backend B.8):
+  - `locked`, `locked_by`, `locked_at`. Locking is `POST /v1/links/{id}/lock` (`links:write`, generated `api.links.*`); unlocking needs `org:manage`.
+- **Test links** (test-mode keys only):
   - The destination may be a full URL or the shorthand `clikgate-test:<inspect|checkout|app-open|store>`. The SDK sends it unchanged and never validates destinations locally.
   - The domain is always `dev.ciz.to`. A live domain gives `422 domain_mode_mismatch`.
   - `expires_at` is capped by the server at 30 days after creation. The SDK sends what the caller gives and returns what the server stores.
@@ -431,7 +431,7 @@ ClikgateError
   ```
 
   - `200`: `applied: true`, `link` is the body, and `warnings` is `link.warnings` (or `[]`).
-  - `202` (two-person approval, backend B.10): `applied: false`, and `change_request` is the body:
+  - `202` (two-person approval): `applied: false`, and `change_request` is the body:
 
     ```json
     {"object": "link_change_request", "id": "lcr_…", "link_id": "lnk_…", "status": "pending", "from_url": "https://old", "to_url": "https://new",
@@ -453,7 +453,7 @@ ClikgateError
 
 ### 12.1 Config
 
-`GET /v1/server-sdk/config` (backend B.5; any valid API key):
+`GET /v1/server-sdk/config` (any valid API key):
 
 ```json
 {"mode": "live", "organization_id": "org_…", "private_mode": false, "click_id_param": "cgid",
@@ -487,7 +487,7 @@ When on, before the HTTP layer sees anything, the SDK checks every wire field of
 | conversion (`conversions.create`) | the above + `external_id` |
 | reversal (`goals.reverse`, `conversions.reverse`) | `goal`, `reference`, `value`, `external_id`, `amount_minor` |
 
-- **Source of truth:** these lists match the backend's (`clikgate_api/src/private_mode/utils/private_mode.py`
+- **Source of truth:** these lists match the backend's (`src/private_mode/utils/private_mode.py`
   `GOAL_EVENT_FIELDS` and `CONVERSION_FIELDS`; `src/payments/services/confirmations.py` `PRIVATE_FIELDS` for
   confirmations), re-checked 2026-10-28. The reversal list is stricter than the backend's on purpose (free-text
   `reason` stays local).
@@ -596,7 +596,7 @@ invalid_argument`. Conformance: `conformance/cases/click_ids.json`, ids `click_i
 
 ## 14. Webhook verification
 
-The header (backend spec 13.3, `docs/WEBHOOKS.md`, `src/core/webhook_signature.py`):
+The header (backend `docs/WEBHOOKS.md`, `src/core/webhook_signature.py`):
 
 ```
 Clikgate-Signature: t=<unix seconds>,v1=<hex>[,v1=<hex>]
@@ -636,7 +636,7 @@ hex = lowercase hex HMAC-SHA256(key = UTF-8 bytes of the whole secret including 
 
 ## 16. Generated API layer
 
-- **Surface:** `client.api.<resource>.<operation>(…)` exposes every API-key operation in `openapi.json` (S.16). Resources come from the OpenAPI tag (`Ad Spend` becomes Node `adSpend`, Python `ad_spend`). Operations come from the summary (`List Links` becomes `listLinks` / `list_links`).
+- **Surface:** `client.api.<resource>.<operation>(…)` exposes every API-key operation in `openapi.json`. Resources come from the OpenAPI tag (`Ad Spend` becomes Node `adSpend`, Python `ad_spend`). Operations come from the summary (`List Links` becomes `listLinks` / `list_links`).
 - **One code path:** generated code MUST call the SDK's own request function, so the transport, User-Agent, retries, idempotency keys, errors and logging are the hand-written ones. There is no second HTTP stack.
 - **Scope:** the generator (`server/codegen/`) keeps the operations the backend marks `x-clikgate-auth: api_key`. It drops `dashboard_session`, `staff`, `public`, `sdk_key` and `cli` operations. The filter is shared by all languages, so every SDK exposes the same operations.
 - **Status:** the hand-written areas (goals, conversions, links, clicks, click IDs, webhooks, the private-mode guard) are what the docs teach. `api.*` is "advanced".
@@ -703,7 +703,7 @@ Each SDK MUST let a test replace these, through a documented "advanced" option, 
 
 ## 20. Backend facts this contract relies on
 
-These were checked in `clikgate_api` on 2026-10-26:
+These were checked in the backend on 2026-10-26:
 
 - **Goal events:**
   - `POST /v1/goals/events` → `201` new / `200` already received. Re-checked 2026-10-28: the body is `GoalEventInfoResponse` with `status` (`GoalStatus`), `reason`, `goal_kind`, `counted`, `value_ignored`, `event_status` (the conversion state that `status` held before) and `payment` (section 23).
@@ -717,7 +717,7 @@ These were checked in `clikgate_api` on 2026-10-26:
   - `warnings[]` on `link` (`LinkWarningResponse {code, message, param}`) includes `no_preview` on create and update when both `og_title` and `og_image_url` are empty.
   - `GET /v1/links/{id}/qr?format=svg|png&size&margin&dark&light`.
 - **Clicks:** `GET /v1/clicks/{id}`.
-- **Being added:** `GET /v1/server-sdk/config` (B.5) is coded to the spec shape. Until it is deployed, a 404 triggers the fail-closed path in 12.1.
+- **Being added:** `GET /v1/server-sdk/config` is coded to the spec shape. Until it is deployed, a 404 triggers the fail-closed path in 12.1.
 - **Webhook `link.destination_changed`:** `data.object` is the link; `data` also carries `from`, `to`, `actor {type, id, api_key_prefix, requested_by?, change_request_id?}`, `actor_type` and `api_key_prefix` (`src/links/services/link_change_requests.py`). SDKs return it as any other event.
 - **Webhook `subscription.updated`:** sent when a Growth add-on is activated, set to end at renewal, or kept. `data.object` is the subscription with `add_ons[]` (`key`, `name`, `status`, `amount_minor`, `ends_at`, `remove_at_renewal`); `data` also carries `previous_attributes`, `change` (`add_on.activated` or `add_on.remove_at_renewal`, the second also when "Remove at renewal" is undone: read `add_ons[].remove_at_renewal`) and `add_on_key`. Endpoints subscribe to it like the other `subscription.*` events. Webhook `type` stays a plain string in every SDK, so no type changes; conformance `webhooks.valid.subscription_updated`.
 - **Plumbing:**
@@ -725,12 +725,12 @@ These were checked in `clikgate_api` on 2026-10-26:
   - Idempotency: `src/core/idempotency/idempotent_route.py` (TTL `IDEMPOTENCY_TTL_SECONDS`).
   - Request IDs come back as `X-Request-Id`. Rate-limit headers are `RateLimit-Limit` / `-Remaining` / `-Reset` and `Retry-After` on 429.
 - **Webhook signatures:** `src/core/webhook_signature.py`.
-- **Click IDs:** prefixed ULIDs (`src/core/ids.py`). The web script cookie is `_cg_<param>`, `path=/`, `SameSite=Lax`, `Secure` on HTTPS (`src/static/clikgate.js`; its default lifetime is 7 days, and the server SDK default is 30 days, S.14).
+- **Click IDs:** prefixed ULIDs (`src/core/ids.py`). The web script cookie is `_cg_<param>`, `path=/`, `SameSite=Lax`, `Secure` on HTTPS (`src/static/clikgate.js`; its default lifetime is 7 days, and the server SDK default is 30 days).
 
 ## 21. Metadata filters and link metadata
 
 - **Wire:** the backend filters by link metadata with one query parameter per key: `?metadata[seller_id]=sel_ada`
-  (`metadata_filters` in clikgate_api `src/links/routers/link_routers.py`). It reads them from the raw query string,
+  (`metadata_filters` in the backend's `src/links/routers/link_routers.py`). It reads them from the raw query string,
   so `openapi.json` doesn't declare them.
 - **Operations:** `GET /v1/links`, `GET /v1/analytics/summary`, `/timeseries`, `/top-links` and `/open-in-app`.
   `codegen/filter.mjs` (`METADATA_FILTER_OPERATIONS`) adds a `metadata` map parameter (deepObject) to these, so the
@@ -744,7 +744,7 @@ These were checked in `clikgate_api` on 2026-10-26:
   none), next to `getExternalReference()` / `ExternalReference`. Node, Python and PHP links are plain objects
   (`link.metadata`, `link["metadata"]`).
 - **`end_goal_value`** in analytics rows is a map of decimal strings per currency (`{"NGN": "18500.00"}`), next to
-  `end_goal_value_minor` (`{"NGN": 1850000}`), the X.E10 convention. Node and Python type it so; PHP, Java and .NET
+  `end_goal_value_minor` (`{"NGN": 1850000}`), the backend's convention. Node and Python type it so; PHP, Java and .NET
   return the JSON as parsed (strings stay strings).
 
 ## 22. Payments confirmed by the business's server
@@ -855,7 +855,7 @@ Common rules:
   none are left.
 - **Key order** doesn't matter. The conformance judge compares the JSON body exactly (no extra keys).
 - **Vectors:** the extraction vectors live in `conformance/vectors/payment-helper-vectors.json`, a copy of
-  `clikgate_api/docs/payment-helper-vectors.json`. `build-cases.mjs --check` fails when the two differ.
+  the backend's `docs/payment-helper-vectors.json`. `build-cases.mjs --check` fails when the two differ.
 
 ### 22.4 Where to call them
 
@@ -878,8 +878,8 @@ as `1500.25` must reach the helper as the same decimal.
 
 ## 23. Goal kinds, goal status and the shared enums
 
-Backend contract C12 B1–B3 (final). Every goal is **Standard** or **Payment** (`kind`, set only in the goal's
-settings: never in a goal call, D4). `goal()` is the only goal method; there is no `payment()` method in any SDK.
+Backend contract (final). Every goal is **Standard** or **Payment** (`kind`, set only in the goal's
+settings: never in a goal call). `goal()` is the only goal method; there is no `payment()` method in any SDK.
 
 ### 23.1 The enums
 
@@ -1009,7 +1009,7 @@ identityToken)`.
   token is created, so the rest of the client keeps working.
 - **Customer ID:** 1-255 characters, counted as Unicode code points (as the backend's identify schema); else
   `InvalidRequestError` `invalid_customer_id` (param `customer_id`), never echoed. PHP also refuses invalid UTF-8.
-- **Server only** (R.27): `ClikgateServerOnlyError` (code `server_only`; PHP, Java and .NET `ClikgateServerOnlyException`)
+- **Server only**: `ClikgateServerOnlyError` (code `server_only`; PHP, Java and .NET `ClikgateServerOnlyException`)
   - Node: when `window`, `document` or React Native (`navigator.product === "ReactNative"`) is detected;
   - Java: when `android.os.Build` loads;
   - .NET: under MAUI or Xamarin (OS platform Android, iOS, tvOS, Mac Catalyst or watchOS, or `Microsoft.Maui`,
@@ -1024,7 +1024,7 @@ identityToken)`.
   stale). Every language's unit tests check every vector (ASCII, dots, combining marks, precomposed vs decomposed é,
   CJK, an emoji outside the BMP, Arabic, 255 characters, `issued_at` 0 and after 2038, a second app's secret, a
   non-ASCII secret) and refuse every `invalid_customer_ids` entry.
-- **Verification reasons** (backend, R.22) the docs list: `expired`, `bad_signature`, `secret_rotated`, `no_secret_set`,
+- **Verification reasons** (backend) the docs list: `expired`, `bad_signature`, `secret_rotated`, `no_secret_set`,
   `not_yet_valid` (issued more than 5 minutes ahead). The SDKs never verify tokens.
 - **Version 2: the account date**. An optional `customer_since` (when the person became the
   business's customer) makes a three-part token `signature.issued_at.customer_since`; without it the token is version 1,
@@ -1050,7 +1050,7 @@ identityToken)`.
 Clikgate tells people who were already the business's customers before it added Clikgate from new ones (referrals, new
 customers). The server SDKs send two kinds of evidence, both refused in private mode.
 
-- **The canonical customer ID** (KC.1, R.24), one form everywhere: Unicode NFC, then trimmed of Unicode White_Space
+- **The canonical customer ID**, one form everywhere: Unicode NFC, then trimmed of Unicode White_Space
   characters and U+FEFF at both ends, case kept. Helpers (pure, offline): Node `canonicalCustomerId(id)`,
   `customerIdWarning(id, { allow11DigitIds })`; Python `canonical_customer_id`, `customer_id_warning(id, *,
   allow_11_digit_ids=False)`; PHP `Clikgate\CustomerId::canonical`, `::warning($id, $allow11DigitIds = false)`; Java
@@ -1059,8 +1059,8 @@ customers). The server SDKs send two kinds of evidence, both refused in private 
   points); `looks_like_email` (an `@` with a `.` after the first `@`); `looks_like_national_id` (exactly 11 ASCII digits,
   unless allowed); `looks_like_phone` (after removing spaces and `-`, an optional `+` then 10-15 ASCII digits). Vectors:
   `server/conformance/vectors/customer-id-vectors.json` (`tools/build_customer_id_vectors.py [--check]`), also copied to
-  `clikgate_api/tests/fixtures`. The SDKs never refuse an ID locally with these: the API decides and answers counts.
-- **`identifyUser` account date** (KC.4): wire `customer_since` (`YYYY-MM-DD`, or an RFC 3339 UTC date-time
+  the backend's test fixtures. The SDKs never refuse an ID locally with these: the API decides and answers counts.
+- **`identifyUser` account date**: wire `customer_since` (`YYYY-MM-DD`, or an RFC 3339 UTC date-time
   `YYYY-MM-DDTHH:MM:SSZ` made from a date-time value or Unix seconds; strings are passed through when they look like
   either) and `customer_since_replace: true` (sent only when true; lets a wrong date move later, audit-logged). Local
   check: `customer_since` needs `customer_id` (`invalid_request`, param `customer_since`); a malformed value is
@@ -1070,7 +1070,7 @@ customers). The server SDKs send two kinds of evidence, both refused in private 
   `customerSinceReplace`; Java builder `customerSince(Instant | LocalDate)`, `customerSinceReplace(boolean)`, answer
   `getCustomerSinceIgnored()`, `getCustomerIdWarning()`; .NET `CustomerSince` (`DateTimeOffset?`),
   `CustomerSinceReplace`, answer `CustomerSinceIgnored`, `CustomerIdWarning`.
-- **Known customers** (KC.3), scope `people:write`:
+- **Known customers**, scope `people:write`:
   - `import`: `POST /v1/known-customers/import {customers: [{customer_id, customer_since?: "YYYY-MM-DD"}]}`, at most
     10,000 per call → `{accepted, refused, refused_by_reason: {reason: count}}`. The SDK splits any list into batches of
     10,000 in order and sums the answers. A caller's idempotency key gets `-<batch index>` appended when there are
@@ -1082,7 +1082,7 @@ customers). The server SDKs send two kinds of evidence, both refused in private 
     `KnownCustomersImportResult` (`import` is a keyword), .NET `KnownCustomers.ImportAsync(IEnumerable<KnownCustomer>)`.
   - `remove`: `POST /v1/known-customers/remove {customer_id}` (the ID only in the body) → `{removed}`. Node and Python
     and PHP return the answer object; Java `remove(id)` and .NET `RemoveAsync(id)` return the boolean.
-- **Private mode** (R.19): `customer_since` and `customer_since_replace` are not in the `identify` allow-list, so the
+- **Private mode**: `customer_since` and `customer_since_replace` are not in the `identify` allow-list, so the
   guard refuses them (`PrivateModeFieldRejectedError`, as the API's `422 private_mode_field_rejected`). Known customers
   are a switched-off feature: with the guard on, `import` and `remove` raise `ConflictError` (PHP, Java, .NET
   `ConflictException`) with code `private_mode_conflict` and no HTTP status, before any request (the API answers
@@ -1094,7 +1094,7 @@ customers). The server SDKs send two kinds of evidence, both refused in private 
 
 ## 25. Hashed email and phone for ad network matching
 
-Backend (`clikgate_api/src/goals/schemas/goal_event_schemas.py`,
+Backend (`src/goals/schemas/goal_event_schemas.py`,
 `src/conversions/schemas/report_conversion_schema.py`, `src/ads/utils/matching.py`, checked 2026-11-04). A business
 that turned on "match by hashed email or phone" for an ad network destination can send its own SHA-256 hashes with a
 goal. Clikgate never hashes on the business's behalf in private mode: **hash on your own server**, with the helper.

@@ -8,7 +8,7 @@
 //   Flutter  flutter/lib/src/{clikgate,referrals,models}.dart      React Native  react-native/src/*.ts
 //   Android  android/clikgate/src/main/java/com/clikgate/*.kt      iOS           ios/Sources/Clikgate/Public/*.swift
 //   Node     server/node/dist/esm/*.d.ts (tsc's declaration output; run `npm run build` in server/node first)
-//   Web      clikgate_api/src/static/clikgate.js (optional: without --web the existing Web section is kept)
+//   Web      the backend's web script, clikgate.js (optional: without --web the existing Web section is kept)
 // --check exits 1 when the file on disk differs (CI drift check).
 import fs from 'node:fs';
 import path from 'node:path';

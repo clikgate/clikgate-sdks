@@ -106,7 +106,7 @@ jobs:
         run: node ai-guides/scripts/check-code-blocks.mjs --mobile mobile-sdk --require ts,swift,dart,kotlin
 
   publish:
-    # On an SDK release: copy the resolved skill to the public skills repository (S.7 distribution).
+    # On an SDK release: copy the resolved skill to the public skills repository.
     if: github.event_name == 'workflow_dispatch' && inputs.publish
     needs: [validate, sdk-sync]
     runs-on: ubuntu-latest

@@ -49,7 +49,7 @@ All run on Linux and Windows with the conformance suite, and every release attac
     - safety rules.
 
     It reads the setup command from `CLIKGATE_CLI_DIR` (default `../clikgate_mobile_sdk/cli`) and needs its build, `dist/cli.cjs` (`cd ../clikgate_mobile_sdk/cli && npm ci && npm run build`).
-  - `node ai-guides/scripts/generate-api-surface.mjs --mobile ../clikgate_mobile_sdk [--web ../clikgate_api/src/static/clikgate.js] [--check]` regenerates `api-surface.md` from the SDK sources. It needs `server/node/dist`.
+  - `node ai-guides/scripts/generate-api-surface.mjs --mobile ../clikgate_mobile_sdk [--web <path to the web script, clikgate.js>] [--check]` regenerates `api-surface.md` from the SDK sources. It needs `server/node/dist`.
   - `node ai-guides/scripts/check-code-blocks.mjs --mobile ../clikgate_mobile_sdk [--swift-typecheck]` compiles every ` ```<lang> clikgate-check ` block.
   - `node ai-guides/scripts/build.mjs` writes `ai-guides/dist/`:
     - `clikgate-skills/` for the public repository;

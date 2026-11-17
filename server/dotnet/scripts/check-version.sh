@@ -1,6 +1,6 @@
 #!/bin/sh
 # Directory.Build.props <Version>, SdkVersion.Value and (on a tag) server-dotnet-v<version> must agree; the core
-# package's only dependency is System.Text.Json, on netstandard2.0 only (S.13).
+# package's only dependency is System.Text.Json, on netstandard2.0 only.
 set -eu
 cd "$(dirname "$0")/.."
 props=$(sed -n 's/.*<Version>\(.*\)<\/Version>.*/\1/p' Directory.Build.props)

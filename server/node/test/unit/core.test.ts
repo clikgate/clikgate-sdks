@@ -96,7 +96,7 @@ test('analytics and link lists take a metadata filter (metadata[<key>]=<value>)'
   const c = client(fetchLike);
   const res = await c.api.analytics.analyticsSummary({ from: '2026-10-01T00:00:00Z', group_by: 'metadata.product_id', metadata: { seller_id: 'sel_ada' } });
   assert.equal(calls[0]!.url, 'https://api.clikgate.com/v1/analytics/summary?from=2026-10-01T00%3A00%3A00Z&group_by=metadata.product_id&metadata%5Bseller_id%5D=sel_ada');
-  // end_goal_value is decimal strings per currency, next to end_goal_value_minor (X.E10).
+  // end_goal_value is decimal strings per currency, next to end_goal_value_minor.
   const row = res.data[0]!;
   const v: string | undefined = row.end_goal_value?.NGN;
   assert.equal(v, '18500.00');

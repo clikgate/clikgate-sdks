@@ -1,5 +1,5 @@
 {
-  "description": "Change 11 server helper vectors (payments.fromPaystack / fromFlutterwave / fromMonnify / fromStripe). `amount` is what a helper sends (the shortest exact decimal in normal units); `amount_minor` is what Clikgate stores (ISO 4217 minor units). The backend tests (tests/payments/test_helpers_and_gateways.py) run every vector.",
+  "description": "Server helper vectors (payments.fromPaystack / fromFlutterwave / fromMonnify / fromStripe). `amount` is what a helper sends (the shortest exact decimal in normal units); `amount_minor` is what Clikgate stores (ISO 4217 minor units). The backend tests (tests/payments/test_helpers_and_gateways.py) run every vector.",
   "checked_at": "2026-10-28",
   "amounts": [
     {

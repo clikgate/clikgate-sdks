@@ -3,7 +3,7 @@
 // from openapi.json. One command:
 //
 //   node server/codegen/generate.mjs                       # regenerate from server/openapi/ (vendored)
-//   node server/codegen/generate.mjs --from ../clikgate_api # copy the backend's docs/openapi-public.json (else docs/openapi.json) first
+//   node server/codegen/generate.mjs --from <backend repo> # copy the backend's docs/openapi-public.json (else docs/openapi.json) first
 //   node server/codegen/generate.mjs --check               # CI drift check: fail if committed output differs
 //   node server/codegen/generate.mjs --lang node           # one language only
 //
@@ -55,7 +55,7 @@ if (from) {
 // 2. Filter ------------------------------------------------------------------------------------
 const source = vendoredSpec(openapiDir);
 const specPath = source.path;
-if (!existsSync(specPath)) die(`server/openapi/${PUBLIC_SPEC} is missing; run with --from <path to clikgate_api>`);
+if (!existsSync(specPath)) die(`server/openapi/${PUBLIC_SPEC} is missing; run with --from <path to the backend repository>`);
 const specBytes = readFileSync(specPath);
 const fullSpec = JSON.parse(specBytes.toString('utf8'));
 // The SDKs build from the backend's PUBLIC spec only. Staff, internal and webhook routes never belong in it: the

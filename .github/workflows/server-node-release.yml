@@ -1,4 +1,4 @@
-# Publish @clikgate/node on tags server-node-v<semver> (S.17), with npm trusted publishing (OIDC, no
+# Publish @clikgate/node on tags server-node-v<semver>, with npm trusted publishing (OIDC, no
 # token) and provenance, plus a CycloneDX SBOM attached to the GitHub release.
 # npm side: package @clikgate/node → Settings → Trusted publishing →
 # GitHub Actions, repository clikgate/clikgate-sdks, workflow server-node-release.yml, environment npm.

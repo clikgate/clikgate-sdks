@@ -36,7 +36,14 @@ FORBIDDEN_TEXT = [
             r"|API_CONTRACT|SDK_BEHAVIOUR|PLATFORM_CHANNEL"
         ),
     ),
-    ("internal process note", re.compile(r"owner decision|judgement call|build specification|\bcoordinator\b", re.I)),
+    ("internal process note", re.compile(r"owner decision|judge?ment call|build specification|\bcoordinator\b", re.I)),
+    ("internal owner note", re.compile(r"\bowner,? 20\d{2}\b", re.I)),
+    # Requirement codes of the internal plans: KC.1, X.E10, R.24, S.13, C21-B4, "C11 B2.2", "backend spec 13.3".
+    # E.164 (the phone number format) is the one public name of this shape.
+    ("internal requirement code", re.compile(r"(?<![\w.])(?!E\.164\b)[A-Z]{1,2}\.[A-Z]?\d+\b(?!\.\d)")),
+    ("internal spec id", re.compile(r"\bC\d{2}-[BFS]\d+\b|\bC\d{1,2} B\d|\bbackend spec \d", re.I)),
+    # Private repositories: say "the backend repository" or "the backend's public document" instead
+    ("private repository", re.compile(r"\.\./clikgate_api|clikgate_api/|clikgate_frontend|clikgate_website|clikgate-sdk-internal")),
 ]
 
 # Files whose job is to list the patterns above (release scanners and this check)
@@ -49,15 +56,12 @@ SKIP = {
 
 IGNORE_FILES = {".gitignore", ".pubignore", ".npmignore", ".dockerignore", ".gitattributes"}
 
-# Byte-for-byte copies of backend files, checked for drift against the backend. Their wording is fixed in the backend
-# first, then copied here; until then only the path-based checks apply to them.
-COPIES_OF_BACKEND_FILES = {
+# Generated from the backend's public OpenAPI document, which is checked in the backend repository. Never
+# hand-edit them: fix the wording in the backend, then regenerate. Only the path-based checks apply to them here.
+GENERATED_FROM_BACKEND = {
     "server/openapi/openapi-public.json",
-    "server/conformance/vectors/payment-helper-vectors.json",
-    "server/conformance/vectors/identity-token-vectors.json",
-    "server/conformance/vectors/customer-id-vectors.json",
-    "server/conformance/tools/build_identity_token_vectors.py",
-    "server/conformance/tools/build_customer_id_vectors.py",
+    "server/openapi/openapi.json",
+    "server/node/src/generated/index.ts",
 }
 
 
@@ -74,7 +78,7 @@ def main(argv: list[str]) -> int:
             problems.append(f"{path}: internal file in a public repository")
             continue
         # Ignore files name the internal files on purpose, to keep them out of git and out of published packages
-        if path in SKIP or path in COPIES_OF_BACKEND_FILES or path.rsplit("/", 1)[-1] in IGNORE_FILES:
+        if path in SKIP or path in GENERATED_FROM_BACKEND or path.rsplit("/", 1)[-1] in IGNORE_FILES:
             continue
         file = Path(path)
         if not file.is_file():

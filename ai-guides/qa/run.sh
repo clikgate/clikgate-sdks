@@ -3,7 +3,7 @@
 #   1. copies a fixture into a fresh folder OUTSIDE this repository (default: $TMPDIR/clikgate-ai-qa), so the
 #      session can't see the specs, the SDK sources or this repository;
 #   2. installs the built clikgate-setup skill into that copy's .claude/skills/;
-#   3. starts a fresh, separate headless session there (`claude -p`) with only the dashboard prompt (F.2),
+#   3. starts a fresh, separate headless session there (`claude -p`) with only the dashboard prompt,
 #      filled in with a test app and the placeholder key cg_sdk_test_x (never a real key);
 #   4. judges the result (evaluate.mjs): doctor --json, files changed, the guide's rules, and the transcript.
 # Runs go one at a time. Results: <out>/<scenario>/{result.json,transcript.md,transcript.jsonl,commands.log}

@@ -125,7 +125,7 @@ const JSON_TYPES = ['application/json'];
 
 /**
  * Operations that filter by link metadata: `?metadata[seller_id]=sel_ada`. The backend reads these from the raw
- * query string (`metadata_filters` in clikgate_api src/links/routers/link_routers.py, used by `analytics_filters`),
+ * query string (`metadata_filters` in the backend's link routers, used by `analytics_filters`),
  * so `openapi.json` doesn't declare them. We add one `metadata` map parameter (deepObject) so every SDK's typed
  * method takes it; each transport sends a map value as `key[sub]=value` (SPEC section 21).
  */
@@ -164,7 +164,7 @@ function placeholder(param) {
  * Returns { spec, report } where report lists what was skipped and why.
  */
 // The published SDK packages carry no internal planning references. The backend's descriptions
-// sometimes cite its internal plans ("Change NN, B.1: …", "(Part 2, 23)", "X.E10"); the SDK copies drop them.
+// sometimes cite its internal plans (a change number, a part and section, a requirement code); the SDK copies drop them.
 const REF = String.raw`(?:[Cc]hange \d{2}|Part \d, (?:section )?\d+(?:\.\d+)*|Spec \d+(?:\.\d+)+|X\.[A-Z]\d+|growth \d+[A-Z]?)`;
 const LEADING_REF = new RegExp(
   String.raw`(^|[.!?]\s+)(?:${REF}(?:,? (?:[A-Z]{1,2}\.?[\dA-Za-z.]*|route [A-D])(?: \/ [A-Z]{1,2}\.[\dA-Za-z.]+)?)?(?: \([^()]*\))?)(?:[;,] ${REF}(?:,? [A-Z]{1,2}\.[\dA-Za-z.]+)?)*[:;,]\s+(\S)`,
@@ -177,7 +177,7 @@ const ANY_REF = new RegExp(String.raw`\b${REF}`);
 export function scrubDescription(text) {
   if (typeof text !== 'string' || !ANY_REF.test(text)) return text;
   let out = text.replace(PAREN_REF, '');
-  // a sentence that starts with a reference ("Change NN, B.1: the goal's kind …") keeps its text
+  // a sentence that starts with a reference ("<reference>: the goal's kind …") keeps its text
   out = out.replace(LEADING_REF, (_m, before, first) => `${before}${first.toUpperCase()}`);
   if (ANY_REF.test(out)) {
     // a reference inside a sentence: drop that sentence (keep the others)
