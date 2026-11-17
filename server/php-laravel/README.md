@@ -96,4 +96,4 @@ Set `CLIKGATE_QUEUE=redis` (any queue connection) and, optionally, `CLIKGATE_QUE
 
 See [`clikgate/clikgate-php`](https://github.com/clikgate/clikgate-php#readme). The full example is in `examples/routes/web.php`.
 
-Licence: MIT. Security: see [SECURITY.md](SECURITY.md).
+Licence: MIT. Security: report vulnerabilities to support@clikgate.com; see the [trust centre](https://clikgate.com/trust).

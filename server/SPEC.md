@@ -696,7 +696,7 @@ Each SDK MUST let a test replace these, through a documented "advanced" option, 
   - Tags `server-<lang>-v<semver>`.
   - Trusted publishing or signing per registry.
   - A CycloneDX SBOM per release.
-  - `SECURITY.md` with the disclosure address `security@clikgate.com` (trust centre: https://clikgate.com/trust).
+  - `SECURITY.md` with the disclosure address `support@clikgate.com` (trust centre: https://clikgate.com/trust).
 - **Versioning:** semantic versioning and a `CHANGELOG.md` per SDK. Deprecations are announced ≥ 6 months ahead. Runtime support is dropped only after that runtime's end of life.
 - **Examples:** in `server/<lang>/examples/`, showing capture → save → `goal` → verify webhook.
 
