@@ -33,3 +33,22 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def recorder() -> Recorder:
     return Recorder()
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """
+    Stop the SDK's background threads before the interpreter shuts down. Tests leave clients with a running
+    ``clikgate-sender`` (and a one-shot ``clikgate-config`` warm-up); a daemon thread still busy at interpreter
+    shutdown can abort the process ("could not acquire lock for <stderr> at interpreter shutdown") after every test
+    passed, which fails CI on Linux runners.
+    """
+    import threading
+
+    for thread in threading.enumerate():
+        if not thread.name.startswith("clikgate-") or thread is threading.current_thread():
+            continue
+        owner = getattr(getattr(thread, "_target", None), "__self__", None)
+        stop = getattr(owner, "stop", None)
+        if callable(stop):
+            stop()
+        thread.join(timeout=5)

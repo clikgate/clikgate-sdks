@@ -53,7 +53,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        # ubuntu-latest is Ubuntu 26.04, which has no Python 3.9; 24.04 has every version the SDK supports
+        os: [ubuntu-24.04, windows-latest]
         python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
     defaults:
       run:
