@@ -296,7 +296,7 @@ Every error extends `ClikgateError`, with `code`, `httpStatus`, `requestId` and 
 
 `clikgate.api.<resource>.<operation>()` covers every API-key operation, generated from the OpenAPI spec (for example `clikgate.api.campaigns.listCampaigns()`). It uses the same transport, retries and errors.
 
-The behaviour of all five Clikgate server SDKs is defined in [`server/SPEC.md`](../SPEC.md) and checked by the shared conformance suite.
+The behaviour of all five Clikgate server SDKs is defined in [`server/SPEC.md`](https://github.com/clikgate/clikgate-sdks/blob/main/server/SPEC.md) and checked by the shared conformance suite.
 
 ## Development
 
@@ -309,4 +309,4 @@ npm run check:package    # exports resolve from import and require, and the tarb
 npm run generate         # regenerate src/generated from server/openapi (needs Java 11+)
 ```
 
-Licence: MIT. Security: see [SECURITY.md](SECURITY.md).
+Licence: MIT. Security: report vulnerabilities to support@clikgate.com; see the [trust centre](https://clikgate.com/trust).

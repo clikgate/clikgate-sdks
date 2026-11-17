@@ -238,4 +238,4 @@ await foreach (var l in clikgate.Links.ListAsync(bySeller)) Console.WriteLine(l.
   - `Proxy`, `NoProxy`, `BatchSize`, `FlushInterval`, `MaxQueueSize`, `ShutdownHooks`;
   - `Clock` and `Random`, for tests.
 
-Licence: MIT. Security: see [SECURITY.md](SECURITY.md).
+Licence: MIT. Security: report vulnerabilities to support@clikgate.com; see the [trust centre](https://clikgate.com/trust).

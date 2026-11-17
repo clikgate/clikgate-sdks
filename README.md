@@ -18,7 +18,7 @@ Licence: [MIT](LICENSE).
 - `server/python/`: `clikgate`. Install it with `pip install clikgate`, plus the extras `[django]`, `[flask]` and `[fastapi]`.
 - `server/php/` and `server/php-laravel/`: install them with `composer require clikgate/clikgate-php` or `composer require clikgate/clikgate-laravel`. Both are split into their own repositories on release.
 - `server/dotnet/`: install with `dotnet add package Clikgate` and `dotnet add package Clikgate.AspNetCore`.
-- `server/java/` and `server/java-spring-boot-starter/`: `com.clikgate:clikgate-java:1.0.0` (Java 8+), and `com.clikgate:clikgate-spring-boot-starter:1.0.0` (Spring Boot 4).
+- `server/java/` and `server/java-spring-boot-starter/`: `com.clikgate:clikgate-java:2.0.1` (Java 8+), and `com.clikgate:clikgate-spring-boot-starter:2.0.1` (Spring Boot 4).
 
 CI:
 

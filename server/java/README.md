@@ -289,4 +289,4 @@ The built-in transport is a small HTTP/1.1 client with keep-alive, one deadline 
 
 Logging goes to SLF4J when it's on the classpath (MDC key `clikgate_code`), else `java.util.logging`, both under the logger `com.clikgate`.
 
-Licence: MIT. Security: see [SECURITY.md](SECURITY.md).
+Licence: MIT. Security: report vulnerabilities to support@clikgate.com; see the [trust centre](https://clikgate.com/trust).

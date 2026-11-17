@@ -272,4 +272,4 @@ Network errors, timeouts and HTTP 429, 500, 502, 503 and 504 are retried up to `
 - `proxy` takes an `http(s)://user:pass@host:port` URL, or `False` to ignore `HTTPS_PROXY`/`NO_PROXY`. `http_client` takes your own `httpx.Client` (mTLS, corporate CAs).
 - An unknown option raises `ConfigurationError`.
 
-Licence: MIT. Security: see [SECURITY.md](SECURITY.md).
+Licence: MIT. Security: report vulnerabilities to support@clikgate.com; see the [trust centre](https://clikgate.com/trust).

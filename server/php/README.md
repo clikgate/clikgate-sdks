@@ -59,7 +59,7 @@ In private mode, hash on your own server: Clikgate never hashes for you there.
 
 Two ways to tell Clikgate which of your users is using the app. Full guide: https://clikgate.com/docs/identify-users. The customer ID is your own user ID from your database, never an email, phone number or ID number. Anonymous users don't need either path.
 
-**Path A (default): identity token.** Create the identity secret in Apps › your app › Identity secret and store it as `CLIKGATE_IDENTITY_SECRET` on your server only. `IdentityToken::create($customerId, ['appId' => …])` (also `$clikgate->createIdentityToken()`, with the `identitySecret` / `identitySecrets` options) signs a token with no network call; return it in the responses the app already calls, and the app passes it to the mobile SDK's `identifyUser()`. Tokens last 30 days by default and are never force-refreshed. Throws PHP has no browser or mobile build, so there is nothing to refuse.
+**Path A (default): identity token.** Create the identity secret in Apps › your app › Identity secret and store it as `CLIKGATE_IDENTITY_SECRET` on your server only. `IdentityToken::create($customerId, ['appId' => …])` (also `$clikgate->createIdentityToken()`, with the `identitySecret` / `identitySecrets` options) signs a token with no network call; return it in the responses the app already calls, and the app passes it to the mobile SDK's `identifyUser()`. Tokens last 30 days by default and are never force-refreshed. Unlike the other server SDKs, it never throws a server-only error: PHP has no browser or mobile build.
 
 ```php
 use Clikgate\IdentityToken;
@@ -236,4 +236,4 @@ Network errors, timeouts and HTTP 429, 500, 502, 503 and 504 are retried up to `
 - With the built-in transport (ext-curl), `timeout` and `proxy` apply, and libcurl reads `https_proxy`/`HTTPS_PROXY`/`NO_PROXY`.
 - With your own PSR-18 client, configure its timeout and proxy on that client.
 
-Licence: MIT. Security: see [SECURITY.md](SECURITY.md).
+Licence: MIT. Security: report vulnerabilities to support@clikgate.com; see the [trust centre](https://clikgate.com/trust).

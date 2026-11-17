@@ -1,6 +1,6 @@
 # com.clikgate:clikgate-spring-boot-starter
 
-Spring Boot 4 (Java 17+) auto-configuration for [`com.clikgate:clikgate-java`](../java/README.md):
+Spring Boot 4 (Java 17+) auto-configuration for [`com.clikgate:clikgate-java`](https://github.com/clikgate/clikgate-sdks/blob/main/server/java/README.md):
 
 - a `Clikgate` bean from `clikgate.*` properties (closed with the context, which flushes queued goals);
 - the click-ID servlet filter;
@@ -90,4 +90,4 @@ SecurityFilterChain security(HttpSecurity http) throws Exception {
 - **The cookie is readable by the page on purpose** (not `HttpOnly`): the web script needs to read it. It only holds the click ID.
 - **Visitor context for goals:** `Goal.builder().reference("APP-55231").context(ClikgateFilter.context(clikgate, request))` adds `kept_by`, `browser_engine` and `platform` (parsed from the `User-Agent` in the SDK; the User-Agent itself is never sent). Allowed in private mode.
 
-See the "Spring Boot" section of [the Java SDK README](../java/README.md#spring-boot) and `../java/examples/spring-boot`. Licence: MIT.
+See the "Spring Boot" section of [the Java SDK README](https://github.com/clikgate/clikgate-sdks/blob/main/server/java/README.md#spring-boot) and `../java/examples/spring-boot`. Licence: MIT.

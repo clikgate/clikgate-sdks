@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Email **security@clikgate.com** (trust centre: https://clikgate.com/trust). Please don't open a public issue.
+Email **support@clikgate.com** (trust centre: https://clikgate.com/trust). Please don't open a public issue.
 
 - We acknowledge reports within 2 working days and keep you informed until the issue is fixed.
 - Include the package and version, a description, and steps to reproduce.
@@ -12,6 +12,7 @@ Email **security@clikgate.com** (trust centre: https://clikgate.com/trust). Plea
 
 | Package | Supported |
 |---|---|
+| `com.clikgate:clikgate-java`, `clikgate-spring-boot-starter`, `clikgate-servlet-jakarta`, `clikgate-servlet-javax` 2.x | yes |
 | `com.clikgate:clikgate-java`, `clikgate-spring-boot-starter`, `clikgate-servlet-jakarta`, `clikgate-servlet-javax` 1.x | yes |
 
 Security fixes go to the latest minor version of each supported major version.
