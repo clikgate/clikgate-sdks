@@ -63,7 +63,7 @@ def test_starlette_and_fastapi() -> None:
     assert r.json() == {"cid": CID}
     assert r.headers.get_list("set-cookie") == [
         f"_cg_cgid={CID}; Path=/; Max-Age=2592000; SameSite=Lax; Secure",
-        "_cg_kept=s; Path=/; Max-Age=2592000; SameSite=Lax; Secure",  # the marker (change 16)
+        "_cg_kept=s; Path=/; Max-Age=2592000; SameSite=Lax; Secure",  # the marker
     ]
     tc.cookies.clear()
     r = tc.get("/", headers={"Clikgate-Click-Id": CID2})

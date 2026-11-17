@@ -866,7 +866,7 @@
     },
     {
       "id": "links.list.metadata_filter",
-      "description": "A metadata map is sent as metadata[<key>]=<value> query parameters (change 10, SPEC section 21)",
+      "description": "A metadata map is sent as metadata[<key>]=<value> query parameters (SPEC section 21)",
       "responses": [
         {
           "status": 200,
@@ -1398,7 +1398,7 @@
     },
     {
       "id": "conversions.create.payment_goal",
-      "description": "Change 12 (B2.5): conversions.create on a Payment goal sends provider and answers with the goal event (object goal_event), returned as is",
+      "description": "conversions.create on a Payment goal sends provider and answers with the goal event (object goal_event), returned as is",
       "responses": [
         {
           "status": 201,
@@ -1488,7 +1488,7 @@
     },
     {
       "id": "conversions.create.payment_goal_waiting",
-      "description": "Change 12 (B2.5): without a click ID the Payment goal conversion waits for its report (status waiting, the confirmation id)",
+      "description": "Without a click ID the Payment goal conversion waits for its report (status waiting, the confirmation id)",
       "responses": [
         {
           "status": 201,
@@ -1568,7 +1568,7 @@
     },
     {
       "id": "conversions.create.payment_goal_missing_provider",
-      "description": "Change 12 (B2.5): a Payment goal conversion without provider → 422 payment_goal_needs_confirmation (not retried)",
+      "description": "A Payment goal conversion without provider → 422 payment_goal_needs_confirmation (not retried)",
       "responses": [
         {
           "status": 422,
@@ -1621,7 +1621,7 @@
     },
     {
       "id": "conversions.create.standard_unchanged",
-      "description": "Change 12: a conversion for a Standard goal still answers with the conversion object",
+      "description": "A conversion for a Standard goal still answers with the conversion object",
       "responses": [
         {
           "status": 201,

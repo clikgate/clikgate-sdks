@@ -15,11 +15,11 @@ conformance/
   mock-server/server.mjs  the mock + judge (Node 18+, zero dependencies)
   mock-server/judge.mjs   matching rules
   schema/case.schema.json JSON Schema of a case file
-  vectors/payment-helper-vectors.json  copy of clikgate_api/docs/payment-helper-vectors.json (change 11 helper vectors; --check fails on drift)
-  vectors/identity-token-vectors.json  createIdentityToken() vectors made by the backend's sign_identity_token (change 22;
+  vectors/payment-helper-vectors.json  copy of clikgate_api/docs/payment-helper-vectors.json (helper vectors; --check fails on drift)
+  vectors/identity-token-vectors.json  createIdentityToken() vectors made by the backend's sign_identity_token (
                                        tools/build_identity_token_vectors.py [--check]); each SDK's unit tests read it.
-                                       Change 26 adds version 2 tokens (`v2`, `v2_invalid_customer_since`, `forgeries`)
-  vectors/customer-id-vectors.json     change 26 KC.1 / R.24 canonical customer ID and validator warnings
+                                       It also has version 2 tokens (`v2`, `v2_invalid_customer_since`, `forgeries`)
+  vectors/customer-id-vectors.json     canonical customer ID and validator warnings
                                        (tools/build_customer_id_vectors.py [--check]); copied to clikgate_api/tests/fixtures
 ```
 
@@ -149,9 +149,9 @@ Result shapes are canonical JSON, the wire objects with `snake_case` keys. Typed
 | `click_ids.cookie_header` | `id`, `days?`, `secure?`, `domain?` | `{"value": "<Set-Cookie value>"}` |
 | `click_ids.persist` | `id`, `secure?`, `days?`, `domain?`, `existing_set_cookie: [..]` (on a fake response that already carries these) | `{"set_cookie": [all Set-Cookie values, in order]}` |
 | `click_ids.from_payment_metadata` | `payload` (any JSON) | `{"value": id \| null}` |
-| `click_ids.context` (change 16) | `request: {url, headers}` | `{"click_id": id \| null, "kept_by": string \| null, "browser_engine": string, "platform": string}` (SPEC 13.1) |
-| `click_ids.keep` (change 16) | `request: {method, url, headers, body}` (body a string), `days?`, `secure?`, `domain?`. Call the SDK's keep handler (`click_ids.keep_route()` or the framework equivalent) on a native request built from these; `click_id_param` comes from `client` | `{"status": int, "cache_control": "<Cache-Control>", "set_cookie": [all Set-Cookie values, in order], "body": "<response body, \"\" when empty>", "location": <Location header or null>}`, plus `"allow"` when the response has an `Allow` header |
-| `hash_for_ads` (change 19) | `email?`, `phone?` (strings; absent = not given). Call the SDK's pure helper (SPEC 25) | the helper's fields in wire names: `{"hashed_email"?, "hashed_phone_e164"?, "hashed_phone_digits"?}` (only those given) |
+| `click_ids.context` | `request: {url, headers}` | `{"click_id": id \| null, "kept_by": string \| null, "browser_engine": string, "platform": string}` (SPEC 13.1) |
+| `click_ids.keep` | `request: {method, url, headers, body}` (body a string), `days?`, `secure?`, `domain?`. Call the SDK's keep handler (`click_ids.keep_route()` or the framework equivalent) on a native request built from these; `click_id_param` comes from `client` | `{"status": int, "cache_control": "<Cache-Control>", "set_cookie": [all Set-Cookie values, in order], "body": "<response body, \"\" when empty>", "location": <Location header or null>}`, plus `"allow"` when the response has an `Allow` header |
+| `hash_for_ads` | `email?`, `phone?` (strings; absent = not given). Call the SDK's pure helper (SPEC 25) | the helper's fields in wire names: `{"hashed_email"?, "hashed_phone_e164"?, "hashed_phone_digits"?}` (only those given) |
 | `money.format` | `value` | `{"value": "<wire string>"}`. If your formatter has no logger, record `inexact_number` when it signals inexactness |
 | `payments.confirm` | the SPEC 22.2 fields in `snake_case` (`provider`, `reference`, `status`, `amount`, `amount_minor`, `currency`, `occurred_at`, `aliases`, `click_id`, `goal`, `test`, `extra`) + `idempotency_key?` | the `payment_confirmation` |
 | `payments.from` | `gateway` (`paystack` \| `flutterwave` \| `monnify` \| `stripe`), `response` (any JSON), `goal?`, `click_id?`. Call the matching `from_*` helper | the confirmation, or `null` |

@@ -1,4 +1,4 @@
-// The shared enums of the server SDKs (change 12, D5): GoalKind, GoalStatus and Provider, written for every
+// The shared enums of the server SDKs: GoalKind, GoalStatus and Provider, written for every
 // language from openapi.json's components. Provider is every gateway in GET /v1/payment-gateways (enabled or
 // not) plus shopify, woocommerce and custom, so a new gateway on the backend shows up as drift in --check.
 //

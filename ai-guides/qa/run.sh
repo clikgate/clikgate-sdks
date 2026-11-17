@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Claude Code verification runs for the AI guides (Change 06 S.7). Each scenario:
+# Claude Code verification runs for the AI guides. Each scenario:
 #   1. copies a fixture into a fresh folder OUTSIDE this repository (default: $TMPDIR/clikgate-ai-qa), so the
 #      session can't see the specs, the SDK sources or this repository;
 #   2. installs the built clikgate-setup skill into that copy's .claude/skills/;

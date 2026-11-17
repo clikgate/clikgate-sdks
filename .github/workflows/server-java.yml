@@ -1,7 +1,7 @@
 # Server SDK for Java (server/java and server/java-spring-boot-starter): compile with -Werror (core and
 # Servlet filters at --release 8, the starter at 17), javadoc, unit tests and the cross-language conformance
 # suite, then the Java 8-compatible artifacts' tests on every LTS (8, 11, 17, 21, 25) and the current JDK (27),
-# on Linux and Windows. JDK support checked 2026-10-26 (docs/DECISIONS.md).
+# on Linux and Windows. JDK support checked 2026-10-26.
 name: server-java
 
 on:

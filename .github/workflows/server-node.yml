@@ -1,6 +1,6 @@
 # Server SDK for Node.js (server/node): lint, types, unit tests and the cross-language conformance
 # suite on every supported Node line plus the minimum (Node 18), on Linux and Windows.
-# Node release lines checked 2026-10-26 (docs/DECISIONS.md): 22 and 24 are LTS, 26 becomes LTS on
+# Node release lines checked 2026-10-26: 22 and 24 are LTS, 26 becomes LTS on
 # 2026-10-28; 18 and 20 are end-of-life but 18 stays the documented minimum (S.9).
 name: server-node
 

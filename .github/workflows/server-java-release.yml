@@ -3,7 +3,7 @@
 # through the Sonatype Central Portal (central-publishing-maven-plugin) with GPG signatures and checksums,
 # plus a CycloneDX SBOM per artifact attached to the GitHub release. Maven Central has no OIDC trusted
 # publishing, so the Portal user token and the signing key are secrets of the environment maven-central
-# (docs/SERVER_SDKS.md): CENTRAL_TOKEN_USERNAME, CENTRAL_TOKEN_PASSWORD, GPG_PRIVATE_KEY, GPG_PASSPHRASE.
+# CENTRAL_TOKEN_USERNAME, CENTRAL_TOKEN_PASSWORD, GPG_PRIVATE_KEY, GPG_PASSPHRASE.
 name: server-java-release
 
 on:

@@ -1,6 +1,6 @@
 # Clikgate server SDKs: the shared contract
 
-Version 1.0 (2026-10-26), with the change 12 additions of 2026-10-28 (section 23). This document is normative for `@clikgate/node`, `clikgate` (Python),
+Version 1.0 (2026-10-26), with the additions of 2026-10-28 (section 23). This document is normative for `@clikgate/node`, `clikgate` (Python),
 `clikgate/clikgate-php`, `com.clikgate:clikgate-java` and `Clikgate` (.NET). Node is the reference
 implementation. When an SDK and this file disagree, the SDK is wrong. When this file and the
 conformance cases (`conformance/cases/*.json`) disagree, fix one of them in the same change.
@@ -29,11 +29,11 @@ Contents:
 18. [Test seams (for the conformance runner)](#18-test-seams-for-the-conformance-runner)
 19. [Quality bar, versioning and release](#19-quality-bar-versioning-and-release)
 20. [Backend facts this contract relies on](#20-backend-facts-this-contract-relies-on)
-21. [Metadata filters and link metadata (change 10)](#21-metadata-filters-and-link-metadata-change-10)
-22. [Payments confirmed by the business's server (change 11, route D)](#22-payments-confirmed-by-the-businesss-server-change-11-route-d)
-23. [Goal kinds, goal status and the shared enums (change 12)](#23-goal-kinds-goal-status-and-the-shared-enums-change-12)
-24. [People: `identifyUser` and goal labels (change 14)](#24-people-identifyuser-and-goal-labels-change-14)
-25. [Hashed email and phone for ad network matching (change 19)](#25-hashed-email-and-phone-for-ad-network-matching-change-19)
+21. [Metadata filters and link metadata](#21-metadata-filters-and-link-metadata)
+22. [Payments confirmed by the business's server](#22-payments-confirmed-by-the-businesss-server)
+23. [Goal kinds, goal status and the shared enums](#23-goal-kinds-goal-status-and-the-shared-enums)
+24. [People: `identifyUser` and goal labels](#24-people-identifyuser-and-goal-labels)
+25. [Hashed email and phone for ad network matching](#25-hashed-email-and-phone-for-ad-network-matching)
 
 ---
 
@@ -174,7 +174,7 @@ The backend envelope (backend spec 6.2), from `src/core/errors.py`:
 | 13 | status 1xx/3xx (redirects are never followed) | `ServerError` | `unexpected_status` |
 
 - When an error body isn't JSON, or has no `error` object (a proxy's HTML 502, for example), the class still follows the status. `code` is then `http_<status>`, and `message` is `"HTTP <status>"` plus at most the first 200 characters of the body, with control characters stripped.
-- **A goal refusal body** (change 23 R.1): a response with no `error` object whose body is a JSON object with `status: "refused"` and a non-empty string `reason` (`422 {"status": "refused", "reason": "unknown_goal", "counted": false, "goal_kind": null}`) takes `code` = that `reason`. The body is the `raw` object; `param` and `type` are null; `message` follows the rule above. The class still follows the status.
+- **A goal refusal body**: a response with no `error` object whose body is a JSON object with `status: "refused"` and a non-empty string `reason` (`422 {"status": "refused", "reason": "unknown_goal", "counted": false, "goal_kind": null}`) takes `code` = that `reason`. The body is the `raw` object; `param` and `type` are null; `message` follows the rule above. The class still follows the status.
 
 **Hierarchy:**
 
@@ -205,17 +205,17 @@ ClikgateError
   | `domain_mode_mismatch` | 422 → `InvalidRequestError` (param `domain`) | — | `src/domains/services/domain_service.py` |
   | `plan_limit_reached` | 403 → `PermissionError` (`param` = the allowance key) | `required_plan` → `requiredPlan` | `src/billing/utils/errors.py` |
   | `plan_upgrade_required`, `feature_disabled` | 403 → `PermissionError` | `required_plan` → `requiredPlan` | backend spec 6.2 (feature gates such as exports and summaries) |
-  | `plan_feature_unavailable` | 403 → `PermissionError` | `required_plan` → `requiredPlan` (`starter`); `feature` (`payment_goals`) stays in `raw` | change 12: Payment goals, payment reports and `payments.confirm` need Starter or above (`src/payments/services/plan_gate.py`) |
+  | `plan_feature_unavailable` | 403 → `PermissionError` | `required_plan` → `requiredPlan` (`starter`); `feature` (`payment_goals`) stays in `raw` | Payment goals, payment reports and `payments.confirm` need Starter or above (`src/payments/services/plan_gate.py`) |
   | `cli_scope` | 403 → `PermissionError` | — (a setup-command token was used; server SDKs need an API key) | `src/cli/utils/allowlist.py` |
   | `link_locked` | 409 → `LinkLockedError` (`param` = the first locked field) | — | `src/links/services/link_service.py` |
   | `https_required` | 422 → `InvalidRequestError` (`param` = the URL field) | — (the organisation allows only `https://` destinations; live links) | `src/links/services/link_service.py` |
   | `destination_not_allowlisted` | 422 → `InvalidRequestError` (`param` = the URL field) | — (the organisation requires its destination allowlist; live links) | `src/links/services/link_service.py` |
   | `private_mode_field_rejected` | 422 → `PrivateModeFieldRejectedError` | `param` → `field` | `src/private_mode` |
-  | `unknown_provider` | 422 → `InvalidRequestError` (param `provider`) | — (a well-formed provider the API doesn't know) | change 12 B3 |
-  | `value_required`, `invalid_value`, `code_not_supported` | 422 → `InvalidRequestError` (param `value` / `code`) | — (a Payment goal sent by the server needs a value above 0 and takes `click_id`, not `code`) | change 12 B2.2, `src/goals/services/goal_events.py` |
-  | `payment_goal_needs_confirmation` | 422 → `InvalidRequestError` (param `provider` or `reference`) | `missing` (list) stays in `raw` | change 12 B2.2 / B2.5: a Payment goal without `provider` or `reference`, from any sender (also `goals.send` and `conversions.create`) |
-  | `unknown_goal` | 422 → `InvalidRequestError` (param `goal`, or null for a refusal body) | `status`, `reason`, `counted`, `goal_kind` stay in `raw` | change 23 R.1: "Allow unknown goal names" is off and no goal (or alias) has this name. Final: never retried (section 23.2) |
-  | `goal_archived` | 422 → `InvalidRequestError` | — | change 23 R.1: the goal is archived and "Allow unknown goal names" is off (with the setting on it is a `received` result, never `410`) |
+  | `unknown_provider` | 422 → `InvalidRequestError` (param `provider`) | — (a well-formed provider the API doesn't know) | |
+  | `value_required`, `invalid_value`, `code_not_supported` | 422 → `InvalidRequestError` (param `value` / `code`) | — (a Payment goal sent by the server needs a value above 0 and takes `click_id`, not `code`) | `src/goals/services/goal_events.py` |
+  | `payment_goal_needs_confirmation` | 422 → `InvalidRequestError` (param `provider` or `reference`) | `missing` (list) stays in `raw` | a Payment goal without `provider` or `reference`, from any sender (also `goals.send` and `conversions.create`) |
+  | `unknown_goal` | 422 → `InvalidRequestError` (param `goal`, or null for a refusal body) | `status`, `reason`, `counted`, `goal_kind` stay in `raw` | "Allow unknown goal names" is off and no goal (or alias) has this name. Final: never retried (section 23.2) |
+  | `goal_archived` | 422 → `InvalidRequestError` | — | the goal is archived and "Allow unknown goal names" is off (with the setting on it is a `received` result, never `410`) |
 
   Node also exports the `KnownErrorCode` union of these codes, plus every local code in this section.
 - `PrivateModeFieldRejectedError` exposes `field`, the field **name** only. Its message MUST NOT contain the rejected value, and SDKs MUST NOT log the value either.
@@ -255,13 +255,13 @@ ClikgateError
 
 | Call | `Idempotency-Key` |
 |---|---|
-| `goals.send`, and each single goal sent by `goal()` in sync mode | a random UUID v4 per call, reused across its retries (change 09 X.E15: never a hash of the reference) |
+| `goals.send`, and each single goal sent by `goal()` in sync mode | a random UUID v4 per call, reused across its retries (never a hash of the reference) |
 | `goals.send_batch` and background batches | a random UUID v4 per batch request, reused across its retries |
 | `goals.reverse`, `conversions.*`, `links.create`, `links.update`, every other POST/PATCH (including `api.*`) | a random UUID v4 per logical call, reused across its retries |
 | GET, DELETE | none |
 
 - Every POST/PATCH method takes an optional `idempotency_key` request option, which overrides the default.
-- **Why goal keys are random (since 1.1.0, change 09 X.E15):** the backend dedupes goal events by `(organization, goal, reference_hash)` itself (X.E1), in every mode, so a resend after a crash, with a new key, returns `200` with the stored event and is never counted twice. A Payment goal sent by the server (section 23) is deduplicated by `(provider, reference)` the same way. The key only makes the retries of one call safe. Versions before 1.1.0 (never released) sent `sha256_hex(goal + ":" + reference)`; no SDK computes that key any more.
+- **Why goal keys are random (since 1.1.0):** the backend dedupes goal events by `(organization, goal, reference_hash)` itself (X.E1), in every mode, so a resend after a crash, with a new key, returns `200` with the stored event and is never counted twice. A Payment goal sent by the server (section 23) is deduplicated by `(provider, reference)` the same way. The key only makes the retries of one call safe. Versions before 1.1.0 (never released) sent `sha256_hex(goal + ":" + reference)`; no SDK computes that key any more.
 - **Same goal and reference, different body:** the backend returns the stored event (`200`); a goal can't be "corrected" by resending. Use `goals.reverse`. Batch items say the same with `status: 200` on the item.
 - **Reversals use random keys** because two identical partial refunds are legitimate.
 - **Backend behaviour** (`src/core/idempotency/idempotent_route.py`):
@@ -300,7 +300,7 @@ ClikgateError
 - **Absent value:** a `null`/absent value is omitted from the body.
 - **Formatter:** each SDK exposes the formatter publicly as `format_value(value) -> string` (Node `formatValue`) so applications and the conformance runner can use it.
 
-**Responses:** they carry `value` as a decimal string (or `null`), and from change 09 (X.E10) also `value_minor` (and `reversed_value_minor`), the same amount as an integer in the currency's minor units (or `null`). SDKs MUST NOT convert `value` to a float, and pass both fields through. Node and Python return the string. Java and .NET MAY expose `BigDecimal` / `decimal` getters next to the raw string.
+**Responses:** they carry `value` as a decimal string (or `null`), and also `value_minor` (and `reversed_value_minor`), the same amount as an integer in the currency's minor units (or `null`). SDKs MUST NOT convert `value` to a float, and pass both fields through. Node and Python return the string. Java and .NET MAY expose `BigDecimal` / `decimal` getters next to the raw string.
 
 ## 9. Goals and sending modes
 
@@ -314,15 +314,15 @@ ClikgateError
 | `code` | `code` | string | offline or creator code; not together with `click_id` |
 | `value` | `value` | money (section 8) | |
 | `currency` | `currency` | ISO 4217 string | only sent when given |
-| `provider` | `provider` | `Provider` (section 23) or a provider-key string | change 12: the gateway of a payment; `^[a-z][a-z0-9_]{1,29}$` locally (`invalid_provider`), the API checks the value (`422 unknown_provider`). A string lets you name a gateway added after your SDK release |
+| `provider` | `provider` | `Provider` (section 23) or a provider-key string | the gateway of a payment; `^[a-z][a-z0-9_]{1,29}$` locally (`invalid_provider`), the API checks the value (`422 unknown_provider`). A string lets you name a gateway added after your SDK release |
 | `is_first` | `isFirst` | boolean | |
 | `occurred_at` | `occurredAt` | datetime or RFC 3339 string | |
 | `metadata` | `metadata` | object ≤ 8 KB | refused in private mode |
-| `kept_by` | `keptBy` | `server_cookie\|script_cookie\|form\|payment_metadata\|unknown` | change 16: how the click ID was kept (`click_ids.context`, 13.1); unknown values are a local `invalid_request` |
-| `browser_engine` | `browserEngine` | `webkit_ios\|safari_mac\|chromium\|gecko\|other` | change 16, from `click_ids.context` |
-| `platform` | `platform` | `ios\|android\|macos\|windows\|linux\|other` | change 16, from `click_ids.context` |
+| `kept_by` | `keptBy` | `server_cookie\|script_cookie\|form\|payment_metadata\|unknown` | how the click ID was kept (`click_ids.context`, 13.1); unknown values are a local `invalid_request` |
+| `browser_engine` | `browserEngine` | `webkit_ios\|safari_mac\|chromium\|gecko\|other` | from `click_ids.context` |
+| `platform` | `platform` | `ios\|android\|macos\|windows\|linux\|other` | from `click_ids.context` |
 | `consent` | `consent` | object | the four-purpose consent object; allowed in private mode (no identity in it) |
-| `hashed_email`, `hashed_phone_e164`, `hashed_phone_digits` | `hashedEmail`, `hashedPhoneE164`, `hashedPhoneDigits` | 64 lowercase hex | change 19: your own SHA-256 hashes for ad network matching (section 25); `hash_for_ads` makes them; other values are a local `invalid_hashed_identifier` |
+| `hashed_email`, `hashed_phone_e164`, `hashed_phone_digits` | `hashedEmail`, `hashedPhoneE164`, `hashedPhoneDigits` | 64 lowercase hex | your own SHA-256 hashes for ad network matching (section 25); `hash_for_ads` makes them; other values are a local `invalid_hashed_identifier` |
 | (any) | `extra` | map | additional wire fields, merged last, for forward compatibility; subject to the private-mode guard |
 
 - **Order of checks before anything is sent:**
@@ -392,7 +392,7 @@ ClikgateError
 
 - **Money:** a `value` in `params` is formatted by section 8.
 - **The private-mode guard** applies (section 12). Its allow-list for conversions also contains `external_id`.
-- **Payment goals (change 12, backend C12 B2.5):** with `goal` set to a Payment goal, `conversions.create` is the same
+- **Payment goals:** with `goal` set to a Payment goal, `conversions.create` is the same
   call as a server Payment goal (section 23): `provider` (a `Provider`, also accepted in `params`) and the payment
   reference (`external_id` or `reference`) are required. The answer is then the **goal event** (`object:
   "goal_event"`) instead of the conversion: the result is `Conversion | GoalEvent`, told apart by `object` (Node and
@@ -483,7 +483,7 @@ When on, before the HTTP layer sees anything, the SDK checks every wire field of
 
 | Payload | Allowed wire fields |
 |---|---|
-| goal event (`goals.send`, `goal()`, batch items) | `goal`, `click_id`, `code`, `reference`, `value`, `currency`, `is_first`, `occurred_at`, `consent` (the four-purpose consent object, change 09), `provider` (change 12), `kept_by`, `browser_engine`, `platform` (change 16, 13.1), `label` (change 14), `hashed_email`, `hashed_phone_e164`, `hashed_phone_digits` (change 19, section 25) |
+| goal event (`goals.send`, `goal()`, batch items) | `goal`, `click_id`, `code`, `reference`, `value`, `currency`, `is_first`, `occurred_at`, `consent` (the four-purpose consent object), `provider`, `kept_by`, `browser_engine`, `platform` (13.1), `label`, `hashed_email`, `hashed_phone_e164`, `hashed_phone_digits` (section 25) |
 | conversion (`conversions.create`) | the above + `external_id` |
 | reversal (`goals.reverse`, `conversions.reverse`) | `goal`, `reference`, `value`, `external_id`, `amount_minor` |
 
@@ -518,8 +518,8 @@ When on, before the HTTP layer sees anything, the SDK checks every wire field of
 | `click_ids.is_valid(id)` | regex test; non-strings are false |
 | `click_ids.from_request(request)` | 1. the query parameter `param` (the first occurrence whose value is valid); 2. the cookie `_cg_<param>` (cookie value URL-decoded); 3. the header `Clikgate-Click-Id` (case-insensitive, trimmed). The first **valid** value wins; invalid values are skipped. Returns the ID or null |
 | `click_ids.cookie_header(id, {days = 30, secure = true, domain?})` | the `Set-Cookie` value, attribute order exact: `_cg_<param>=<id>; Path=/; Max-Age=<days*86400>[; Domain=<domain>]; SameSite=Lax[; Secure]`. **Not** `HttpOnly`, because the web script reads it. An invalid ID raises `InvalidRequestError invalid_click_id` |
-| `click_ids.persist(response, id, options)` | appends that header to the framework's response, **keeping** existing `Set-Cookie` headers, then (change 16) the marker `_cg_kept=s` with the same `Path`, `Max-Age`, `Domain`, `SameSite` and `Secure` (so the web script reports `kept_by: server_cookie`). If `secure` isn't given, it is true when the request is HTTPS (TLS socket, or `X-Forwarded-Proto: https`), and true when unknown |
-| `click_ids.keep_route(options)` | change 16: the `/cg/keep` handler (13.1) |
+| `click_ids.persist(response, id, options)` | appends that header to the framework's response, **keeping** existing `Set-Cookie` headers, then the marker `_cg_kept=s` with the same `Path`, `Max-Age`, `Domain`, `SameSite` and `Secure` (so the web script reports `kept_by: server_cookie`). If `secure` isn't given, it is true when the request is HTTPS (TLS socket, or `X-Forwarded-Proto: https`), and true when unknown |
+| `click_ids.keep_route(options)` | the `/cg/keep` handler (13.1) |
 | `click_ids.from_payment_metadata(payload)` | below |
 
 **`from_payment_metadata(payload)`**, matching `src/sales/providers/normalize.py`:
@@ -535,7 +535,7 @@ When on, before the HTTP layer sees anything, the SDK checks every wire field of
 
 **Framework neutrality:** `from_request` and `persist` accept the language's common request and response types. The conformance cases describe a request as `{url, headers}` and the runner builds the native object.
 
-### 13.1 `/cg/keep` (change 16, R.1)
+### 13.1 `/cg/keep`
 
 The web script's optional `data-server-endpoint="/cg/keep"` makes one `POST` to the business's **own** server (the
 host that serves the page) when a click ID arrives in the page URL, so the server sets the cookie. Safari, and every
@@ -567,7 +567,7 @@ core function that implements exactly:
 `days` must be 1–400 (browsers cap cookie lifetimes at 400 days); otherwise construction throws `InvalidRequestError
 invalid_argument`. Conformance: `conformance/cases/click_ids.json`, ids `click_ids.keep.*`.
 
-**Visitor context for goals (change 16, B.1/R.2):** goals the business's server sends MAY carry `kept_by`
+**Visitor context for goals:** goals the business's server sends MAY carry `kept_by`
 (`server_cookie|script_cookie|form|payment_metadata|unknown`), `browser_engine`
 (`webkit_ios|safari_mac|chromium|gecko|other`) and `platform` (`ios|android|macos|windows|linux|other`). The
 `click_ids.context(request)` helper returns `{click_id, kept_by, browser_engine, platform}` for a goal's options:
@@ -691,7 +691,7 @@ Each SDK MUST let a test replace these, through a documented "advanced" option, 
   - Unit tests.
   - The **conformance suite** (all cases pass, section 18).
   - A capturing-transport test for the guard.
-  - Nightly live contract tests with a `cg_test_` key (C6-S6).
+  - Nightly live contract tests with a `cg_test_` key.
 - **CI matrix:** every supported runtime plus the minimum, on Linux and Windows.
 - **Releases:**
   - Tags `server-<lang>-v<semver>`.
@@ -706,12 +706,12 @@ Each SDK MUST let a test replace these, through a documented "advanced" option, 
 These were checked in `clikgate_api` on 2026-10-26:
 
 - **Goal events:**
-  - `POST /v1/goals/events` → `201` new / `200` already received. Change 12 (re-checked 2026-10-28): the body is `GoalEventInfoResponse` with `status` (`GoalStatus`), `reason`, `goal_kind`, `counted`, `value_ignored`, `event_status` (the conversion state that `status` held before) and `payment` (section 23).
+  - `POST /v1/goals/events` → `201` new / `200` already received. Re-checked 2026-10-28: the body is `GoalEventInfoResponse` with `status` (`GoalStatus`), `reason`, `goal_kind`, `counted`, `value_ignored`, `event_status` (the conversion state that `status` held before) and `payment` (section 23).
   - `POST /v1/goals/events/batch` → `200 {object: "list", data: [{index, ok, status, goal_event, error}]}` (≤ 500 events).
   - `POST /v1/goals/events/reverse` → `200 goal_event`.
   - Errors are listed in `docs/GOALS.md`.
 - **Conversions:** `POST /v1/conversions` returns `201` (new) or `200` (existing `external_id`). `POST /v1/conversions/{id}/reverse` takes `{amount_minor?, reason?, external_id?}`.
-- **Links** (re-checked against the built C6-B5 backend, 2026-10-26):
+- **Links** (re-checked against the built backend, 2026-10-26):
   - `POST /v1/links` → `201`.
   - `PATCH /v1/links/{id}` → `200` link, or `202` `LinkChangeRequestInfoResponse` (two-person approval), or `409 link_locked`. Live links on organisations with link safety can also get `422 https_required` / `422 destination_not_allowlisted`.
   - `warnings[]` on `link` (`LinkWarningResponse {code, message, param}`) includes `no_preview` on create and update when both `og_title` and `og_image_url` are empty.
@@ -719,7 +719,7 @@ These were checked in `clikgate_api` on 2026-10-26:
 - **Clicks:** `GET /v1/clicks/{id}`.
 - **Being added:** `GET /v1/server-sdk/config` (B.5) is coded to the spec shape. Until it is deployed, a 404 triggers the fail-closed path in 12.1.
 - **Webhook `link.destination_changed`:** `data.object` is the link; `data` also carries `from`, `to`, `actor {type, id, api_key_prefix, requested_by?, change_request_id?}`, `actor_type` and `api_key_prefix` (`src/links/services/link_change_requests.py`). SDKs return it as any other event.
-- **Webhook `subscription.updated` (change 10, backend C10 B2.8):** sent when a Growth add-on is activated, set to end at renewal, or kept. `data.object` is the subscription with `add_ons[]` (`key`, `name`, `status`, `amount_minor`, `ends_at`, `remove_at_renewal`); `data` also carries `previous_attributes`, `change` (`add_on.activated` or `add_on.remove_at_renewal`, the second also when "Remove at renewal" is undone: read `add_ons[].remove_at_renewal`) and `add_on_key`. Endpoints subscribe to it like the other `subscription.*` events. Webhook `type` stays a plain string in every SDK, so no type changes; conformance `webhooks.valid.subscription_updated`.
+- **Webhook `subscription.updated`:** sent when a Growth add-on is activated, set to end at renewal, or kept. `data.object` is the subscription with `add_ons[]` (`key`, `name`, `status`, `amount_minor`, `ends_at`, `remove_at_renewal`); `data` also carries `previous_attributes`, `change` (`add_on.activated` or `add_on.remove_at_renewal`, the second also when "Remove at renewal" is undone: read `add_ons[].remove_at_renewal`) and `add_on_key`. Endpoints subscribe to it like the other `subscription.*` events. Webhook `type` stays a plain string in every SDK, so no type changes; conformance `webhooks.valid.subscription_updated`.
 - **Plumbing:**
   - Errors: `src/core/errors.py`.
   - Idempotency: `src/core/idempotency/idempotent_route.py` (TTL `IDEMPOTENCY_TTL_SECONDS`).
@@ -727,7 +727,7 @@ These were checked in `clikgate_api` on 2026-10-26:
 - **Webhook signatures:** `src/core/webhook_signature.py`.
 - **Click IDs:** prefixed ULIDs (`src/core/ids.py`). The web script cookie is `_cg_<param>`, `path=/`, `SameSite=Lax`, `Secure` on HTTPS (`src/static/clikgate.js`; its default lifetime is 7 days, and the server SDK default is 30 days, S.14).
 
-## 21. Metadata filters and link metadata (change 10)
+## 21. Metadata filters and link metadata
 
 - **Wire:** the backend filters by link metadata with one query parameter per key: `?metadata[seller_id]=sel_ada`
   (`metadata_filters` in clikgate_api `src/links/routers/link_routers.py`). It reads them from the raw query string,
@@ -747,11 +747,11 @@ These were checked in `clikgate_api` on 2026-10-26:
   `end_goal_value_minor` (`{"NGN": 1850000}`), the X.E10 convention. Node and Python type it so; PHP, Java and .NET
   return the JSON as parsed (strings stay strings).
 
-## 22. Payments confirmed by the business's server (change 11, route D)
+## 22. Payments confirmed by the business's server
 
-Backend contract C11 B2.2 and B2.3, with the change 12 updates. The website or app **reports** a payment by
-sending a **Payment goal** with `goal()` (`provider` and `reference`, never an amount; change 12 removed the separate
-`payment()` methods and their routes). The business's server **confirms** it right after its own verification with
+The website or app **reports** a payment by
+sending a **Payment goal** with `goal()` (`provider` and `reference`, never an amount; the separate
+`payment()` methods were removed and their routes). The business's server **confirms** it right after its own verification with
 the gateway, with these methods, or by sending the same Payment goal with `goals.send` and the value (section 23).
 Clikgate counts the goal with the confirmed amount when the two match. The server SDKs never talk to a gateway and
 never take a gateway key.
@@ -806,8 +806,8 @@ optional.
 - One random `Idempotency-Key` per call, reused by its retries (section 7); retries as section 6. The `200` repeat
   (same provider, reference, status and amount) is success.
 - API errors map as section 5: `403 plan_feature_unavailable` (`required_plan: "starter"`, `feature:
-  "payment_goals"`: payment confirmations need Starter or above; change 12 replaced change 11's `sales_tracking`
-  feature gate with this plan gate), `422 unknown_provider`, `invalid_status`, `invalid_amount`, `invalid_currency`,
+  "payment_goals"`: payment confirmations need Starter or above; this plan gate replaced the earlier `sales_tracking`
+  feature gate), `422 unknown_provider`, `invalid_status`, `invalid_amount`, `invalid_currency`,
   `amount_and_amount_minor`, `environment_mismatch`, `private_mode_field_rejected`.
 
 ### 22.3 The helpers (B2.3): extraction rules
@@ -876,7 +876,7 @@ Also call them for refunds (`status: refunded`, `amount` = the refunded amount).
 Runners convert `response` to the type their helper takes (section 22.1) without changing numbers: JSON floats such
 as `1500.25` must reach the helper as the same decimal.
 
-## 23. Goal kinds, goal status and the shared enums (change 12)
+## 23. Goal kinds, goal status and the shared enums
 
 Backend contract C12 B1–B3 (final). Every goal is **Standard** or **Payment** (`kind`, set only in the goal's
 settings: never in a goal call, D4). `goal()` is the only goal method; there is no `payment()` method in any SDK.
@@ -886,7 +886,7 @@ settings: never in a goal call, D4). `goal()` is the only goal method; there is 
 | Enum | Values (wire) | Node | Python | PHP | Java | .NET |
 |---|---|---|---|---|---|---|
 | `GoalKind` | `standard`, `payment` | `GoalKind.Payment` (type `'standard' \| 'payment'`) | `GoalKind.PAYMENT` | `GoalKind::Payment` | `GoalKind.PAYMENT` | `GoalKind.PAYMENT` |
-| `GoalStatus` | `counted`, `waiting`, `refused`, `received` (change 22 R.9) | `GoalStatus.Counted` | `GoalStatus.COUNTED` | `GoalStatus::Counted` | `GoalStatus.COUNTED` | `GoalStatus.COUNTED` |
+| `GoalStatus` | `counted`, `waiting`, `refused`, `received` | `GoalStatus.Counted` | `GoalStatus.COUNTED` | `GoalStatus::Counted` | `GoalStatus.COUNTED` | `GoalStatus.COUNTED` |
 | `Provider` | every provider in `GET /v1/payment-gateways`, plus `shopify`, `woocommerce`, `custom` | `Provider.Paystack` | `Provider.PAYSTACK` | `Provider::Paystack` | `Provider.PAYSTACK` | `Provider.PAYSTACK` |
 
 - **Generated, never hand-written:** `node server/codegen/generate.mjs` writes them from `openapi.json`'s
@@ -909,18 +909,18 @@ Every goal call returns (batch items: in `goal_event`) the `goal_event` with:
 | `status` | `GoalStatus` (Node and Python: the wire string, which equals the enum member; Java `getStatus()` and .NET `Status` return the enum, or null for a value this SDK doesn't know) |
 | `reason` | `null` when counted; else `waiting_for_confirmation`, `pending_click`, `already_counted_for_click`, `unattributed`, `rejected_bot`, `outside_window`, `already_counted`, … (a plain string: new reasons can appear) |
 | `goal_kind` | `GoalKind` of the goal |
-| `counted` | `status == "counted"` (change 09, kept) |
+| `counted` | `status == "counted"` (kept) |
 | `value_ignored` | `true` when the value was dropped (browser and app senders of a Payment goal) |
-| `event_status` | the conversion state that `status` held before change 12 (`attributed`, `unattributed`, `rejected_bot`, …), or null while a Payment goal waits |
+| `event_status` | the conversion state that `status` held before (`attributed`, `unattributed`, `rejected_bot`, …), or null while a Payment goal waits |
 | `payment` | for a Payment goal sent by the server: `{confirmation_id, match_status, report_id, provider}`; else null |
 
 - `waiting`, `refused` and `received` are **results**, not errors: `goals.send` returns them, background `goal()`
   doesn't pass them to `on_error`, and none is retried. 4xx errors stay errors (section 5).
-- **`received` (change 22 R.9, R.10):** a name that isn't ticked as a goal yet answers `200 {status: "received", reason:
+- **`received`:** a name that isn't ticked as a goal yet answers `200 {status: "received", reason:
   "not_counted_yet"}`; an archived goal answers `received` with reason `goal_archived` (no longer `410 goal_archived`).
   The event is stored for 30 days, not counted, not metered and not sent to ad networks. Conformance:
   `goals.send.status.received_not_counted_yet` and `goals.background.received_not_counted_yet`.
-- **Strict goal names (change 23 R.1, R.2, R.9):** with the organisation's "Allow unknown goal names" off, a name with
+- **Strict goal names:** with the organisation's "Allow unknown goal names" off, a name with
   no goal (or alias) behind it answers `422 unknown_goal` and an archived goal `422 goal_archived` (an error envelope,
   like `payment_goal_needs_confirmation`, or the refusal body of section 5; both map to `InvalidRequestError` with that
   code). Both are **final**: `goals.send` throws once (422 is never retried); background and sync `goal()` pass it to
@@ -953,7 +953,7 @@ An SDK released today MUST keep working against a newer API:
   links, errors and webhooks; suite `goals` checks every `status` value and the B2 error codes.
 
 
-## 24. People: `identifyUser` and goal labels (change 14)
+## 24. People: `identifyUser` and goal labels
 
 - **Method** (section 2 casing): Node `identifyUser(params, requestOptions?)`, Python `identify_user(*, click_id, app_id,
   installation_id, customer_id, label, request_options)` (sync and async), PHP `identifyUser(array $params, array
@@ -969,7 +969,7 @@ An SDK released today MUST keep working against a newer API:
 - **Goals:** optional `label` (wire `label`) on `goal`, `goals.send` and batch events; `is_first` is unchanged (from the
   server it is what counts a new customer).
 - The removed `POST /v1/apps/{app_id}/identify` is gone from the generated layer. Conformance: suite `people` (6 cases).
-- **Path B (change 22 I.6, R.25, R.26):** the app reads `getInstallationId()` and sends it in its sign-in request; the
+- **Path B:** the app reads `getInstallationId()` and sends it in its sign-in request; the
   server calls `identifyUser` with `app_id`, `installation_id`, `customer_id` (and `label`) after sign-in and at every
   signed-in app open, and skips the call when the app sends no installation ID (tracking off). No identity secret or
   token is needed; the API accepts installations active in the last 7 days, and the call satisfies
@@ -977,7 +977,7 @@ An SDK released today MUST keep working against a newer API:
   and link to https://clikgate.com/docs/identify-users.
 
 
-## 26. Identity tokens: `createIdentityToken` (change 22 I.1, R.22, R.27)
+## 26. Identity tokens: `createIdentityToken`
 
 The default way for an app to prove which of the business's users is signed in (path A of
 https://clikgate.com/docs/identify-users): the business's server signs a token and returns it in responses the app
@@ -1026,7 +1026,7 @@ identityToken)`.
   non-ASCII secret) and refuse every `invalid_customer_ids` entry.
 - **Verification reasons** (backend, R.22) the docs list: `expired`, `bad_signature`, `secret_rotated`, `no_secret_set`,
   `not_yet_valid` (issued more than 5 minutes ahead). The SDKs never verify tokens.
-- **Version 2: the account date** (change 26 KC.5, R.13). An optional `customer_since` (when the person became the
+- **Version 2: the account date**. An optional `customer_since` (when the person became the
   business's customer) makes a three-part token `signature.issued_at.customer_since`; without it the token is version 1,
   unchanged. Both dates are whole UTC Unix seconds.
   - MAC input: `"v2\n" + utf8_byte_length(cid) + ":" + cid + "\n" + issued_at + "\n" + customer_since`, where `cid` is
@@ -1045,7 +1045,7 @@ identityToken)`.
     signer, cross-checked against the backend's `sign_identity_token_v2` when it exists). PHP needs the `intl` extension
     only for non-ASCII customer IDs in version 2 (`ConfigurationException` `intl_required` otherwise).
 
-## 27. Existing customers: account dates and known customers (change 26)
+## 27. Existing customers: account dates and known customers
 
 Clikgate tells people who were already the business's customers before it added Clikgate from new ones (referrals, new
 customers). The server SDKs send two kinds of evidence, both refused in private mode.
@@ -1092,9 +1092,9 @@ customers). The server SDKs send two kinds of evidence, both refused in private 
   generator runs (section 16); the hand-written methods above don't wait for that.
 
 
-## 25. Hashed email and phone for ad network matching (change 19)
+## 25. Hashed email and phone for ad network matching
 
-Backend C19-B4 (spec change 19 B.5, R.3-R.5; `clikgate_api/src/goals/schemas/goal_event_schemas.py`,
+Backend (`clikgate_api/src/goals/schemas/goal_event_schemas.py`,
 `src/conversions/schemas/report_conversion_schema.py`, `src/ads/utils/matching.py`, checked 2026-11-04). A business
 that turned on "match by hashed email or phone" for an ad network destination can send its own SHA-256 hashes with a
 goal. Clikgate never hashes on the business's behalf in private mode: **hash on your own server**, with the helper.

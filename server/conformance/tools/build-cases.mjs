@@ -25,8 +25,7 @@ const CLICK = 'clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6';
 const CLICK2 = 'clk_01JCK8Z9V7Q4M2N6P8R0S2T4W7';
 const LINK = 'lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA';
 
-// Change 12 (backend C12 B2.3): `status` is the GoalStatus (counted | waiting | refused, and received since change 22
-// R.9); the conversion state that
+// `status` is the GoalStatus (counted | waiting | refused, and received); the conversion state that
 // was in `status` is `event_status`; plus goal_kind, value_ignored and payment.
 const goalEvent = (over = {}) => ({
   object: 'goal_event',
@@ -89,7 +88,7 @@ const changeRequest = {
   expires_at: '2026-11-02T12:00:00Z',
   created_at: '2026-10-26T12:00:00Z',
   livemode: false,
-}; // backend LinkChangeRequestInfoResponse (C6-B5)
+}; // backend LinkChangeRequestInfoResponse
 const click = {
   object: 'click',
   id: CLICK,
@@ -285,7 +284,7 @@ add('errors', 'Error envelope → typed errors (SPEC 5)', [
 const created = ok(goalEvent(), 201);
 const created_minor = ok(goalEvent({ value: '2000000', value_minor: 200000000, currency: 'NGN' }), 201);
 const send = { call: 'goals.send', args: { key: 'account_opened', reference: 'APP-55231', click_id: CLICK, value: '2000000' } };
-// change 09 X.E15: goal keys are a random UUID v4 per call (never a hash of the reference).
+// Goal keys are a random UUID v4 per call (never a hash of the reference).
 const k55231 = { $uuid4: true };
 const srv = (code = 'unavailable', status = 503, headers = {}) => ({ ...err(status, 'server', code, 'Try again.'), headers: { 'x-request-id': 'req_5xx', ...headers } });
 add('retries', 'Retries, full-jitter backoff and Retry-After (SPEC 6)', [
@@ -447,7 +446,7 @@ add('retries', 'Retries, full-jitter backoff and Retry-After (SPEC 6)', [
 add('idempotency', 'Idempotency keys (SPEC 7)', [
   {
     id: 'idempotency.goal.random',
-    description: 'goals.send: Idempotency-Key is a random UUID v4, not a hash of the reference (change 09 X.E15)',
+    description: 'goals.send: Idempotency-Key is a random UUID v4, not a hash of the reference',
     responses: [created],
     steps: [send],
     expect: { requests: [{ ...GOAL_POST, headers: { 'idempotency-key': { $uuid4: true } } }] },
@@ -622,7 +621,7 @@ add('money', 'Money is always a decimal string on the wire (SPEC 8)', [
 const batchOk = (n, start = 0) => ok({ object: 'list', data: Array.from({ length: n }, (_, i) => ({ index: i, ok: true, status: 201, goal_event: goalEvent({ reference: `R-${start + i}` }), error: null })) });
 const ev = (i) => ({ goal: 'order_paid', reference: `R-${i}` });
 const bg = { send_mode: 'background' };
-// Change 12 (backend C12 B2): one goal endpoint per sender. A goal call may carry `provider` (a Provider value) and
+// One goal endpoint per sender. A goal call may carry `provider` (a Provider value) and
 // `reference`; the goal's kind (never in the call) decides. From the business's server a Payment goal is a trusted
 // confirmation (route D): counted with a click ID, else waiting for the browser's or app's report.
 const PCF = 'pcf_01JCK8Z9V7Q4M2N6P8R0S2T4PC';
@@ -646,42 +645,42 @@ const goalErr = (status, type, code, message, param, extra = {}) => err(status, 
 const C12_GOAL_CASES = [
   {
     id: 'goals.send.status.counted',
-    description: 'Change 12: a counted standard goal returns status counted, goal_kind standard, and the conversion state in event_status',
+    description: 'A counted standard goal returns status counted, goal_kind standard, and the conversion state in event_status',
     responses: [created],
     steps: [{ ...send, expect: { result: { status: 'counted', reason: null, goal_kind: 'standard', counted: true, value_ignored: false, event_status: 'attributed', payment: null } } }],
     expect: { requests: [{ ...GOAL_POST, json: { goal: 'account_opened', reference: 'APP-55231', click_id: CLICK, value: '2000000' } }] },
   },
   {
     id: 'goals.send.status.refused_bot',
-    description: 'Change 12: a goal on a bot click is refused (201): status refused, reason rejected_bot; not an error',
+    description: 'A goal on a bot click is refused (201): status refused, reason rejected_bot; not an error',
     responses: [ok(goalEvent({ status: 'refused', reason: 'rejected_bot', counted: false, event_status: 'rejected_bot' }), 201)],
     steps: [{ ...send, expect: { result: { status: 'refused', reason: 'rejected_bot', counted: false, event_status: 'rejected_bot' } } }],
     expect: { requests: [GOAL_POST] },
   },
   {
     id: 'goals.send.status.refused_outside_window',
-    description: 'Change 12: outside the goal window → status refused, reason outside_window',
+    description: 'Outside the goal window → status refused, reason outside_window',
     responses: [ok(goalEvent({ status: 'refused', reason: 'outside_window', counted: false, event_status: 'unattributed', attributed_to: null }), 201)],
     steps: [{ ...send, expect: { result: { status: 'refused', reason: 'outside_window', counted: false } } }],
     expect: { requests: [GOAL_POST] },
   },
   {
     id: 'goals.send.status.waiting_pending_click',
-    description: 'Change 12: recorded after an outage, waiting for its click → status waiting, reason pending_click',
+    description: 'Recorded after an outage, waiting for its click → status waiting, reason pending_click',
     responses: [ok(goalEvent({ status: 'waiting', reason: 'pending_click', counted: false, event_status: 'pending_click', attributed_to: null }), 201)],
     steps: [{ ...send, expect: { result: { status: 'waiting', reason: 'pending_click', counted: false } } }],
     expect: { requests: [GOAL_POST] },
   },
   {
     id: 'goals.send.status.received_not_counted_yet',
-    description: 'Change 22 R.9: a name not ticked as a goal yet is stored (200): status received, reason not_counted_yet; a success, sent once, never retried',
+    description: 'A name not ticked as a goal yet is stored (200): status received, reason not_counted_yet; a success, sent once, never retried',
     responses: [ok(goalEvent({ status: 'received', reason: 'not_counted_yet', counted: false, event_status: 'unattributed', attributed_to: null }), 200)],
     steps: [{ ...send, expect: { result: { status: 'received', reason: 'not_counted_yet', counted: false } } }],
     expect: { requests: [GOAL_POST] },
   },
   {
     id: 'goals.background.received_not_counted_yet',
-    description: 'Change 22 R.9: background goal() answered with status received (ok item) is a success: one batch, nothing re-queued, on_error stays empty',
+    description: 'Background goal() answered with status received (ok item) is a success: one batch, nothing re-queued, on_error stays empty',
     client: { send_mode: 'background' },
     responses: [ok({ object: 'list', data: [{ index: 0, ok: true, status: 200, goal_event: goalEvent({ status: 'received', reason: 'not_counted_yet', counted: false, event_status: 'unattributed', attributed_to: null }), error: null }] })],
     steps: [{ call: 'goal', args: { key: 'account_opened', reference: 'APP-55231', click_id: CLICK } }, { call: 'flush', expect: { result: { value: true } } }, { call: 'flush', expect: { result: { value: true } } }],
@@ -689,14 +688,14 @@ const C12_GOAL_CASES = [
   },
   {
     id: 'goals.send.provider',
-    description: 'Change 12: provider is a wire field of every goal call (a standard goal checks it and otherwise ignores it)',
+    description: 'provider is a wire field of every goal call (a standard goal checks it and otherwise ignores it)',
     responses: [created],
     steps: [{ call: 'goals.send', args: { key: 'account_opened', reference: 'APP-9', provider: 'flutterwave' }, expect: { result: { status: 'counted', goal_kind: 'standard' } } }],
     expect: { requests: [{ ...GOAL_POST, json: { goal: 'account_opened', reference: 'APP-9', provider: 'flutterwave' } }] },
   },
   {
     id: 'goals.send.provider_newer_gateway',
-    description: 'Change 12: a provider this SDK release does not know (a newer gateway) is sent as given; the API validates it',
+    description: 'A provider this SDK release does not know (a newer gateway) is sent as given; the API validates it',
     responses: [created],
     steps: [{ call: 'goals.send', args: { key: 'order_paid', reference: 'T-77', value: '10', provider: 'acme_pay' } }],
     expect: { requests: [{ ...GOAL_POST, json: { goal: 'order_paid', reference: 'T-77', value: '10', provider: 'acme_pay' } }] },
@@ -707,13 +706,13 @@ const C12_GOAL_CASES = [
     ['empty', ''],
   ].map(([name, provider]) => ({
     id: `goals.send.invalid_provider.${name}`,
-    description: `Change 12: provider ${JSON.stringify(provider)} is refused locally (a provider key is lower-case snake_case)`,
+    description: `provider ${JSON.stringify(provider)} is refused locally (a provider key is lower-case snake_case)`,
     steps: [{ call: 'goals.send', args: { key: 'order_paid', reference: 'T-78', provider }, expect: { error: { class: 'InvalidRequestError', code: 'invalid_provider', param: 'provider', http_status: null } } }],
     expect: { requests: [] },
   })),
   {
     id: 'goals.send.payment.waiting',
-    description: 'Change 12: a Payment goal sent by the server without a click ID waits for its report: status waiting, the confirmation id, payment details',
+    description: 'A Payment goal sent by the server without a click ID waits for its report: status waiting, the confirmation id, payment details',
     responses: [ok(paymentWaiting, 201)],
     steps: [
       {
@@ -737,7 +736,7 @@ const C12_GOAL_CASES = [
   },
   {
     id: 'goals.send.payment.counted',
-    description: 'Change 12: a Payment goal sent by the server with a click ID is counted at once with the value sent',
+    description: 'A Payment goal sent by the server with a click ID is counted at once with the value sent',
     responses: [ok(payGoal({ payment: { confirmation_id: PCF, match_status: 'matched', report_id: PRP, provider: 'paystack' } }), 201)],
     steps: [
       {
@@ -750,19 +749,19 @@ const C12_GOAL_CASES = [
   },
   {
     id: 'goals.send.payment.already_counted',
-    description: 'Change 12: a payment reference already counted (200) is refused with reason already_counted; a success, not an error',
+    description: 'A payment reference already counted (200) is refused with reason already_counted; a success, not an error',
     responses: [ok(payGoal({ ...paymentWaiting, status: 'refused', reason: 'already_counted', payment: { confirmation_id: PCF, match_status: 'duplicate', report_id: null, provider: 'paystack' } }))],
     steps: [{ ...paySend, expect: { result: { status: 'refused', reason: 'already_counted', counted: false, goal_kind: 'payment', payment: { match_status: 'duplicate' } } } }],
     expect: { requests: [GOAL_POST] },
   },
   {
     id: 'goals.send.payment.missing_provider',
-    description: 'Change 12: a server Payment goal needs provider and reference (no default provider): the SDK sends what it is given (it never knows the kind) and the API answers 422 payment_goal_needs_confirmation with missing',
+    description: 'A server Payment goal needs provider and reference (no default provider): the SDK sends what it is given (it never knows the kind) and the API answers 422 payment_goal_needs_confirmation with missing',
     responses: [goalErr(422, 'invalid_request', 'payment_goal_needs_confirmation', 'order_paid is a Payment goal: send provider and reference so your payment provider or server can confirm it.', 'provider', { missing: ['provider'] })],
     steps: [{ call: 'goals.send', args: { key: 'order_paid', reference: 'T123456', value: '7500', click_id: CLICK }, expect: { error: { class: 'InvalidRequestError', code: 'payment_goal_needs_confirmation', param: 'provider', http_status: 422 } } }],
     expect: { requests: [{ ...GOAL_POST, json: { goal: 'order_paid', reference: 'T123456', value: '7500', click_id: CLICK } }] },
   },
-  // Change 12 B2 error codes: plain API errors, mapped by SPEC 5 and never retried
+  // Goal error codes: plain API errors, mapped by SPEC 5 and never retried
   ...[
     ['unknown_provider', 422, 'invalid_request', 'Unknown provider "acme_pay". Use a provider from GET /v1/payment-gateways.', 'provider', {}, { ...paySend.args, provider: 'acme_pay' }],
     ['value_required', 422, 'invalid_request', 'A Payment goal sent by your server needs a value.', 'value', {}, { key: 'order_paid', reference: 'T123456', provider: 'paystack' }],
@@ -780,14 +779,14 @@ const C12_GOAL_CASES = [
     ['validation_error', 422, 'invalid_request', 'kind is not a goal call field: the kind lives in the goal settings.', 'kind', {}, { ...paySend.args, extra: { kind: 'standard' } }],
   ].map(([code, status, type, message, param, extra, args]) => ({
     id: `goals.send.error.${code}`,
-    description: `Change 12: ${status} ${code} is an InvalidRequestError with its param; not retried`,
+    description: `${status} ${code} is an InvalidRequestError with its param; not retried`,
     responses: [goalErr(status, type, code, message, param, extra)],
     steps: [{ call: 'goals.send', args, expect: { error: { class: 'InvalidRequestError', code, param, http_status: status } } }],
     expect: { requests: [GOAL_POST] },
   })),
   {
     id: 'goals.send.error.plan_feature_unavailable',
-    description: 'Change 12: a Payment goal on Free → 403 plan_feature_unavailable, a PermissionError with required_plan starter',
+    description: 'A Payment goal on Free → 403 plan_feature_unavailable, a PermissionError with required_plan starter',
     client: { max_retries: 3 },
     responses: [goalErr(403, 'permission', 'plan_feature_unavailable', "You're on Free. Payment goals are included from Starter. Upgrade to Starter to use them.", null, { feature: 'payment_goals', required_plan: 'starter' })],
     steps: [{ ...paySend, expect: { error: { class: 'PermissionError', code: 'plan_feature_unavailable', http_status: 403, required_plan: 'starter' } } }],
@@ -795,7 +794,7 @@ const C12_GOAL_CASES = [
   },
   {
     id: 'goals.batch.status_values',
-    description: 'Change 12: batch items carry the GoalStatus in goal_event.status (counted, waiting, refused) and errors per item',
+    description: 'Batch items carry the GoalStatus in goal_event.status (counted, waiting, refused) and errors per item',
     responses: [
       ok({
         object: 'list',
@@ -849,13 +848,13 @@ const C12_GOAL_CASES = [
   },
   {
     id: 'goals.batch.invalid_provider',
-    description: 'Change 12: a batch event with a malformed provider throws with its index; nothing is sent',
+    description: 'A batch event with a malformed provider throws with its index; nothing is sent',
     steps: [{ call: 'goals.send_batch', args: { events: [ev(0), { goal: 'order_paid', reference: 'R-1', provider: 'PayStack' }] }, expect: { error: { class: 'InvalidRequestError', code: 'invalid_provider', param: 'provider', index: 1 } } }],
     expect: { requests: [] },
   },
   {
     id: 'goals.background.payment_waiting',
-    description: 'Change 12: background goal() with provider; a waiting Payment goal (ok item) is not an error: on_error stays empty',
+    description: 'Background goal() with provider; a waiting Payment goal (ok item) is not an error: on_error stays empty',
     client: { send_mode: 'background' },
     responses: [ok({ object: 'list', data: [{ index: 0, ok: true, status: 201, goal_event: paymentWaiting, error: null }] })],
     steps: [{ call: 'goal', args: { key: 'order_paid', reference: 'T123456', value: '7500', currency: 'NGN', provider: 'paystack' } }, { call: 'flush', expect: { result: { value: true } } }],
@@ -863,7 +862,7 @@ const C12_GOAL_CASES = [
   },
   {
     id: 'goals.background.payment_item_error',
-    description: 'Change 12: a batch item refused with value_required (a server Payment goal without a value) goes to on_error',
+    description: 'A batch item refused with value_required (a server Payment goal without a value) goes to on_error',
     client: { send_mode: 'background' },
     responses: [ok({ object: 'list', data: [{ index: 0, ok: false, status: 422, goal_event: null, error: { type: 'invalid_request', code: 'value_required', message: 'A Payment goal sent by your server needs a value.', param: 'value' } }] })],
     steps: [{ call: 'goal', args: { key: 'order_paid', reference: 'T123456', provider: 'paystack' } }, { call: 'flush' }],
@@ -871,13 +870,13 @@ const C12_GOAL_CASES = [
   },
   {
     id: 'goals.background.invalid_provider',
-    description: 'Change 12: goal() with a malformed provider never throws: on_error invalid_provider, nothing queued',
+    description: 'goal() with a malformed provider never throws: on_error invalid_provider, nothing queued',
     client: { send_mode: 'background' },
     steps: [{ call: 'goal', args: { key: 'order_paid', reference: 'T-1', provider: 'Paystack' } }, { call: 'flush' }],
     expect: { requests: [], on_error: [{ class: 'InvalidRequestError', code: 'invalid_provider', events: [{ goal: 'order_paid', reference: 'T-1' }] }] },
   },
 ];
-// Change 23 (R.1, R.9): "Allow unknown goal names" off. The API refuses a name with no goal behind it with
+// "Allow unknown goal names" off. The API refuses a name with no goal behind it with
 // `422 unknown_goal` (an archived goal with `422 goal_archived`), as an error envelope like
 // payment_goal_needs_confirmation or as the refusal body {status: "refused", reason, counted: false, goal_kind: null}.
 // Final: never retried, never re-queued, and the SDK never checks names or remembers the refusal.
@@ -890,7 +889,7 @@ const STRICT_HIDDEN = ['APP-77120', '2500'];
 const STRICT_GOAL_CASES = [
   {
     id: 'goals.send.refused.unknown_goal',
-    description: 'Change 23 R.1: strict mode refuses a name that is not set up: 422 unknown_goal is an InvalidRequestError (param goal), sent once, never retried; the reference and value are never logged',
+    description: 'Strict mode refuses a name that is not set up: 422 unknown_goal is an InvalidRequestError (param goal), sent once, never retried; the reference and value are never logged',
     client: { max_retries: 3 },
     responses: [unknownGoalErr()],
     steps: [{ ...strictSend, expect: { error: { class: 'InvalidRequestError', code: 'unknown_goal', param: 'goal', http_status: 422 } } }],
@@ -898,7 +897,7 @@ const STRICT_GOAL_CASES = [
   },
   {
     id: 'goals.send.refused.unknown_goal_refusal_body',
-    description: 'Change 23 R.1: a 422 answered with the refusal body {status: refused, reason: unknown_goal} and no error envelope maps to code unknown_goal (the reason), not http_422; never retried',
+    description: 'A 422 answered with the refusal body {status: refused, reason: unknown_goal} and no error envelope maps to code unknown_goal (the reason), not http_422; never retried',
     client: { max_retries: 3 },
     responses: [refusalBody('unknown_goal', { counted: false, goal_kind: null })],
     steps: [{ ...strictSend, expect: { error: { class: 'InvalidRequestError', code: 'unknown_goal', param: null, http_status: 422 } } }],
@@ -906,7 +905,7 @@ const STRICT_GOAL_CASES = [
   },
   {
     id: 'goals.send.refused.goal_archived',
-    description: 'Change 23 R.1: in strict mode an archived goal is 422 goal_archived (never 410): an InvalidRequestError, never retried',
+    description: 'In strict mode an archived goal is 422 goal_archived (never 410): an InvalidRequestError, never retried',
     client: { max_retries: 3 },
     responses: [refusalBody('goal_archived')],
     steps: [{ call: 'goals.send', args: { key: 'old_signup', reference: 'APP-77121' }, expect: { error: { class: 'InvalidRequestError', code: 'goal_archived', http_status: 422 } } }],
@@ -914,7 +913,7 @@ const STRICT_GOAL_CASES = [
   },
   {
     id: 'goals.send.refused.not_remembered',
-    description: 'Change 23 R.9: the SDK never checks names or caches the setting: after an unknown_goal refusal the same name is sent again (the goal may have been set up since)',
+    description: 'The SDK never checks names or caches the setting: after an unknown_goal refusal the same name is sent again (the goal may have been set up since)',
     responses: [unknownGoalErr(), created],
     steps: [
       { ...strictSend, expect: { error: { class: 'InvalidRequestError', code: 'unknown_goal', http_status: 422 } } },
@@ -924,7 +923,7 @@ const STRICT_GOAL_CASES = [
   },
   {
     id: 'goals.background.refused.unknown_goal_item',
-    description: 'Change 23 R.1: a background batch item refused with 422 unknown_goal goes to on_error and is dropped, never re-queued: a second flush sends nothing',
+    description: 'A background batch item refused with 422 unknown_goal goes to on_error and is dropped, never re-queued: a second flush sends nothing',
     client: { send_mode: 'background' },
     responses: [ok({ object: 'list', data: [{ index: 0, ok: false, status: 422, goal_event: null, error: { type: 'invalid_request', code: 'unknown_goal', message: UNKNOWN_MSG, param: 'goal' } }] })],
     steps: [{ call: 'goal', args: { key: 'level_complete', reference: 'APP-77120', value: '2500' } }, { call: 'flush', expect: { result: { value: true } } }, { call: 'flush', expect: { result: { value: true } } }],
@@ -936,7 +935,7 @@ const STRICT_GOAL_CASES = [
   },
   {
     id: 'goals.background.refused.goal_archived_item',
-    description: 'Change 23 R.1: a background batch item refused with 422 goal_archived goes to on_error and is dropped; the other item is a success',
+    description: 'A background batch item refused with 422 goal_archived goes to on_error and is dropped; the other item is a success',
     client: { send_mode: 'background' },
     responses: [ok({ object: 'list', data: [{ index: 0, ok: true, status: 201, goal_event: goalEvent({ reference: 'R-0' }), error: null }, { index: 1, ok: false, status: 422, goal_event: null, error: { type: 'invalid_request', code: 'goal_archived', message: 'This goal is archived.', param: 'goal' } }] })],
     steps: [{ call: 'goal', args: { key: 'order_paid', reference: 'R-0' } }, { call: 'goal', args: { key: 'old_signup', reference: 'APP-77121' } }, { call: 'flush' }, { call: 'flush' }],
@@ -944,7 +943,7 @@ const STRICT_GOAL_CASES = [
   },
   {
     id: 'goals.background.refused.whole_batch_refusal_body',
-    description: 'Change 23 R.1: a whole batch answered 422 with the refusal body is not retried: the events are dropped and on_error gets code unknown_goal once',
+    description: 'A whole batch answered 422 with the refusal body is not retried: the events are dropped and on_error gets code unknown_goal once',
     client: { send_mode: 'background', max_retries: 3 },
     responses: [refusalBody('unknown_goal', { counted: false, goal_kind: null })],
     steps: [{ call: 'goal', args: { key: 'level_complete', reference: 'APP-77120' } }, { call: 'flush' }, { call: 'flush' }],
@@ -952,7 +951,7 @@ const STRICT_GOAL_CASES = [
   },
   {
     id: 'goals.batch.refused.unknown_goal_item',
-    description: 'Change 23 R.1: goals.sendBatch returns an unknown_goal item as a per-item failure (not thrown) next to a counted one',
+    description: 'goals.sendBatch returns an unknown_goal item as a per-item failure (not thrown) next to a counted one',
     responses: [ok({ object: 'list', data: [{ index: 0, ok: true, status: 201, goal_event: goalEvent({ reference: 'R-0' }), error: null }, { index: 1, ok: false, status: 422, goal_event: null, error: { type: 'invalid_request', code: 'unknown_goal', message: UNKNOWN_MSG, param: 'goal' } }] })],
     steps: [
       {
@@ -1031,7 +1030,7 @@ add('goals', 'Goals: send, batch, reverse, background queueing and flush (SPEC 9
   ...STRICT_GOAL_CASES,
   {
     id: 'goals.send.value_minor',
-    description: 'The result keeps value as a decimal string and value_minor as an integer (change 09 X.E10)',
+    description: 'The result keeps value as a decimal string and value_minor as an integer',
     responses: [created_minor],
     steps: [{ ...send, expect: { result: { value: '2000000', value_minor: 200000000, currency: 'NGN' } } }],
     expect: { requests: [{}] },
@@ -1249,7 +1248,7 @@ add('private_mode', 'Server SDK config and the private-mode guard (SPEC 12)', [
   },
   {
     id: 'private_mode.on.consent',
-    description: 'consent (the four-purpose consent object) is allowed in private mode, as the backend allows it since change 09',
+    description: 'consent (the four-purpose consent object) is allowed in private mode, as the backend allows it',
     client: { private_mode: true },
     responses: [created],
     steps: [{ call: 'goals.send', args: { key: 'account_opened', reference: 'APP-1', consent: { attribution: 'granted', analytics: 'denied' } } }],
@@ -1309,7 +1308,7 @@ add('private_mode', 'Server SDK config and the private-mode guard (SPEC 12)', [
   },
   {
     id: 'private_mode.on.provider_allowed',
-    description: 'Change 12 (backend V.7): provider is on the goal allow-list (a gateway name, not personal data)',
+    description: 'provider is on the goal allow-list (a gateway name, not personal data)',
     client: { private_mode: true },
     responses: [created],
     steps: [{ call: 'goals.send', args: { key: 'order_paid', reference: 'T123456', click_id: CLICK, value: '7500', currency: 'NGN', provider: 'paystack' } }],
@@ -1317,7 +1316,7 @@ add('private_mode', 'Server SDK config and the private-mode guard (SPEC 12)', [
   },
   {
     id: 'private_mode.on.provider_batch_and_conversion',
-    description: 'Change 12: provider is allowed on batch items and conversions in private mode too',
+    description: 'provider is allowed on batch items and conversions in private mode too',
     client: { private_mode: true },
     responses: [batchOk(1), ok({ object: 'conversion', id: 'cnv_5' }, 201)],
     steps: [
@@ -1634,7 +1633,7 @@ add('links', 'Links: create, get, update (202 change requests, 409 locked), list
   },
   {
     id: 'links.list.metadata_filter',
-    description: 'A metadata map is sent as metadata[<key>]=<value> query parameters (change 10, SPEC section 21)',
+    description: 'A metadata map is sent as metadata[<key>]=<value> query parameters (SPEC section 21)',
     responses: [ok({ object: 'list', data: [link({ id: 'lnk_1', metadata: { seller_id: 'sel_ada' } })], has_more: false, next_cursor: null })],
     steps: [{ call: 'links.list', args: { params: { status: 'active', metadata: { seller_id: 'sel_ada', product_id: 'prd_ankara_6y' } } }, expect: { result: { items: [{ id: 'lnk_1', metadata: { seller_id: 'sel_ada' } }] } } }],
     expect: { requests: [{ method: 'GET', path: '/v1/links', query: { status: 'active', 'metadata[seller_id]': 'sel_ada', 'metadata[product_id]': 'prd_ankara_6y' } }] },
@@ -1697,7 +1696,7 @@ add('links', 'Links: create, get, update (202 change requests, 409 locked), list
   },
   {
     id: 'conversions.create.payment_goal',
-    description: 'Change 12 (B2.5): conversions.create on a Payment goal sends provider and answers with the goal event (object goal_event), returned as is',
+    description: 'conversions.create on a Payment goal sends provider and answers with the goal event (object goal_event), returned as is',
     responses: [ok(payGoal({ reference: 'ORD-77', payment: { confirmation_id: PCF, match_status: 'matched', report_id: PRP, provider: 'paystack' } }), 201)],
     steps: [
       {
@@ -1710,21 +1709,21 @@ add('links', 'Links: create, get, update (202 change requests, 409 locked), list
   },
   {
     id: 'conversions.create.payment_goal_waiting',
-    description: 'Change 12 (B2.5): without a click ID the Payment goal conversion waits for its report (status waiting, the confirmation id)',
+    description: 'Without a click ID the Payment goal conversion waits for its report (status waiting, the confirmation id)',
     responses: [ok({ ...paymentWaiting, reference: 'ORD-78' }, 201)],
     steps: [{ call: 'conversions.create', args: { params: { external_id: 'ORD-78', goal: 'order_paid', amount_minor: 750000, currency: 'NGN', provider: 'paystack' } }, expect: { result: { object: 'goal_event', id: PCF, status: 'waiting', reason: 'waiting_for_confirmation' } } }],
     expect: { requests: [{ method: 'POST', path: '/v1/conversions', json: { external_id: 'ORD-78', goal: 'order_paid', amount_minor: 750000, currency: 'NGN', provider: 'paystack' } }] },
   },
   {
     id: 'conversions.create.payment_goal_missing_provider',
-    description: 'Change 12 (B2.5): a Payment goal conversion without provider → 422 payment_goal_needs_confirmation (not retried)',
+    description: 'A Payment goal conversion without provider → 422 payment_goal_needs_confirmation (not retried)',
     responses: [goalErr(422, 'invalid_request', 'payment_goal_needs_confirmation', 'order_paid is a Payment goal: send provider and reference so your payment provider or server can confirm it.', 'provider', { missing: ['provider'] })],
     steps: [{ call: 'conversions.create', args: { params: { external_id: 'ORD-79', goal: 'order_paid', value: '10' } }, expect: { error: { class: 'InvalidRequestError', code: 'payment_goal_needs_confirmation', param: 'provider', http_status: 422 } } }],
     expect: { requests: [{ method: 'POST', path: '/v1/conversions' }] },
   },
   {
     id: 'conversions.create.standard_unchanged',
-    description: 'Change 12: a conversion for a Standard goal still answers with the conversion object',
+    description: 'A conversion for a Standard goal still answers with the conversion object',
     responses: [ok({ object: 'conversion', id: 'cnv_6', status: 'attributed' }, 201)],
     steps: [{ call: 'conversions.create', args: { params: { external_id: 'ORD-80', goal: 'account_opened', provider: 'paystack' } }, expect: { result: { object: 'conversion', id: 'cnv_6' } } }],
     expect: { requests: [{ method: 'POST', path: '/v1/conversions', json: { external_id: 'ORD-80', goal: 'account_opened', provider: 'paystack' } }] },
@@ -1785,7 +1784,7 @@ const SUB_EVENT = JSON.stringify({
     add_on_key: 'domains_pack',
   },
 });
-// link.destination_changed (backend C6-B5, src/links/services/link_change_requests.py): data.object is the link,
+// link.destination_changed (backend src/links/services/link_change_requests.py): data.object is the link,
 // plus from, to, actor {type, id, api_key_prefix, requested_by?, change_request_id?}, actor_type and api_key_prefix
 const DEST_EVENT = JSON.stringify({
   id: 'evt_01JCK8Z9V7Q4M2N6P8R0S2T4DC',
@@ -1815,7 +1814,7 @@ add('webhooks', 'Webhook signature verification (SPEC 14, backend spec 13.3)', [
   wh('valid.edge_of_tolerance', 'Exactly 300 s old is accepted', { raw_body: BODY, header: hdr(NOW_S - 300, sig(SECRET, NOW_S - 300)), secret: SECRET }, verified),
   wh('valid.tolerance_zero', 'tolerance 0 disables the time check (tests only)', { raw_body: BODY, header: hdr(NOW_S - 86400, sig(SECRET, NOW_S - 86400)), secret: SECRET, tolerance: 0 }, verified),
   wh('valid.custom_tolerance', 'A custom tolerance of 600 s accepts 500 s old', { raw_body: BODY, header: hdr(NOW_S - 500, sig(SECRET, NOW_S - 500)), secret: SECRET, tolerance: 600 }, verified),
-  wh('valid.subscription_updated', 'subscription.updated (change 10) carries the subscription with add_ons, change and add_on_key', { raw_body: SUB_EVENT, header: hdr(NOW_S, sig(SECRET, NOW_S, SUB_EVENT)), secret: SECRET }, { result: { type: 'subscription.updated', data: { object: { object: 'subscription', plan_key: 'growth', add_ons: [{ key: 'domains_pack', status: 'active', amount_minor: 4000000, remove_at_renewal: false }] }, change: 'add_on.activated', add_on_key: 'domains_pack' } } }),
+  wh('valid.subscription_updated', 'subscription.updated carries the subscription with add_ons, change and add_on_key', { raw_body: SUB_EVENT, header: hdr(NOW_S, sig(SECRET, NOW_S, SUB_EVENT)), secret: SECRET }, { result: { type: 'subscription.updated', data: { object: { object: 'subscription', plan_key: 'growth', add_ons: [{ key: 'domains_pack', status: 'active', amount_minor: 4000000, remove_at_renewal: false }] }, change: 'add_on.activated', add_on_key: 'domains_pack' } } }),
   wh('valid.link_destination_changed', 'link.destination_changed carries the link, from, to and the actor', { raw_body: DEST_EVENT, header: hdr(NOW_S, sig(SECRET, NOW_S, DEST_EVENT)), secret: SECRET }, { result: { type: 'link.destination_changed', data: { object: { object: 'link' }, from: 'https://example.com/spring', to: 'https://example.com/summer', actor: { type: 'user', change_request_id: 'lcr_01JCK8Z9V7Q4M2N6P8R0S2T4CR' }, actor_type: 'user' } } }),
   wh('expired', '301 s old is refused', { raw_body: BODY, header: hdr(NOW_S - 301, sig(SECRET, NOW_S - 301)), secret: SECRET }, sigErr('timestamp_outside_tolerance')),
   wh('future', '301 s in the future is refused', { raw_body: BODY, header: hdr(NOW_S + 301, sig(SECRET, NOW_S + 301)), secret: SECRET }, sigErr('timestamp_outside_tolerance')),
@@ -1868,7 +1867,7 @@ const iv = (id, value, expected) => ({
   steps: [{ call: 'click_ids.is_valid', args: { id: value }, expect: { result: { value: expected } } }],
   expect: { requests: [] },
 });
-// Change 16 (R.1): click_ids.keep, the /cg/keep route on the business's own server
+// click_ids.keep, the /cg/keep route on the business's own server
 const KEEP_URL = 'https://shop.example.com/cg/keep';
 const KEEP_NO_STORE = 'no-store, private';
 const keepReq = (headers, body, method = 'POST', url = KEEP_URL) => ({ method, url, headers: { host: 'shop.example.com', ...headers }, body });
@@ -1995,7 +1994,7 @@ add('click_ids', 'Keeping the click ID: validation, extraction, cookies, payment
   },
   {
     id: 'click_ids.persist.marker_days',
-    description: 'persist (change 16): the _cg_kept=s marker follows days, domain and secure',
+    description: 'persist: the _cg_kept=s marker follows days, domain and secure',
     steps: [{ call: 'click_ids.persist', args: { id: CLICK, days: 90, secure: false, domain: '.example.com', existing_set_cookie: [] }, expect: { result: { set_cookie: [`_cg_cgid=${CLICK}; Path=/; Max-Age=7776000; Domain=.example.com; SameSite=Lax`, '_cg_kept=s; Path=/; Max-Age=7776000; Domain=.example.com; SameSite=Lax'] } } }],
     expect: { requests: [] },
   },
@@ -2021,7 +2020,7 @@ add('click_ids', 'Keeping the click ID: validation, extraction, cookies, payment
 ]);
 
 // ---------------------------------------------------------------------------------------------
-// Change 11 (S.3): payments.confirm and the gateway helpers (SPEC 22, backend contract B2.2 / B2.3).
+// payments.confirm and the gateway helpers (SPEC 22).
 // The helper vectors are a copy of clikgate_api/docs/payment-helper-vectors.json (../vectors/).
 const VECTORS = JSON.parse(readFileSync(join(here, '..', 'vectors', 'payment-helper-vectors.json'), 'utf8'));
 // --check also fails when the copy drifts from the backend's file (when clikgate_api is checked out next to clikgate_sdks).
@@ -2181,14 +2180,14 @@ add('payments', 'Payments confirmed by the business server: payments.confirm and
   },
   {
     id: 'payments.confirm.plan_feature_unavailable',
-    description: 'Change 12 (backend C12 V1.6): payments need Starter or above; Free gets 403 plan_feature_unavailable, a PermissionError with required_plan',
+    description: 'Payments need Starter or above; Free gets 403 plan_feature_unavailable, a PermissionError with required_plan',
     responses: [err(403, 'permission', 'plan_feature_unavailable', "You're on Free. Payment goals are included from Starter. Upgrade to Starter to use them.", null, 'req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ', { feature: 'payment_goals', required_plan: 'starter' })],
     steps: [{ call: 'payments.confirm', args: { provider: 'paystack', reference: 'T_9', status: 'success', amount: '50', currency: 'NGN' }, expect: { error: { class: 'PermissionError', code: 'plan_feature_unavailable', http_status: 403, required_plan: 'starter' } } }],
     expect: { requests: [CONFIRM_POST] },
   },
   {
     id: 'payments.confirm.unknown_provider',
-    description: 'Change 12: a well-formed provider this SDK does not know is sent; the API answers 422 unknown_provider (not retried)',
+    description: 'A well-formed provider this SDK does not know is sent; the API answers 422 unknown_provider (not retried)',
     responses: [err(422, 'invalid_request', 'unknown_provider', 'Unknown provider "acme_pay". Use a provider from GET /v1/payment-gateways.', 'provider')],
     steps: [{ call: 'payments.confirm', args: { provider: 'acme_pay', reference: 'T_10', status: 'success', amount: '50', currency: 'NGN' }, expect: { error: { class: 'InvalidRequestError', code: 'unknown_provider', param: 'provider', http_status: 422 } } }],
     expect: { requests: [{ ...CONFIRM_POST, json: { provider: 'acme_pay', reference: 'T_10', status: 'success', amount: '50', currency: 'NGN' } }] },
@@ -2358,12 +2357,12 @@ add('payments', 'Payments confirmed by the business server: payments.confirm and
 ]);
 
 // ---------------------------------------------------------------------------------------------
-// Change 12 (S.3): an SDK released today must keep working against a newer API. Unknown response fields,
+// An SDK released today must keep working against a newer API. Unknown response fields,
 // unknown enum values (a future GoalStatus, GoalKind or Provider) and unknown error keys are ignored, never
 // an error; the wire object is still returned with every field (typed SDKs keep them in the raw JSON).
 const FUTURE = { future_field: { nested: [1, 'two', null], flag: true }, future_list: ['a'] };
 const FUTURE_EVENT = JSON.stringify({ ...event, type: 'goal.future_event', future_field: 1, data: { ...event.data, object: { ...event.data.object, status: 'deferred', goal_kind: 'subscription', future_field: true } } });
-add('compat', 'Forward compatibility: older SDK versions ignore unknown fields and enum values (change 12 S.3)', [
+add('compat', 'Forward compatibility: older SDK versions ignore unknown fields and enum values', [
   {
     id: 'compat.goal_event.unknown_fields',
     description: 'A goal_event with fields this SDK does not know is returned as usual, unknown fields kept',
@@ -2449,10 +2448,10 @@ add('compat', 'Forward compatibility: older SDK versions ignore unknown fields a
 const schema = JSON.parse(readFileSync(join(here, '..', 'schema', 'case.schema.json'), 'utf8')).$defs;
 
 // ---------------------------------------------------------------------------------------------
-// Change 14 (S.1): identifyUser() and goal labels (SPEC 24; backend B.5 POST /v1/people/identify).
+// identifyUser() and goal labels (SPEC 24; backend POST /v1/people/identify).
 const IDENTIFY_POST = { method: 'POST', path: '/v1/people/identify' };
 const identified = (labelIgnored = null) => ok({ object: 'person_identified', person_id: 'per_01JCK8Z9V7Q4M2N6P8R0S2T4PE', label_ignored: labelIgnored }, 200);
-add('people', 'identifyUser() and goal labels (SPEC 24; backend change 14 B.5)', [
+add('people', 'identifyUser() and goal labels (SPEC 24)', [
   {
     id: 'people.identify.click_customer_label',
     description: 'A click, a customer ID and a label map to the wire; the person is returned',
@@ -2505,7 +2504,7 @@ add('people', 'identifyUser() and goal labels (SPEC 24; backend change 14 B.5)',
 ]);
 
 // ---------------------------------------------------------------------------------------------
-// Change 19 (C19-S1, R.20 S.3): hashed email and phone for ad network matching (SPEC 25; backend C19-B4
+// Hashed email and phone for ad network matching (SPEC 25; backend
 // goal_event_schemas.py / report_conversion_schema.py). Vectors: clikgate_website apps/www/samples/ads-hashing/.
 const H_EMAIL = '0f096d5de5ccb3a1e50f34246aab7d9c539de7bd63498d5fae420ecfba31aaed'; // "  Ada.Obi@Example.com "
 const H_E164 = '6b39248188406864f30420963a3e793bf8571e2fa733f767889f9fa882b5d14c'; // "+2348031234567"
@@ -2513,7 +2512,7 @@ const H_DIGITS = 'fe144b034b54f22ea55473f479fe83b2ccbc55af8cdb280ef65ef280bcd4bf
 const HASHED = { hashed_email: H_EMAIL, hashed_phone_e164: H_E164, hashed_phone_digits: H_DIGITS };
 const badHash = (param) => ({ class: 'InvalidRequestError', code: 'invalid_hashed_identifier', param, http_status: null });
 const badInput = (param, input) => ({ class: 'InvalidRequestError', code: 'invalid_argument', param, http_status: null, message_excludes: [input] });
-add('ads_matching', 'Hashed email and phone for ad network matching: hash_for_ads and the goal options (SPEC 25; backend change 19 B.5, R.5)', [
+add('ads_matching', 'Hashed email and phone for ad network matching: hash_for_ads and the goal options (SPEC 25)', [
   {
     id: 'ads_matching.hash_for_ads.vectors',
     description: 'hash_for_ads trims and lowercases the email and hashes the phone with and without the +; 00 works like +',

@@ -1,4 +1,4 @@
-// Change 21 (R.41): the server SDK generator uses only `public` routes. Run: node --test server/codegen/filter.test.mjs
+// The server SDK generator uses only `public` routes. Run: node --test server/codegen/filter.test.mjs
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -125,7 +125,7 @@ test('the backend public document is preferred, with a fallback to the legacy on
   for (const s of [backendSpec('/b', () => true), vendoredSpec('/v', () => true)]) assert.doesNotMatch(s.path, /staff|dashboard/);
 });
 
-test('change 22: app-event routes are removed and GoalStatus gains received, idempotently', () => {
+test('app-event routes are removed and GoalStatus gains received, idempotently', () => {
   const base = audienceSpec();
   base.paths['/v1/sdk/events'] = { post: op('sdk', 'Sdk events') };
   base.paths['/v1/app-events'] = { get: op('public', 'List app events') };

@@ -5,7 +5,7 @@
   "cases": [
     {
       "id": "idempotency.goal.random",
-      "description": "goals.send: Idempotency-Key is a random UUID v4, not a hash of the reference (change 09 X.E15)",
+      "description": "goals.send: Idempotency-Key is a random UUID v4, not a hash of the reference",
       "responses": [
         {
           "status": 201,

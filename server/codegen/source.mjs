@@ -1,7 +1,7 @@
-// Which OpenAPI document the server SDK generator reads (Change 21, R.41). Pure path logic, no side effects, so it is
+// Which OpenAPI document the server SDK generator reads. Pure path logic, no side effects, so it is
 // unit-tested (filter.test.mjs).
 //
-// The backend writes three documents from Change 21 on: `docs/openapi-public.json` (`public` + `sdk` routes), the only
+// The backend writes three documents: `docs/openapi-public.json` (`public` + `sdk` routes), the only
 // one the docs site and this generator read, plus the private dashboard and staff documents. Until a backend checkout
 // has it, the generator falls back to the older single `docs/openapi.json` (filtered by `x-clikgate-auth` only).
 import { existsSync } from 'node:fs';

@@ -1,4 +1,4 @@
-"""Build server/conformance/vectors/identity-token-vectors.json (change 22 I.1, R.27; version 2: change 26 KC.5, R.13).
+"""Build server/conformance/vectors/identity-token-vectors.json (versions 1 and 2).
 
 Every token is made by the backend's own signer, ``sign_identity_token`` in
 ``clikgate_api/src/sdk/utils/identity_tokens.py`` (loaded from the sibling checkout by file path), so every server
@@ -47,7 +47,7 @@ CASES = [
     ("non_ascii_secret", "cgis_Vector\u00e9\u00df\u2603", "user_42", 1767225600),
 ]
 
-# Change 26 KC.5 / R.13: (name, secret, customer_id as passed, issued_at, customer_since)
+# Version 2: (name, secret, customer_id as passed, issued_at, customer_since)
 V2_CASES = [
     ("v2_ascii", SECRET, "user_42", 1767225600, 1709370000),
     ("v2_dots_in_customer_id", SECRET, "acct.2026.0042", 1767225600, 1709370000),

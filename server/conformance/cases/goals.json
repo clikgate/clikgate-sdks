@@ -552,7 +552,7 @@
     },
     {
       "id": "goals.send.status.counted",
-      "description": "Change 12: a counted standard goal returns status counted, goal_kind standard, and the conversion state in event_status",
+      "description": "A counted standard goal returns status counted, goal_kind standard, and the conversion state in event_status",
       "responses": [
         {
           "status": 201,
@@ -629,7 +629,7 @@
     },
     {
       "id": "goals.send.status.refused_bot",
-      "description": "Change 12: a goal on a bot click is refused (201): status refused, reason rejected_bot; not an error",
+      "description": "A goal on a bot click is refused (201): status refused, reason rejected_bot; not an error",
       "responses": [
         {
           "status": 201,
@@ -697,7 +697,7 @@
     },
     {
       "id": "goals.send.status.refused_outside_window",
-      "description": "Change 12: outside the goal window → status refused, reason outside_window",
+      "description": "Outside the goal window → status refused, reason outside_window",
       "responses": [
         {
           "status": 201,
@@ -760,7 +760,7 @@
     },
     {
       "id": "goals.send.status.waiting_pending_click",
-      "description": "Change 12: recorded after an outage, waiting for its click → status waiting, reason pending_click",
+      "description": "Recorded after an outage, waiting for its click → status waiting, reason pending_click",
       "responses": [
         {
           "status": 201,
@@ -823,7 +823,7 @@
     },
     {
       "id": "goals.send.status.received_not_counted_yet",
-      "description": "Change 22 R.9: a name not ticked as a goal yet is stored (200): status received, reason not_counted_yet; a success, sent once, never retried",
+      "description": "A name not ticked as a goal yet is stored (200): status received, reason not_counted_yet; a success, sent once, never retried",
       "responses": [
         {
           "status": 200,
@@ -886,7 +886,7 @@
     },
     {
       "id": "goals.background.received_not_counted_yet",
-      "description": "Change 22 R.9: background goal() answered with status received (ok item) is a success: one batch, nothing re-queued, on_error stays empty",
+      "description": "Background goal() answered with status received (ok item) is a success: one batch, nothing re-queued, on_error stays empty",
       "client": {
         "send_mode": "background"
       },
@@ -972,7 +972,7 @@
     },
     {
       "id": "goals.send.provider",
-      "description": "Change 12: provider is a wire field of every goal call (a standard goal checks it and otherwise ignores it)",
+      "description": "provider is a wire field of every goal call (a standard goal checks it and otherwise ignores it)",
       "responses": [
         {
           "status": 201,
@@ -1042,7 +1042,7 @@
     },
     {
       "id": "goals.send.provider_newer_gateway",
-      "description": "Change 12: a provider this SDK release does not know (a newer gateway) is sent as given; the API validates it",
+      "description": "A provider this SDK release does not know (a newer gateway) is sent as given; the API validates it",
       "responses": [
         {
           "status": 201,
@@ -1108,7 +1108,7 @@
     },
     {
       "id": "goals.send.invalid_provider.upper_case",
-      "description": "Change 12: provider \"Paystack\" is refused locally (a provider key is lower-case snake_case)",
+      "description": "provider \"Paystack\" is refused locally (a provider key is lower-case snake_case)",
       "steps": [
         {
           "call": "goals.send",
@@ -1134,7 +1134,7 @@
     },
     {
       "id": "goals.send.invalid_provider.dash",
-      "description": "Change 12: provider \"mtn-momo\" is refused locally (a provider key is lower-case snake_case)",
+      "description": "provider \"mtn-momo\" is refused locally (a provider key is lower-case snake_case)",
       "steps": [
         {
           "call": "goals.send",
@@ -1160,7 +1160,7 @@
     },
     {
       "id": "goals.send.invalid_provider.empty",
-      "description": "Change 12: provider \"\" is refused locally (a provider key is lower-case snake_case)",
+      "description": "provider \"\" is refused locally (a provider key is lower-case snake_case)",
       "steps": [
         {
           "call": "goals.send",
@@ -1186,7 +1186,7 @@
     },
     {
       "id": "goals.send.payment.waiting",
-      "description": "Change 12: a Payment goal sent by the server without a click ID waits for its report: status waiting, the confirmation id, payment details",
+      "description": "A Payment goal sent by the server without a click ID waits for its report: status waiting, the confirmation id, payment details",
       "responses": [
         {
           "status": 201,
@@ -1274,7 +1274,7 @@
     },
     {
       "id": "goals.send.payment.counted",
-      "description": "Change 12: a Payment goal sent by the server with a click ID is counted at once with the value sent",
+      "description": "A Payment goal sent by the server with a click ID is counted at once with the value sent",
       "responses": [
         {
           "status": 201,
@@ -1363,7 +1363,7 @@
     },
     {
       "id": "goals.send.payment.already_counted",
-      "description": "Change 12: a payment reference already counted (200) is refused with reason already_counted; a success, not an error",
+      "description": "A payment reference already counted (200) is refused with reason already_counted; a success, not an error",
       "responses": [
         {
           "status": 200,
@@ -1437,7 +1437,7 @@
     },
     {
       "id": "goals.send.payment.missing_provider",
-      "description": "Change 12: a server Payment goal needs provider and reference (no default provider): the SDK sends what it is given (it never knows the kind) and the API answers 422 payment_goal_needs_confirmation with missing",
+      "description": "A server Payment goal needs provider and reference (no default provider): the SDK sends what it is given (it never knows the kind) and the API answers 422 payment_goal_needs_confirmation with missing",
       "responses": [
         {
           "status": 422,
@@ -1495,7 +1495,7 @@
     },
     {
       "id": "goals.send.error.unknown_provider",
-      "description": "Change 12: 422 unknown_provider is an InvalidRequestError with its param; not retried",
+      "description": "422 unknown_provider is an InvalidRequestError with its param; not retried",
       "responses": [
         {
           "status": 422,
@@ -1545,7 +1545,7 @@
     },
     {
       "id": "goals.send.error.value_required",
-      "description": "Change 12: 422 value_required is an InvalidRequestError with its param; not retried",
+      "description": "422 value_required is an InvalidRequestError with its param; not retried",
       "responses": [
         {
           "status": 422,
@@ -1593,7 +1593,7 @@
     },
     {
       "id": "goals.send.error.invalid_value",
-      "description": "Change 12: 422 invalid_value is an InvalidRequestError with its param; not retried",
+      "description": "422 invalid_value is an InvalidRequestError with its param; not retried",
       "responses": [
         {
           "status": 422,
@@ -1643,7 +1643,7 @@
     },
     {
       "id": "goals.send.error.code_not_supported",
-      "description": "Change 12: 422 code_not_supported is an InvalidRequestError with its param; not retried",
+      "description": "422 code_not_supported is an InvalidRequestError with its param; not retried",
       "responses": [
         {
           "status": 422,
@@ -1694,7 +1694,7 @@
     },
     {
       "id": "goals.send.error.payment_goal_needs_confirmation",
-      "description": "Change 12: 422 payment_goal_needs_confirmation is an InvalidRequestError with its param; not retried",
+      "description": "422 payment_goal_needs_confirmation is an InvalidRequestError with its param; not retried",
       "responses": [
         {
           "status": 422,
@@ -1745,7 +1745,7 @@
     },
     {
       "id": "goals.send.error.validation_error",
-      "description": "Change 12: 422 validation_error is an InvalidRequestError with its param; not retried",
+      "description": "422 validation_error is an InvalidRequestError with its param; not retried",
       "responses": [
         {
           "status": 422,
@@ -1798,7 +1798,7 @@
     },
     {
       "id": "goals.send.error.plan_feature_unavailable",
-      "description": "Change 12: a Payment goal on Free → 403 plan_feature_unavailable, a PermissionError with required_plan starter",
+      "description": "A Payment goal on Free → 403 plan_feature_unavailable, a PermissionError with required_plan starter",
       "client": {
         "max_retries": 3
       },
@@ -1853,7 +1853,7 @@
     },
     {
       "id": "goals.batch.status_values",
-      "description": "Change 12: batch items carry the GoalStatus in goal_event.status (counted, waiting, refused) and errors per item",
+      "description": "Batch items carry the GoalStatus in goal_event.status (counted, waiting, refused) and errors per item",
       "responses": [
         {
           "status": 200,
@@ -2097,7 +2097,7 @@
     },
     {
       "id": "goals.batch.invalid_provider",
-      "description": "Change 12: a batch event with a malformed provider throws with its index; nothing is sent",
+      "description": "A batch event with a malformed provider throws with its index; nothing is sent",
       "steps": [
         {
           "call": "goals.send_batch",
@@ -2131,7 +2131,7 @@
     },
     {
       "id": "goals.background.payment_waiting",
-      "description": "Change 12: background goal() with provider; a waiting Payment goal (ok item) is not an error: on_error stays empty",
+      "description": "Background goal() with provider; a waiting Payment goal (ok item) is not an error: on_error stays empty",
       "client": {
         "send_mode": "background"
       },
@@ -2228,7 +2228,7 @@
     },
     {
       "id": "goals.background.payment_item_error",
-      "description": "Change 12: a batch item refused with value_required (a server Payment goal without a value) goes to on_error",
+      "description": "A batch item refused with value_required (a server Payment goal without a value) goes to on_error",
       "client": {
         "send_mode": "background"
       },
@@ -2304,7 +2304,7 @@
     },
     {
       "id": "goals.background.invalid_provider",
-      "description": "Change 12: goal() with a malformed provider never throws: on_error invalid_provider, nothing queued",
+      "description": "goal() with a malformed provider never throws: on_error invalid_provider, nothing queued",
       "client": {
         "send_mode": "background"
       },
@@ -2340,7 +2340,7 @@
     },
     {
       "id": "goals.send.refused.unknown_goal",
-      "description": "Change 23 R.1: strict mode refuses a name that is not set up: 422 unknown_goal is an InvalidRequestError (param goal), sent once, never retried; the reference and value are never logged",
+      "description": "Strict mode refuses a name that is not set up: 422 unknown_goal is an InvalidRequestError (param goal), sent once, never retried; the reference and value are never logged",
       "client": {
         "max_retries": 3
       },
@@ -2406,7 +2406,7 @@
     },
     {
       "id": "goals.send.refused.unknown_goal_refusal_body",
-      "description": "Change 23 R.1: a 422 answered with the refusal body {status: refused, reason: unknown_goal} and no error envelope maps to code unknown_goal (the reason), not http_422; never retried",
+      "description": "A 422 answered with the refusal body {status: refused, reason: unknown_goal} and no error envelope maps to code unknown_goal (the reason), not http_422; never retried",
       "client": {
         "max_retries": 3
       },
@@ -2459,7 +2459,7 @@
     },
     {
       "id": "goals.send.refused.goal_archived",
-      "description": "Change 23 R.1: in strict mode an archived goal is 422 goal_archived (never 410): an InvalidRequestError, never retried",
+      "description": "In strict mode an archived goal is 422 goal_archived (never 410): an InvalidRequestError, never retried",
       "client": {
         "max_retries": 3
       },
@@ -2503,7 +2503,7 @@
     },
     {
       "id": "goals.send.refused.not_remembered",
-      "description": "Change 23 R.9: the SDK never checks names or caches the setting: after an unknown_goal refusal the same name is sent again (the goal may have been set up since)",
+      "description": "The SDK never checks names or caches the setting: after an unknown_goal refusal the same name is sent again (the goal may have been set up since)",
       "responses": [
         {
           "status": 422,
@@ -2615,7 +2615,7 @@
     },
     {
       "id": "goals.background.refused.unknown_goal_item",
-      "description": "Change 23 R.1: a background batch item refused with 422 unknown_goal goes to on_error and is dropped, never re-queued: a second flush sends nothing",
+      "description": "A background batch item refused with 422 unknown_goal goes to on_error and is dropped, never re-queued: a second flush sends nothing",
       "client": {
         "send_mode": "background"
       },
@@ -2708,7 +2708,7 @@
     },
     {
       "id": "goals.background.refused.goal_archived_item",
-      "description": "Change 23 R.1: a background batch item refused with 422 goal_archived goes to on_error and is dropped; the other item is a success",
+      "description": "A background batch item refused with 422 goal_archived goes to on_error and is dropped; the other item is a success",
       "client": {
         "send_mode": "background"
       },
@@ -2819,7 +2819,7 @@
     },
     {
       "id": "goals.background.refused.whole_batch_refusal_body",
-      "description": "Change 23 R.1: a whole batch answered 422 with the refusal body is not retried: the events are dropped and on_error gets code unknown_goal once",
+      "description": "A whole batch answered 422 with the refusal body is not retried: the events are dropped and on_error gets code unknown_goal once",
       "client": {
         "send_mode": "background",
         "max_retries": 3
@@ -2879,7 +2879,7 @@
     },
     {
       "id": "goals.batch.refused.unknown_goal_item",
-      "description": "Change 23 R.1: goals.sendBatch returns an unknown_goal item as a per-item failure (not thrown) next to a counted one",
+      "description": "goals.sendBatch returns an unknown_goal item as a per-item failure (not thrown) next to a counted one",
       "responses": [
         {
           "status": 200,
@@ -2987,7 +2987,7 @@
     },
     {
       "id": "goals.send.value_minor",
-      "description": "The result keeps value as a decimal string and value_minor as an integer (change 09 X.E10)",
+      "description": "The result keeps value as a decimal string and value_minor as an integer",
       "responses": [
         {
           "status": 201,

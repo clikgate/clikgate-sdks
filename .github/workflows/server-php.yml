@@ -1,7 +1,7 @@
 # Server SDK for PHP (server/php) and the Laravel package (server/php-laravel): static analysis (PHPStan max),
 # code style, unit tests and the cross-language conformance suite on every supported PHP plus the minimum
 # (8.1), on Linux and Windows; the Laravel package on Laravel 12 and 13.
-# PHP versions checked 2026-10-26 (docs/DECISIONS.md): 8.2-8.5 are supported; 8.1 (EOL 2025-12-31) stays
+# PHP versions checked 2026-10-26: 8.2-8.5 are supported; 8.1 (EOL 2025-12-31) stays
 # tested because S.9 makes it the documented minimum.
 name: server-php
 

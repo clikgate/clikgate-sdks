@@ -90,7 +90,7 @@ test('background mode: the timer flushes on its own', async () => {
   await c.close();
 });
 
-test('change 10: analytics and link lists take a metadata filter (metadata[<key>]=<value>)', async () => {
+test('analytics and link lists take a metadata filter (metadata[<key>]=<value>)', async () => {
   const page = { object: 'list', data: [{ group: 'sel_ada', end_goal_value: { NGN: '18500.00' }, end_goal_value_minor: { NGN: 1850000 } }], has_more: false, next_cursor: null };
   const { calls, fetchLike } = capture([{ status: 200, json: page }, { status: 200, json: { object: 'list', data: [], has_more: false, next_cursor: null } }]);
   const c = client(fetchLike);

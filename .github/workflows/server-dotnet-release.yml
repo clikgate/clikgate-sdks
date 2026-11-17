@@ -1,6 +1,6 @@
 # Publish Clikgate and Clikgate.AspNetCore to NuGet.org on tags server-dotnet-v<semver> (S.17), with NuGet trusted
 # publishing (OIDC: NuGet/login exchanges the GitHub token for a 1-hour API key; no long-lived key), symbols
-# (.snupkg) and a CycloneDX SBOM attached to the GitHub release. NuGet side (docs/SERVER_SDKS.md): a trusted
+# (.snupkg) and a CycloneDX SBOM attached to the GitHub release. NuGet side: a trusted
 # publishing policy for owner clikgate, repository clikgate-sdks, workflow server-dotnet-release.yml, environment
 # nuget; the secret NUGET_USER is the nuget.org profile name.
 name: server-dotnet-release

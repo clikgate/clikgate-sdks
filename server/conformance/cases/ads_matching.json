@@ -1,7 +1,7 @@
 {
   "$schema": "../schema/case.schema.json",
   "suite": "ads_matching",
-  "description": "Hashed email and phone for ad network matching: hash_for_ads and the goal options (SPEC 25; backend change 19 B.5, R.5)",
+  "description": "Hashed email and phone for ad network matching: hash_for_ads and the goal options (SPEC 25)",
   "cases": [
     {
       "id": "ads_matching.hash_for_ads.vectors",

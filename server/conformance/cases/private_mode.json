@@ -43,7 +43,7 @@
     },
     {
       "id": "private_mode.on.consent",
-      "description": "consent (the four-purpose consent object) is allowed in private mode, as the backend allows it since change 09",
+      "description": "consent (the four-purpose consent object) is allowed in private mode, as the backend allows it",
       "client": {
         "private_mode": true
       },
@@ -529,7 +529,7 @@
     },
     {
       "id": "private_mode.on.provider_allowed",
-      "description": "Change 12 (backend V.7): provider is on the goal allow-list (a gateway name, not personal data)",
+      "description": "provider is on the goal allow-list (a gateway name, not personal data)",
       "client": {
         "private_mode": true
       },
@@ -602,7 +602,7 @@
     },
     {
       "id": "private_mode.on.provider_batch_and_conversion",
-      "description": "Change 12: provider is allowed on batch items and conversions in private mode too",
+      "description": "provider is allowed on batch items and conversions in private mode too",
       "client": {
         "private_mode": true
       },

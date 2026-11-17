@@ -1,4 +1,4 @@
-"""Build server/conformance/vectors/customer-id-vectors.json (change 26 KC.1, R.24).
+"""Build server/conformance/vectors/customer-id-vectors.json.
 
 One canonical form of a business's customer ID, and one validator, shared by the API (import, identify, account dates)
 and every server SDK:

@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Clikgate.Tests;
 
-/// <summary>Change 26: identity token version 2, the canonical customer ID, CustomerSince on IdentifyUserAsync, known customers.</summary>
+/// <summary>Identity token version 2, the canonical customer ID, CustomerSince on IdentifyUserAsync, known customers.</summary>
 public class ExistingUsersTests
 {
     private const string Key = "cg_test_unit000000000000";

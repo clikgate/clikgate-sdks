@@ -15,7 +15,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 
-/** Change 26: identity token version 2, the canonical customer ID, customerSince on identifyUser, known customers. */
+/** Identity token version 2, the canonical customer ID, customerSince on identifyUser, known customers. */
 final class ExistingUsersTest extends TestCase
 {
     private const KEY = 'cg_test_unit000000000000';

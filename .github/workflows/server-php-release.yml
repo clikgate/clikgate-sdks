@@ -2,7 +2,7 @@
 # Packagist has no trusted publishing for public packages and needs each package at the root of its own
 # repository, so CI splits server/php and server/php-laravel (git subtree split) into the read-only public
 # repositories, tags them v<semver>, and Packagist updates through its GitHub hook. Each push uses a
-# deploy key with write access to that one repository (docs/SERVER_SDKS.md): secrets PHP_SPLIT_DEPLOY_KEY
+# deploy key with write access to that one repository: secrets PHP_SPLIT_DEPLOY_KEY
 # and LARAVEL_SPLIT_DEPLOY_KEY, in the environment packagist.
 name: server-php-release
 

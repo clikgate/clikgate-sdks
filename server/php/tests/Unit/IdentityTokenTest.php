@@ -11,7 +11,7 @@ use Clikgate\IdentityToken;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-/** Change 22 I.1: identity tokens against the shared vectors made by the backend signer. */
+/** Identity tokens against the shared vectors made by the backend signer. */
 final class IdentityTokenTest extends TestCase
 {
     /** @return array{vectors: list<array{name: string, secret: string, customer_id: string, issued_at: int, token: string}>, invalid: list<array{name: string, customer_id: string}>} */

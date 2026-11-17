@@ -1,4 +1,4 @@
-"""Change 26: identity token version 2, the canonical customer ID, customer_since on identify_user, known customers."""
+"""Identity token version 2, the canonical customer ID, customer_since on identify_user, known customers."""
 
 from __future__ import annotations
 

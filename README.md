@@ -7,7 +7,7 @@ This repository holds the **server SDKs + AI guides**. The setup command (`npx @
 | Server SDKs | [`server/`](server/) | `@clikgate/node`, `clikgate` (PyPI), `clikgate/clikgate-php` + `clikgate/clikgate-laravel`, `com.clikgate:clikgate-java` (+ Servlet filters, Spring Boot starter), `Clikgate` + `Clikgate.AspNetCore` (NuGet) |
 | AI guides | [`ai-guides/`](ai-guides/) | the `clikgate-setup` skill, published to `clikgate/clikgate-skills` |
 
-Decisions and dated documentation findings are in [`docs/DECISIONS.md`](docs/DECISIONS.md). Licence: [MIT](LICENSE).
+Licence: [MIT](LICENSE).
 
 ## Server SDKs
 
@@ -33,7 +33,7 @@ All run on Linux and Windows with the conformance suite, and every release attac
 
 ## Setup command (moved)
 
-`@clikgate/setup` moved to `clikgate_mobile_sdk/cli/` on 2026-10-26 (owner decision; still MIT), because it is tightly coupled to the mobile SDKs' versions and APIs. Its docs are `clikgate_mobile_sdk/docs/SETUP_COMMAND.md`, its decisions `clikgate_mobile_sdk/cli/DECISIONS.md`, and its workflows `cli.yml` / `cli-release.yml` are in that repository. The AI guides below still use it: check out `clikgate_mobile_sdk` next to this repository, or set `CLIKGATE_CLI_DIR` to its `cli/` folder.
+`@clikgate/setup` moved to `clikgate_mobile_sdk/cli/` on 2026-10-26 (still MIT), because it is tightly coupled to the mobile SDKs' versions and APIs. Its docs are `clikgate_mobile_sdk/docs/SETUP_COMMAND.md`, and its workflows `cli.yml` / `cli-release.yml` are in that repository. The AI guides below still use it: check out `clikgate_mobile_sdk` next to this repository, or set `CLIKGATE_CLI_DIR` to its `cli/` folder.
 
 ## AI guides
 
@@ -54,7 +54,7 @@ All run on Linux and Windows with the conformance suite, and every release attac
   - `node ai-guides/scripts/build.mjs` writes `ai-guides/dist/`:
     - `clikgate-skills/` for the public repository;
     - `website/`, with `docs/ai/setup.md`, `/.well-known/agent-skills/`, `llms.txt` and `llms-full.txt`.
-- QA: `ai-guides/qa/run.sh` runs the headless Claude Code verification on copies of the fixtures (the setup command's, from `CLIKGATE_CLI_DIR`) outside the repositories. Results are in [`docs/AI_GUIDES_QA.md`](docs/AI_GUIDES_QA.md).
+- QA: `ai-guides/qa/run.sh` runs the headless Claude Code verification on copies of the fixtures (the setup command's, from `CLIKGATE_CLI_DIR`) outside the repositories.
 - CI: `.github/workflows/ai-guides.yml` runs three jobs:
   - validate, with the setup command from a checkout of `clikgate/clikgate-mobile-sdk`;
   - API-surface drift plus code blocks, against `clikgate/clikgate-mobile-sdk`;

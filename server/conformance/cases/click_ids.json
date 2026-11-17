@@ -833,7 +833,7 @@
     },
     {
       "id": "click_ids.persist.marker_days",
-      "description": "persist (change 16): the _cg_kept=s marker follows days, domain and secure",
+      "description": "persist: the _cg_kept=s marker follows days, domain and secure",
       "steps": [
         {
           "call": "click_ids.persist",

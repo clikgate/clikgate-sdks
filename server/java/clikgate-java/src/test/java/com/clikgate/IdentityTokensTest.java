@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
-/** Change 22 I.1 / R.27: identity tokens against the shared vectors made by the backend signer. */
+/** Identity tokens against the shared vectors made by the backend signer. */
 class IdentityTokensTest {
   private static final JsonNode DOC = load();
 

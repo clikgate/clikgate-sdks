@@ -197,7 +197,7 @@ function flutter() {
   ].join('\n');
 }
 
-// Change 22: `ClikgateMoney` (the track() revenue helper) was removed from every mobile SDK with track().
+// `ClikgateMoney` (the track() revenue helper) was removed from every mobile SDK with track().
 function mustMatch(src, re, what) {
   const m = re.exec(src);
   if (!m) throw new Error(`${what} not found in the SDK source (has it moved? update generate-api-surface.mjs)`);

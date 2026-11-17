@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// Change 22 (S, R.44): fail if the removed app-event API creeps back into this repository, and check that every
+// Fail if the removed app-event API creeps back into this repository, and check that every
 // server SDK reference page links to the "Identify your users" guide (I.8).
 //
 //   node scripts/check_no_track.mjs              # scan the repository (git-tracked and new, non-ignored files)
 //   node scripts/check_no_track.mjs --self-test  # prove the patterns match what they should, and only that
 //
-// Matches Clikgate identifiers only (R.44): a Clikgate track call, `trackEvent`, the removed webhook type and routes,
+// Matches Clikgate identifiers only: a Clikgate track call, `trackEvent`, the removed webhook type and routes,
 // and "Event rules" (case-sensitive). Allowed, by path: third-party code (dependencies are git-ignored and never
-// scanned), docs/spec/ (the change specs), the vendored backend OpenAPI document (refreshed by the codegen sync), the
+// scanned), the vendored backend OpenAPI document (refreshed by the codegen sync), the
 // codegen removal list and its test (they name the removed routes on purpose), and this file. In a CHANGELOG.md only
 // the entry recording the removal ("- **Removed") may name them. Test files that assert the old routes answer 404
 // are allowed with the marker `no-track-guard: 404 test` on the line.
@@ -30,7 +30,6 @@ export const RULES = [
 
 /** Paths never scanned, with the reason. */
 export const ALLOWED_PATHS = [
-  [/^docs\/specs?\//, 'change specs'],
   [/(^|\/)(node_modules|vendor|\.venv|venv|target|bin|obj|dist|build|\.test-dist|\.cache|\.phpstan-cache)\//, 'third-party code and build output'],
   [/^server\/openapi\/openapi(-public)?\.json$/, 'the vendored backend OpenAPI document (server/codegen/removed.mjs drops the routes)'],
   [/^server\/codegen\/removed\.mjs$/, 'the codegen removal list'],
@@ -121,7 +120,7 @@ function selfTest() {
   if (!hits('server/node/README.md', '- **Removed:** `GET /v1/app-events`').length) fails.push('only CHANGELOG.md removal entries are allowed');
   if (!hits('server/node/CHANGELOG.md', '- **Added:** `GET /v1/app-events`').length) fails.push('other CHANGELOG lines are scanned');
   if (hits('tests/test_routes.py', 'assert get("/v1/app-events").status == 404  # no-track-guard: 404 test').length) fails.push('marked 404 tests must be allowed');
-  if (!allowedPath('docs/spec/clikgate-change-22.md') || !allowedPath('server/node/node_modules/x/index.js') || allowedPath('server/node/src/client.ts')) fails.push('path allow-list is wrong');
+  if (!allowedPath('server/codegen/removed.mjs') || !allowedPath('server/node/node_modules/x/index.js') || allowedPath('server/node/src/client.ts')) fails.push('path allow-list is wrong');
   if (fails.length) {
     console.error(`check_no_track self-test failed:\n  ${fails.join('\n  ')}`);
     process.exit(1);

@@ -285,7 +285,7 @@
     },
     {
       "id": "webhooks.valid.subscription_updated",
-      "description": "subscription.updated (change 10) carries the subscription with add_ons, change and add_on_key",
+      "description": "subscription.updated carries the subscription with add_ons, change and add_on_key",
       "steps": [
         {
           "call": "webhooks.verify",

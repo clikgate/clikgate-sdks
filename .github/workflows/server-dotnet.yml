@@ -1,6 +1,6 @@
 # Server SDK for .NET (server/dotnet): build with warnings as errors (netstandard2.0, net8.0, net10.0), unit
 # tests, the cross-language conformance suite and the ASP.NET Core add-on, on .NET 8 and 10 (Linux and Windows)
-# plus .NET Framework 4.7.2 on Windows for the netstandard2.0 build. Support checked 2026-10-26 (docs/DECISIONS.md):
+# plus .NET Framework 4.7.2 on Windows for the netstandard2.0 build. Support checked 2026-10-26:
 # .NET 8 and 9 reach end of support on 2026-11-10; .NET 10 (LTS) runs to 2028-11-14.
 name: server-dotnet
 

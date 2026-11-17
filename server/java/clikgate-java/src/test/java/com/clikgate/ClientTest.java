@@ -189,7 +189,7 @@ class ClientTest {
   @Test
   @SuppressWarnings("unchecked")
   void metadataFilterLinkMetadataAndEndGoalValue() throws Exception {
-    // Change 10: a metadata map is sent as metadata[<key>]=<value>; Link exposes its metadata.
+    // A metadata map is sent as metadata[<key>]=<value>; Link exposes its metadata.
     Recorder r = new Recorder();
     r.status = 200;
     r.body = "{\"object\":\"list\",\"data\":[{\"group\":\"sel_ada\",\"end_goal_value\":{\"NGN\":\"18500.00\"},\"end_goal_value_minor\":{\"NGN\":1850000}}],\"has_more\":false,\"next_cursor\":null}";

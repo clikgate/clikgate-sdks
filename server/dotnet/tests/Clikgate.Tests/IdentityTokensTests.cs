@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Clikgate.Tests;
 
-/// <summary>Change 22 I.1 / R.27: identity tokens against the shared vectors made by the backend signer.</summary>
+/// <summary>Identity tokens against the shared vectors made by the backend signer.</summary>
 public class IdentityTokensTests
 {
     private static readonly JsonElement Doc = Load();

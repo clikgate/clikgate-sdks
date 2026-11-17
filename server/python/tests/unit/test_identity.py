@@ -1,4 +1,4 @@
-"""create_identity_token (change 22 I.1, R.27) against the shared vectors made by the backend signer."""
+"""create_identity_token against the shared vectors made by the backend signer."""
 
 from __future__ import annotations
 

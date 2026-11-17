@@ -43,7 +43,7 @@ test('persist() on a real ServerResponse keeps existing cookies', async () => {
   }, '/');
   assert.equal(r.setCookie.length, 3);
   assert.match(r.setCookie[1]!, /^_cg_cgid=clk_[0-9A-Z]{26}; Path=\/; Max-Age=2592000; SameSite=Lax$/); // plain HTTP: no Secure
-  assert.equal(r.setCookie[2], '_cg_kept=s; Path=/; Max-Age=2592000; SameSite=Lax'); // the marker (change 16)
+  assert.equal(r.setCookie[2], '_cg_kept=s; Path=/; Max-Age=2592000; SameSite=Lax'); // the marker
 });
 
 test('express/connect middleware exposes req.clikgate and persists query click IDs', async () => {

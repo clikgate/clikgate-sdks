@@ -1,4 +1,4 @@
-# Drift check for the generated API layer (S.16) and the shared enums (GoalKind, GoalStatus, Provider, change 12):
+# Drift check for the generated API layer (S.16) and the shared enums (GoalKind, GoalStatus, Provider):
 # regenerate from the vendored openapi.json with the pinned OpenAPI Generator and fail if the committed output
 # differs, or if a file is no longer generated. To update after the backend
 # changes: node server/codegen/generate.mjs --from ../clikgate_api, then commit. Covers every configured
@@ -35,7 +35,7 @@ jobs:
         with:
           path: server/codegen/.cache
           key: openapi-generator-${{ hashFiles('server/codegen/generator.json') }}
-      - name: Generator input is the public audience only (Change 21, R.41)
+      - name: Generator input is the public audience only
         run: node --test server/codegen/filter.test.mjs
       - name: Regenerate and compare
         run: node server/codegen/generate.mjs --check

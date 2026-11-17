@@ -1,7 +1,7 @@
 {
   "$schema": "../schema/case.schema.json",
   "suite": "people",
-  "description": "identifyUser() and goal labels (SPEC 24; backend change 14 B.5)",
+  "description": "identifyUser() and goal labels (SPEC 24)",
   "cases": [
     {
       "id": "people.identify.click_customer_label",

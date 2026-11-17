@@ -173,7 +173,7 @@ public class ClientTests
     [Fact]
     public async Task Metadata_filter_link_metadata_and_end_goal_value()
     {
-        // Change 10: a metadata map is sent as metadata[<key>]=<value>; Link exposes its metadata.
+        // A metadata map is sent as metadata[<key>]=<value>; Link exposes its metadata.
         var r = new Recorder { Status = HttpStatusCode.OK, Body = "{\"object\":\"list\",\"data\":[{\"group\":\"sel_ada\",\"end_goal_value\":{\"NGN\":\"18500.00\"},\"end_goal_value_minor\":{\"NGN\":1850000}}],\"has_more\":false,\"next_cursor\":null}" };
         await using var c = Client(r, PrivateMode.Off, SendMode.Sync, []);
         var page = await c.Api.Analytics.AnalyticsSummaryAsync(new Dictionary<string, object?>

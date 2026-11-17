@@ -1,4 +1,4 @@
-"""The /cg/keep route, the _cg_kept marker and click_ids.context (change 16, SPEC 13.1)."""
+"""The /cg/keep route, the _cg_kept marker and click_ids.context (SPEC 13.1)."""
 
 from __future__ import annotations
 

@@ -25,7 +25,7 @@ class ClikgateAutoConfigurationTest {
         .run(ctx -> {
           assertThat(ctx).hasSingleBean(Clikgate.class);
           assertThat(ctx.getBean(Clikgate.class).mode()).isEqualTo("test");
-          assertThat(ctx.getBean(Clikgate.class).payments()).isNotNull(); // change 11: payment confirmations on the bean
+          assertThat(ctx.getBean(Clikgate.class).payments()).isNotNull(); // payment confirmations on the bean
           assertThat(ctx.getBean(Clikgate.class).payments().buildFromPaystack("{\"data\":{\"reference\":\"T_1\",\"status\":\"success\",\"amount\":750000,\"currency\":\"NGN\"}}"))
               .containsEntry("amount", "7500").containsEntry("reference", "T_1");
           assertThat(ctx).doesNotHaveBean(FilterRegistrationBean.class); // not a web application

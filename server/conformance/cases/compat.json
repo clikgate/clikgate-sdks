@@ -1,7 +1,7 @@
 {
   "$schema": "../schema/case.schema.json",
   "suite": "compat",
-  "description": "Forward compatibility: older SDK versions ignore unknown fields and enum values (change 12 S.3)",
+  "description": "Forward compatibility: older SDK versions ignore unknown fields and enum values",
   "cases": [
     {
       "id": "compat.goal_event.unknown_fields",

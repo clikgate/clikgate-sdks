@@ -15,7 +15,7 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 
-/** Change 16: the `/cg/keep` route, the `_cg_kept=s` marker and `clickIds->context()` (SPEC 13, 13.1). */
+/** The `/cg/keep` route, the `_cg_kept=s` marker and `clickIds->context()` (SPEC 13, 13.1). */
 final class KeepRouteTest extends TestCase
 {
     private const CID = 'clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6';

@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Clikgate.Tests;
 
-/// <summary>Change 16: the /cg/keep core, the _cg_kept=s marker and ClickIds.Context (SPEC 13, 13.1).</summary>
+/// <summary>The /cg/keep core, the _cg_kept=s marker and ClickIds.Context (SPEC 13, 13.1).</summary>
 public class KeepRouteTests
 {
     private const string Cid = "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6";

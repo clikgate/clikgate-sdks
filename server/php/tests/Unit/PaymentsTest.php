@@ -11,7 +11,7 @@ use Nyholm\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 
-/** Change 11 (SPEC 22): payments->confirm() and the gateway helpers. */
+/** SPEC 22: payments->confirm() and the gateway helpers. */
 final class PaymentsTest extends TestCase
 {
     private const KEY = 'cg_test_unit000000000000';

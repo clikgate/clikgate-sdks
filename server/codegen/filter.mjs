@@ -14,7 +14,7 @@ export function apiKeyCallable(op) {
 }
 
 /**
- * Change 21 (R.41): every backend route declares an audience (`x-audience`: `public`, `sdk`, `dashboard`, `partner`,
+ * Every backend route declares an audience (`x-audience`: `public`, `sdk`, `dashboard`, `partner`,
  * `webhook`, `staff`, `internal`). The server SDKs are generated from `public` only: `sdk` routes (the mobile and web
  * SDK protocol) are published in `openapi-public.json` but never in the server SDKs. Once a document declares
  * audiences, an operation without one is hidden (the backend treats it so too).
@@ -31,7 +31,7 @@ const operationsOf = (source) =>
     METHODS.filter((m) => item?.[m] && typeof item[m] === 'object').map((m) => [m, path, item[m]]),
   );
 
-/** True when any operation carries `x-audience` (the backend's `openapi-public.json` from Change 21 on). */
+/** True when any operation carries `x-audience` (the backend's `openapi-public.json`). */
 export function declaresAudiences(source) {
   return operationsOf(source).some(([, , op]) => op[AUDIENCE_EXTENSION] !== undefined);
 }
@@ -163,8 +163,8 @@ function placeholder(param) {
  * and `x-clikgate-auth: api_key`, never a staff, internal or SDK protocol path.
  * Returns { spec, report } where report lists what was skipped and why.
  */
-// Change 12 (S.4): the published SDK packages carry no internal planning references. The backend's descriptions
-// sometimes cite its internal plans ("Change 12, B.1: …", "(Part 2, 23)", "X.E10"); the SDK copies drop them.
+// The published SDK packages carry no internal planning references. The backend's descriptions
+// sometimes cite its internal plans ("Change NN, B.1: …", "(Part 2, 23)", "X.E10"); the SDK copies drop them.
 const REF = String.raw`(?:[Cc]hange \d{2}|Part \d, (?:section )?\d+(?:\.\d+)*|Spec \d+(?:\.\d+)+|X\.[A-Z]\d+|growth \d+[A-Z]?)`;
 const LEADING_REF = new RegExp(
   String.raw`(^|[.!?]\s+)(?:${REF}(?:,? (?:[A-Z]{1,2}\.?[\dA-Za-z.]*|route [A-D])(?: \/ [A-Z]{1,2}\.[\dA-Za-z.]+)?)?(?: \([^()]*\))?)(?:[;,] ${REF}(?:,? [A-Z]{1,2}\.[\dA-Za-z.]+)?)*[:;,]\s+(\S)`,
@@ -177,7 +177,7 @@ const ANY_REF = new RegExp(String.raw`\b${REF}`);
 export function scrubDescription(text) {
   if (typeof text !== 'string' || !ANY_REF.test(text)) return text;
   let out = text.replace(PAREN_REF, '');
-  // a sentence that starts with a reference ("Change 12, B.1: the goal's kind …") keeps its text
+  // a sentence that starts with a reference ("Change NN, B.1: the goal's kind …") keeps its text
   out = out.replace(LEADING_REF, (_m, before, first) => `${before}${first.toUpperCase()}`);
   if (ANY_REF.test(out)) {
     // a reference inside a sentence: drop that sentence (keep the others)

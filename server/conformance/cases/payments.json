@@ -658,7 +658,7 @@
     },
     {
       "id": "payments.confirm.plan_feature_unavailable",
-      "description": "Change 12 (backend C12 V1.6): payments need Starter or above; Free gets 403 plan_feature_unavailable, a PermissionError with required_plan",
+      "description": "Payments need Starter or above; Free gets 403 plan_feature_unavailable, a PermissionError with required_plan",
       "responses": [
         {
           "status": 403,
@@ -710,7 +710,7 @@
     },
     {
       "id": "payments.confirm.unknown_provider",
-      "description": "Change 12: a well-formed provider this SDK does not know is sent; the API answers 422 unknown_provider (not retried)",
+      "description": "A well-formed provider this SDK does not know is sent; the API answers 422 unknown_provider (not retried)",
       "responses": [
         {
           "status": 422,

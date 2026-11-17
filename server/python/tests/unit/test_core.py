@@ -229,7 +229,7 @@ def test_proxy_option_is_passed_to_httpx() -> None:
 
 
 def test_metadata_filter_and_end_goal_value(recorder: Recorder) -> None:
-    """Change 10: analytics and link lists take ``metadata={...}``, sent as ``metadata[<key>]=<value>``."""
+    """Analytics and link lists take ``metadata={...}``, sent as ``metadata[<key>]=<value>``."""
     page = {
         "object": "list",
         "data": [{"group": "sel_ada", "end_goal_value": {"NGN": "18500.00"}, "end_goal_value_minor": {"NGN": 1850000}}],

@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-/** Change 16: the {@code /cg/keep} core, the {@code _cg_kept=s} marker and {@code clickIds().context()} (SPEC 13, 13.1). */
+/** The {@code /cg/keep} core, the {@code _cg_kept=s} marker and {@code clickIds().context()} (SPEC 13, 13.1). */
 class KeepRouteTest {
   private static final String CID = "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6";
   private static final String COOKIE = "_cg_cgid=" + CID + "; Path=/; Max-Age=2592000; SameSite=Lax; Secure";

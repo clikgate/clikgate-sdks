@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.Test;
 
-/** Change 26: identity token version 2, the canonical customer ID, customerSince on identifyUser, known customers. */
+/** Identity token version 2, the canonical customer ID, customerSince on identifyUser, known customers. */
 class ExistingUsersTest {
   private static final String KEY = "cg_test_unit000000000000";
 
