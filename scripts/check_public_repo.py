@@ -44,6 +44,15 @@ FORBIDDEN_TEXT = [
     ("internal spec id", re.compile(r"\bC\d{2}-[BFS]\d+\b|\bC\d{1,2} B\d|\bbackend spec \d", re.I)),
     # Private repositories: say "the backend repository" or "the backend's public document" instead
     ("private repository", re.compile(r"\.\./clikgate_api|clikgate_api/|clikgate_frontend|clikgate_website|clikgate-sdk-internal")),
+    # The backend's source layout (src/<module>/.../<file>.py, src/core/..., src/static/...); this repo's own Python
+    # package lives under src/clikgate/, and "clikgate_api" as a quoted directory name in code builds that layout too
+    (
+        "backend source path",
+        re.compile(
+            r"(?<![\w./-])src/(?!clikgate/)[a-z_]+/(?:[a-z_]+/)*[a-z_]+\.(?:py|html)\b|(?<![\w./-])src/(?:core|static)/"
+            r"|[\"']clikgate_api[\"']"
+        ),
+    ),
 ]
 
 # Files whose job is to list the patterns above (release scanners and this check)

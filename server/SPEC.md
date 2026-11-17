@@ -124,7 +124,7 @@ Every request carries these headers:
   ```
 
   - `<runtime version>` has no leading `v`. For Java it is `java.version`; for .NET, `Environment.Version`.
-  - **Sanitising (required by the backend parser, `src/server_sdk/utils/user_agent.py`):** `<sdk version>` and `<runtime version>` MUST match `^[0-9][0-9A-Za-z.+-]{0,39}$`. Replace any other character with `-` and truncate to 40 characters, so Java `1.8.0_402` becomes `1.8.0-402`. The backend keeps `sdk`, `sdk_version`, `runtime` and `runtime_version` (shown in Developers → SDKs and `GET /v1/developers/sdks`, with `latest_version`, `update_available` and `below_minimum`). A runtime version that fails the regex is silently stored as part of the runtime name.
+  - **Sanitising (required by the backend parser):** `<sdk version>` and `<runtime version>` MUST match `^[0-9][0-9A-Za-z.+-]{0,39}$`. Replace any other character with `-` and truncate to 40 characters, so Java `1.8.0_402` becomes `1.8.0-402`. The backend keeps `sdk`, `sdk_version`, `runtime` and `runtime_version` (shown in Developers → SDKs and `GET /v1/developers/sdks`, with `latest_version`, `update_available` and `below_minimum`). A runtime version that fails the regex is silently stored as part of the runtime name.
   - The runtime token is the lowercase SDK token (`node`, `python`, `php`, `java`, `dotnet`), never `.NET` or `OpenJDK`.
   - `<os>` is lowercase: `linux`, `darwin`, `windows`, `freebsd`, … (Node `win32` becomes `windows`).
   - `<arch>` is normalised to `x64`, `arm64`, `x86` or `arm`. Anything else is passed through, lowercased, with spaces removed.
@@ -145,7 +145,7 @@ Every request carries these headers:
 
 Every error extends `ClikgateError`, which exposes `http_status` (int or null), `code` (string), `message`, `request_id` (string or null), `param` (string or null) and `type` (the envelope's type, or null for local errors). The raw error object is available as `body`/`raw` (Node `error.raw`).
 
-The backend envelope, from `src/core/errors.py`:
+The backend's error envelope:
 
 ```json
 {"error": {"type": "invalid_request", "code": "invalid_value", "message": "…", "param": "value", "request_id": "req_…"}}
@@ -200,19 +200,19 @@ ClikgateError
 
   | Code | Status → class | Extra fields (wire → Node) | Source |
   |---|---|---|---|
-  | `test_destination_not_allowed` | 422 → `InvalidRequestError` | `allowed` (list: `clikgate_test_page`, `verified_site`, `local_address`, `verified_tunnel`) → `allowed`; `doc_url` → `docUrl` | `src/test_links/utils/destinations.py` |
-  | `test_link_limit_reached` | 403 → `PermissionError` | `limit` → `limit` | `src/test_links/services/test_link_policy.py` |
-  | `domain_mode_mismatch` | 422 → `InvalidRequestError` (param `domain`) | — | `src/domains/services/domain_service.py` |
-  | `plan_limit_reached` | 403 → `PermissionError` (`param` = the allowance key) | `required_plan` → `requiredPlan` | `src/billing/utils/errors.py` |
+  | `test_destination_not_allowed` | 422 → `InvalidRequestError` | `allowed` (list: `clikgate_test_page`, `verified_site`, `local_address`, `verified_tunnel`) → `allowed`; `doc_url` → `docUrl` | backend |
+  | `test_link_limit_reached` | 403 → `PermissionError` | `limit` → `limit` | backend |
+  | `domain_mode_mismatch` | 422 → `InvalidRequestError` (param `domain`) | — | backend |
+  | `plan_limit_reached` | 403 → `PermissionError` (`param` = the allowance key) | `required_plan` → `requiredPlan` | backend |
   | `plan_upgrade_required`, `feature_disabled` | 403 → `PermissionError` | `required_plan` → `requiredPlan` | feature gates such as exports and summaries |
-  | `plan_feature_unavailable` | 403 → `PermissionError` | `required_plan` → `requiredPlan` (`starter`); `feature` (`payment_goals`) stays in `raw` | Payment goals, payment reports and `payments.confirm` need Starter or above (`src/payments/services/plan_gate.py`) |
-  | `cli_scope` | 403 → `PermissionError` | — (a setup-command token was used; server SDKs need an API key) | `src/cli/utils/allowlist.py` |
-  | `link_locked` | 409 → `LinkLockedError` (`param` = the first locked field) | — | `src/links/services/link_service.py` |
-  | `https_required` | 422 → `InvalidRequestError` (`param` = the URL field) | — (the organisation allows only `https://` destinations; live links) | `src/links/services/link_service.py` |
-  | `destination_not_allowlisted` | 422 → `InvalidRequestError` (`param` = the URL field) | — (the organisation requires its destination allowlist; live links) | `src/links/services/link_service.py` |
-  | `private_mode_field_rejected` | 422 → `PrivateModeFieldRejectedError` | `param` → `field` | `src/private_mode` |
+  | `plan_feature_unavailable` | 403 → `PermissionError` | `required_plan` → `requiredPlan` (`starter`); `feature` (`payment_goals`) stays in `raw` | Payment goals, payment reports and `payments.confirm` need Starter or above |
+  | `cli_scope` | 403 → `PermissionError` | — (a setup-command token was used; server SDKs need an API key) | backend |
+  | `link_locked` | 409 → `LinkLockedError` (`param` = the first locked field) | — | backend |
+  | `https_required` | 422 → `InvalidRequestError` (`param` = the URL field) | — (the organisation allows only `https://` destinations; live links) | backend |
+  | `destination_not_allowlisted` | 422 → `InvalidRequestError` (`param` = the URL field) | — (the organisation requires its destination allowlist; live links) | backend |
+  | `private_mode_field_rejected` | 422 → `PrivateModeFieldRejectedError` | `param` → `field` | backend |
   | `unknown_provider` | 422 → `InvalidRequestError` (param `provider`) | — (a well-formed provider the API doesn't know) | |
-  | `value_required`, `invalid_value`, `code_not_supported` | 422 → `InvalidRequestError` (param `value` / `code`) | — (a Payment goal sent by the server needs a value above 0 and takes `click_id`, not `code`) | `src/goals/services/goal_events.py` |
+  | `value_required`, `invalid_value`, `code_not_supported` | 422 → `InvalidRequestError` (param `value` / `code`) | — (a Payment goal sent by the server needs a value above 0 and takes `click_id`, not `code`) | backend |
   | `payment_goal_needs_confirmation` | 422 → `InvalidRequestError` (param `provider` or `reference`) | `missing` (list) stays in `raw` | a Payment goal without `provider` or `reference`, from any sender (also `goals.send` and `conversions.create`) |
   | `unknown_goal` | 422 → `InvalidRequestError` (param `goal`, or null for a refusal body) | `status`, `reason`, `counted`, `goal_kind` stay in `raw` | "Allow unknown goal names" is off and no goal (or alias) has this name. Final: never retried (section 23.2) |
   | `goal_archived` | 422 → `InvalidRequestError` | — | the goal is archived and "Allow unknown goal names" is off (with the setting on it is a `received` result, never `410`) |
@@ -264,7 +264,7 @@ ClikgateError
 - **Why goal keys are random (since 1.1.0):** the backend dedupes goal events by `(organization, goal, reference_hash)` itself, in every mode, so a resend after a crash, with a new key, returns `200` with the stored event and is never counted twice. A Payment goal sent by the server (section 23) is deduplicated by `(provider, reference)` the same way. The key only makes the retries of one call safe. Versions before 1.1.0 (never released) sent `sha256_hex(goal + ":" + reference)`; no SDK computes that key any more.
 - **Same goal and reference, different body:** the backend returns the stored event (`200`); a goal can't be "corrected" by resending. Use `goals.reverse`. Batch items say the same with `status: 200` on the item.
 - **Reversals use random keys** because two identical partial refunds are legitimate.
-- **Backend behaviour** (`src/core/idempotency/idempotent_route.py`):
+- **Backend behaviour**:
   - The same key with the same request replays the stored response, with `Idempotent-Replayed: true`.
   - The same key with a different request is `409 idempotency_key_reused` (`IdempotencyError`, not retried).
   - 4xx answers are stored too, so a retry gets the same answer; 5xx responses are not stored.
@@ -416,7 +416,7 @@ ClikgateError
 
 - **Link fields the SDK relies on:**
   - `warnings[]`.
-  - `domain_badge`: `"premium"` on `ciz.to` links, else `null` (`src/links/schemas/response/link_info_response.py`).
+  - `domain_badge`: `"premium"` on `ciz.to` links, else `null`.
   - `locked`, `locked_by`, `locked_at`. Locking is `POST /v1/links/{id}/lock` (`links:write`, generated `api.links.*`); unlocking needs `org:manage`.
 - **Test links** (test-mode keys only):
   - The destination may be a full URL or the shorthand `clikgate-test:<inspect|checkout|app-open|store>`. The SDK sends it unchanged and never validates destinations locally.
@@ -443,7 +443,7 @@ ClikgateError
 
   - `409 link_locked`: throws `LinkLockedError`, which is never retried. Unlocking needs `org:manage` in the dashboard.
 - **Pagination:**
-  - The backend uses cursors (`src/core/pagination.py`): `limit` (1–100, default 25), `starting_after`, `ending_before`. The response has `has_more` and `next_cursor`.
+  - The backend uses cursors: `limit` (1–100, default 25), `starting_after`, `ending_before`. The response has `has_more` and `next_cursor`.
   - The iterator requests the next page with `starting_after = next_cursor` and keeps the caller's other params.
   - It stops when `has_more` is false or `next_cursor` is null.
   - Pages are fetched lazily, one request at a time.
@@ -487,9 +487,8 @@ When on, before the HTTP layer sees anything, the SDK checks every wire field of
 | conversion (`conversions.create`) | the above + `external_id` |
 | reversal (`goals.reverse`, `conversions.reverse`) | `goal`, `reference`, `value`, `external_id`, `amount_minor` |
 
-- **Source of truth:** these lists match the backend's (`src/private_mode/utils/private_mode.py`
-  `GOAL_EVENT_FIELDS` and `CONVERSION_FIELDS`; `src/payments/services/confirmations.py` `PRIVATE_FIELDS` for
-  confirmations), re-checked 2026-10-28. The reversal list is stricter than the backend's on purpose (free-text
+- **Source of truth:** these lists match the backend's private-mode field lists for goals, conversions and
+  confirmations, re-checked 2026-10-28. The reversal list is stricter than the backend's on purpose (free-text
   `reason` stays local).
 - **A refused field** raises `PrivateModeFieldRejectedError` with `field` = the first refused wire field, in this order: `metadata`, `consent`, then the others in alphabetical order. Nothing is sent. For batches, the error has `index`.
 - **`goal()`** passes the error to `on_error`.
@@ -511,7 +510,7 @@ When on, before the HTTP layer sees anything, the SDK checks every wire field of
 
 - **Valid ID:** `^clk_[0-9A-Z]{26}$` (prefixed ULID, Crockford base32, uppercase).
 - **Parameter:** `param` is `click_id_param`, from the option, else the loaded config, else `cgid`.
-- **Cookie name:** `_cg_<param>`, the same first-party cookie the web script writes (`src/static/clikgate.js`).
+- **Cookie name:** `_cg_<param>`, the same first-party cookie the web script writes.
 
 | Canonical | Behaviour |
 |---|---|
@@ -522,7 +521,7 @@ When on, before the HTTP layer sees anything, the SDK checks every wire field of
 | `click_ids.keep_route(options)` | the `/cg/keep` handler (13.1) |
 | `click_ids.from_payment_metadata(payload)` | below |
 
-**`from_payment_metadata(payload)`**, matching `src/sales/providers/normalize.py`:
+**`from_payment_metadata(payload)`** matching the backend:
 
 1. If `payload` is a string, parse it as JSON. If that fails, return null.
 2. Candidates, in order: `payload`, then `payload.data` (Paystack and Flutterwave webhook envelopes), when it is an object.
@@ -596,7 +595,7 @@ invalid_argument`. Conformance: `conformance/cases/click_ids.json`, ids `click_i
 
 ## 14. Webhook verification
 
-The header (backend `docs/WEBHOOKS.md`, `src/core/webhook_signature.py`):
+The header:
 
 ```
 Clikgate-Signature: t=<unix seconds>,v1=<hex>[,v1=<hex>]
@@ -718,19 +717,19 @@ These were checked in the backend on 2026-10-26:
   - `GET /v1/links/{id}/qr?format=svg|png&size&margin&dark&light`.
 - **Clicks:** `GET /v1/clicks/{id}`.
 - **Being added:** `GET /v1/server-sdk/config` is coded to the spec shape. Until it is deployed, a 404 triggers the fail-closed path in 12.1.
-- **Webhook `link.destination_changed`:** `data.object` is the link; `data` also carries `from`, `to`, `actor {type, id, api_key_prefix, requested_by?, change_request_id?}`, `actor_type` and `api_key_prefix` (`src/links/services/link_change_requests.py`). SDKs return it as any other event.
+- **Webhook `link.destination_changed`:** `data.object` is the link; `data` also carries `from`, `to`, `actor {type, id, api_key_prefix, requested_by?, change_request_id?}`, `actor_type` and `api_key_prefix`. SDKs return it as any other event.
 - **Webhook `subscription.updated`:** sent when a Growth add-on is activated, set to end at renewal, or kept. `data.object` is the subscription with `add_ons[]` (`key`, `name`, `status`, `amount_minor`, `ends_at`, `remove_at_renewal`); `data` also carries `previous_attributes`, `change` (`add_on.activated` or `add_on.remove_at_renewal`, the second also when "Remove at renewal" is undone: read `add_ons[].remove_at_renewal`) and `add_on_key`. Endpoints subscribe to it like the other `subscription.*` events. Webhook `type` stays a plain string in every SDK, so no type changes; conformance `webhooks.valid.subscription_updated`.
 - **Plumbing:**
-  - Errors: `src/core/errors.py`.
-  - Idempotency: `src/core/idempotency/idempotent_route.py` (TTL `IDEMPOTENCY_TTL_SECONDS`).
+  - Errors: the envelope above.
+  - Idempotency: keys are kept for the backend's idempotency window (see Idempotency above).
   - Request IDs come back as `X-Request-Id`. Rate-limit headers are `RateLimit-Limit` / `-Remaining` / `-Reset` and `Retry-After` on 429.
-- **Webhook signatures:** `src/core/webhook_signature.py`.
-- **Click IDs:** prefixed ULIDs (`src/core/ids.py`). The web script cookie is `_cg_<param>`, `path=/`, `SameSite=Lax`, `Secure` on HTTPS (`src/static/clikgate.js`; its default lifetime is 7 days, and the server SDK default is 30 days).
+- **Webhook signatures:** the scheme under Webhooks above.
+- **Click IDs:** prefixed ULIDs. The web script cookie is `_cg_<param>`, `path=/`, `SameSite=Lax`, `Secure` on HTTPS (the web script's default lifetime is 7 days; the server SDK default is 30 days).
 
 ## 21. Metadata filters and link metadata
 
-- **Wire:** the backend filters by link metadata with one query parameter per key: `?metadata[seller_id]=sel_ada`
-  (`metadata_filters` in the backend's `src/links/routers/link_routers.py`). It reads them from the raw query string,
+- **Wire:** the backend filters by link metadata with one query parameter per key: `?metadata[seller_id]=sel_ada`.
+  The backend reads them from the raw query string,
   so `openapi.json` doesn't declare them.
 - **Operations:** `GET /v1/links`, `GET /v1/analytics/summary`, `/timeseries`, `/top-links` and `/open-in-app`.
   `codegen/filter.mjs` (`METADATA_FILTER_OPERATIONS`) adds a `metadata` map parameter (deepObject) to these, so the
@@ -1094,8 +1093,7 @@ customers). The server SDKs send two kinds of evidence, both refused in private 
 
 ## 25. Hashed email and phone for ad network matching
 
-Backend (`src/goals/schemas/goal_event_schemas.py`,
-`src/conversions/schemas/report_conversion_schema.py`, `src/ads/utils/matching.py`, checked 2026-11-04). A business
+Backend behaviour, checked 2026-11-04: a business
 that turned on "match by hashed email or phone" for an ad network destination can send its own SHA-256 hashes with a
 goal. Clikgate never hashes on the business's behalf in private mode: **hash on your own server**, with the helper.
 

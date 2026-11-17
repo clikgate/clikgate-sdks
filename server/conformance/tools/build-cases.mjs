@@ -1784,7 +1784,7 @@ const SUB_EVENT = JSON.stringify({
     add_on_key: 'domains_pack',
   },
 });
-// link.destination_changed (backend src/links/services/link_change_requests.py): data.object is the link,
+// link.destination_changed: data.object is the link,
 // plus from, to, actor {type, id, api_key_prefix, requested_by?, change_request_id?}, actor_type and api_key_prefix
 const DEST_EVENT = JSON.stringify({
   id: 'evt_01JCK8Z9V7Q4M2N6P8R0S2T4DC',
@@ -2023,9 +2023,9 @@ add('click_ids', 'Keeping the click ID: validation, extraction, cookies, payment
 // payments.confirm and the gateway helpers (SPEC 22).
 // The helper vectors are a copy of the backend's docs/payment-helper-vectors.json (../vectors/).
 const VECTORS = JSON.parse(readFileSync(join(here, '..', 'vectors', 'payment-helper-vectors.json'), 'utf8'));
-// --check also fails when the copy drifts from the backend's file (when the backend repository is checked out next to this one).
-const BACKEND_VECTORS = join(here, '..', '..', '..', '..', 'clikgate_api', 'docs', 'payment-helper-vectors.json');
-if (check && existsSync(BACKEND_VECTORS) && readFileSync(BACKEND_VECTORS, 'utf8') !== readFileSync(join(here, '..', 'vectors', 'payment-helper-vectors.json'), 'utf8')) {
+// --check also fails when the copy drifts from the backend's file, when CLIKGATE_BACKEND_PAYMENT_VECTORS names it.
+const BACKEND_VECTORS = process.env.CLIKGATE_BACKEND_PAYMENT_VECTORS || '';
+if (check && BACKEND_VECTORS && existsSync(BACKEND_VECTORS) && readFileSync(BACKEND_VECTORS, 'utf8') !== readFileSync(join(here, '..', 'vectors', 'payment-helper-vectors.json'), 'utf8')) {
   console.error(`server/conformance/vectors/payment-helper-vectors.json differs from ${BACKEND_VECTORS}: copy it over and rebuild the cases.`);
   process.exit(1);
 }

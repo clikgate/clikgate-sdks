@@ -1,11 +1,11 @@
 """Build server/conformance/vectors/identity-token-vectors.json (versions 1 and 2).
 
-Every token is made by the backend's own signer, ``sign_identity_token`` in
-the backend's ``src/sdk/utils/identity_tokens.py`` (loaded from the sibling checkout by file path), so every server
-SDK's ``createIdentityToken()`` is tested against the exact function Clikgate verifies with.
+Every token is made by the backend's own signer, ``sign_identity_token``, loaded by file path from the module named
+in ``CLIKGATE_IDENTITY_SIGNER``, so every server SDK's ``createIdentityToken()`` is tested against the exact function
+Clikgate verifies with. The maintainers' notes say where that module is.
 
-    python3 server/conformance/tools/build_identity_token_vectors.py           # rewrite the vectors
-    python3 server/conformance/tools/build_identity_token_vectors.py --check   # fail if the file is stale
+    CLIKGATE_IDENTITY_SIGNER=<path> python3 server/conformance/tools/build_identity_token_vectors.py          # rewrite
+    CLIKGATE_IDENTITY_SIGNER=<path> python3 server/conformance/tools/build_identity_token_vectors.py --check  # stale?
 
 Version 2 tokens (``sig.issued_at.customer_since``) are made by the reference signer below. When the backend exposes
 ``sign_identity_token_v2(secret, customer_id, customer_since=, issued_at=)`` it must agree with the reference.
@@ -20,13 +20,14 @@ import hashlib
 import hmac
 import importlib.util
 import json
+import os
 import sys
 import unicodedata
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE.parent / "vectors" / "identity-token-vectors.json"
-BACKEND = HERE.parents[3] / "clikgate_api" / "src" / "sdk" / "utils" / "identity_tokens.py"
+SIGNER_ENV = "CLIKGATE_IDENTITY_SIGNER"
 
 SECRET = "cgis_VectorOnly0000000000000000000000000000"
 SECRET_2 = "cgis_VectorOnlyOtherApp00000000000000000000"
@@ -102,9 +103,12 @@ def reference_sign_v2(secret: str, customer_id: str, issued_at: int, customer_si
 
 
 def load_backend():
-    spec = importlib.util.spec_from_file_location("clikgate_identity_tokens", BACKEND)
+    path = os.environ.get(SIGNER_ENV, "").strip()
+    if not path:
+        raise SystemExit(f"set {SIGNER_ENV} to the backend's identity-token signer module (a .py file)")
+    spec = importlib.util.spec_from_file_location("clikgate_identity_tokens", Path(path))
     if spec is None or spec.loader is None:
-        raise SystemExit(f"cannot load {BACKEND}")
+        raise SystemExit(f"cannot load {path}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -153,8 +157,8 @@ def build() -> str:
         "description": (
             "Identity-token vectors. token = base64url_nopad(HMAC_SHA256(secret, customer_id + '.' + issued_at))"
             " + '.' + issued_at, with secret and message encoded as UTF-8 and no Unicode normalisation (the precomposed and"
-            " decomposed e-acute vectors differ). Built by server/conformance/tools/build_identity_token_vectors.py from"
-            " the backend's src/sdk/utils/identity_tokens.py sign_identity_token. Every server SDK's createIdentityToken() must"
+            " decomposed e-acute vectors differ). Built by server/conformance/tools/build_identity_token_vectors.py with"
+            " the backend's own sign_identity_token. Every server SDK's createIdentityToken() must"
             " return `token` for each vector, and refuse every invalid_customer_ids entry (customer IDs are 1-255 characters,"
             " counted as Unicode code points, as the backend's identify schema does). The secrets and customer IDs are invented. Non-ASCII text is written as \\u escapes so no editor can normalise it."
         ),
