@@ -88,7 +88,7 @@ jobs:
           ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
           export GIT_SSH_COMMAND="ssh -i ~/.ssh/split_key -o IdentitiesOnly=yes"
           git config user.name "clikgate-release"
-          git config user.email "sdk@clikgate.com"
+          git config user.email "dev@clikgate.com"
           sha="$(git subtree split --prefix="$PREFIX" HEAD)"
           git push "git@github.com:${REPO}.git" "${sha}:refs/heads/main"
           git tag -a "v${version}" "$sha" -m "${REPO} ${version} (from clikgate/clikgate-sdks ${GITHUB_SHA})"

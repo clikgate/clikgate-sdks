@@ -126,7 +126,7 @@ jobs:
           git clone --depth 1 "git@github.com:${SKILLS_REPO}.git" skills-repo
           rsync -a --delete --exclude .git dist/clikgate-skills/ skills-repo/
           cd skills-repo
-          git config user.name "clikgate-bot" && git config user.email "sdk@clikgate.com"
+          git config user.name "clikgate-bot" && git config user.email "dev@clikgate.com"
           git add -A
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git commit -m "Update clikgate-setup from clikgate-sdks@${GITHUB_SHA::12}"
