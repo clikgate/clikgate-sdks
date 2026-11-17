@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.9"
-authors = [{ name = "Clikgate", email = "sdk@clikgate.com" }]
+authors = [{ name = "Clikgate", email = "dev@clikgate.com" }]
 keywords = ["clikgate", "attribution", "goals", "conversions", "deep-linking", "webhooks", "django", "flask", "fastapi"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
