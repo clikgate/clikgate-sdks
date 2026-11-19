@@ -37,7 +37,7 @@ Each check has `id`, `status` (`pass`, `warn`, `fail`, `skip`), `title`, and opt
 | `unreachable`, `not_served`, `redirected`, `invalid_json` | the domain isn't serving its app-links file correctly. Check the DNS record in the dashboard; nothing to change in the app |
 | `missing_team_id` / `missing_fingerprints` | add the Team ID / the SHA-256 fingerprints in the dashboard |
 | `app_not_listed` | the app isn't attached to this domain: check the app's link domains in the dashboard |
-| `wrong_fingerprint` | the fingerprint doesn't match the build. With Play App Signing, use the one from Play Console › Release › Setup › App signing |
+| `wrong_fingerprint` | the fingerprint doesn't match the build. With Play App Signing, use the one from Play Console › Protected with Play › Play Store protection › Manage Play app signing |
 | `link_subdomain_not_confirmed` | the app's link subdomain is only a suggestion: the user confirms it in the dashboard (Apps › the app › Link subdomain), or reruns `npx @clikgate/setup` in their terminal and confirms it there |
 
 ## Common problems

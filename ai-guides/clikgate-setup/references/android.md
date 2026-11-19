@@ -80,7 +80,7 @@ Artifact: `com.clikgate:clikgate-android:{{versions.android}}` (Maven Central), 
    }
    ```
 
-5. In the dashboard (Apps › the app), add the SHA-256 fingerprints. Get the debug one with `keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android`. With Play App Signing, get the release one from Play Console › Release › Setup › App signing, because the local keystore's fingerprint won't match users' devices.
+5. In the dashboard (Apps › the app), add the SHA-256 fingerprints. Get the debug one with `keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android`. With Play App Signing, get the release one from Play Console › Protected with Play › Play Store protection › Manage Play app signing, because the local keystore's fingerprint won't match users' devices.
 
 ## Check
 
