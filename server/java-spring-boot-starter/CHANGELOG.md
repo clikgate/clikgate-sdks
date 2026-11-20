@@ -2,6 +2,12 @@
 
 All notable changes to these artifacts, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the artifacts use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Java versions are dropped only after their end of life.
 
+## [2.0.2] - unreleased
+
+### Fixed
+
+- **A null account date no longer throws.** `IdentityTokens.create(customerId, appId, customerSince)` and `clikgate.createIdentityToken(customerId, appId, customerSince)` accept a null `Instant`: the token is then version 1, the same as `create(customerId, appId)`. One call, `createIdentityToken(user.getId(), null, user.getCreatedAt())`, now works for every customer, including those with no stored account date. Before, a null date threw `NullPointerException`.
+
 ## [2.0.1] - unreleased
 
 ### Existing users

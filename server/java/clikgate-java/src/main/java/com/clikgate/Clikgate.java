@@ -281,13 +281,15 @@ public final class Clikgate implements AutoCloseable {
 
   /**
    * A version 2 identity token that also carries when the person became your customer, so Clikgate can
-   * tell an existing customer from a new one. {@code appId} may be null.
+   * tell an existing customer from a new one. {@code appId} may be null. A null {@code customerSince} (no stored
+   * account date) makes a version 1 token, the same as {@link #createIdentityToken(String, String)}.
    *
    * <pre>{@code
    * response.put("clikgateIdentityToken", clikgate.createIdentityToken(user.getId(), null, user.getCreatedAt()));
    * }</pre>
    */
-  public String createIdentityToken(String customerId, @Nullable String appId, Instant customerSince) {
+  public String createIdentityToken(String customerId, @Nullable String appId, @Nullable Instant customerSince) {
+    if (customerSince == null) return createIdentityToken(customerId, appId);
     return IdentityTokens.createWith(
         IdentityTokens.onAndroid(), identitySecret, identitySecrets, System::getenv, customerId, appId, null, null, customerSince.getEpochSecond());
   }

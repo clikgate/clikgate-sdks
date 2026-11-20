@@ -74,6 +74,14 @@ public static class IdentityTokens
     public static string Create(string customerId, string? appId, DateTimeOffset customerSince) =>
         CreateWith(OnClientPlatform.Value, null, null, Environment.GetEnvironmentVariable, customerId, appId, null, null, customerSince.ToUnixTimeSeconds());
 
+    /// <summary>
+    /// <see cref="Create(string, string?, DateTimeOffset)"/> for a customer whose account date may be unknown: a null
+    /// <paramref name="customerSince"/> makes a version 1 token, the same as <see cref="Create(string, string?)"/>, so one
+    /// call works for every customer.
+    /// </summary>
+    public static string Create(string customerId, string? appId, DateTimeOffset? customerSince) =>
+        customerSince is DateTimeOffset since ? Create(customerId, appId, since) : Create(customerId, appId);
+
     /// <summary>A version 2 token signed with an explicit secret, issue time and account date (Unix seconds).</summary>
     public static string Create(string customerId, string secret, long issuedAtSeconds, long customerSinceSeconds) =>
         CreateWith(OnClientPlatform.Value, null, null, Environment.GetEnvironmentVariable, customerId, null, secret, issuedAtSeconds, customerSinceSeconds);

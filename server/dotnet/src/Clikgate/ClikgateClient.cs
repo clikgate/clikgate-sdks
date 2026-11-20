@@ -48,8 +48,11 @@ public interface IClikgateClient : IAsyncDisposable, IDisposable
     /// <summary>Creates an identity token for the signed-in user (no network call). See https://clikgate.com/docs/identify-users.</summary>
     string CreateIdentityToken(string customerId, string? appId = null);
 
-    /// <summary>Creates a version 2 identity token that also carries when the person became your customer.</summary>
-    string CreateIdentityToken(string customerId, string? appId, DateTimeOffset customerSince);
+    /// <summary>
+    /// Creates a version 2 identity token that also carries when the person became your customer. A null
+    /// <paramref name="customerSince"/> (no stored account date) makes a version 1 token instead.
+    /// </summary>
+    string CreateIdentityToken(string customerId, string? appId, DateTimeOffset? customerSince);
 
     /// <summary>Tells Clikgate who a person is (<c>POST /v1/people/identify</c>).</summary>
     Task<PersonIdentified> IdentifyUserAsync(IdentifyUserParams parameters, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default);
@@ -299,6 +302,15 @@ public sealed class ClikgateClient : IClikgateClient
     /// <example><code>clikgate.CreateIdentityToken(user.Id, null, user.CreatedAt)</code></example>
     public string CreateIdentityToken(string customerId, string? appId, DateTimeOffset customerSince) =>
         IdentityTokens.CreateWith(IdentityTokens.ClientPlatform, _identitySecret, _identitySecrets, Environment.GetEnvironmentVariable, customerId, appId, null, null, customerSince.ToUnixTimeSeconds());
+
+    /// <summary>
+    /// <see cref="CreateIdentityToken(string, string?, DateTimeOffset)"/> for a customer whose account date may be
+    /// unknown: a null <paramref name="customerSince"/> makes a version 1 token, the same as
+    /// <see cref="CreateIdentityToken(string, string?)"/>.
+    /// </summary>
+    /// <example><code>clikgate.CreateIdentityToken(user.Id, null, user.CreatedAt) // DateTimeOffset? from your database</code></example>
+    public string CreateIdentityToken(string customerId, string? appId, DateTimeOffset? customerSince) =>
+        customerSince is DateTimeOffset since ? CreateIdentityToken(customerId, appId, since) : CreateIdentityToken(customerId, appId);
 
     /// <summary>
     /// Tells Clikgate who a person is (<c>POST /v1/people/identify</c>): a click, an app installation (<c>AppId</c> +

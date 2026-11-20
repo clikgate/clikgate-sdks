@@ -1040,6 +1040,9 @@ identityToken)`.
     customerSinceSeconds)`, client `createIdentityToken(customerId, appId, Instant)`; .NET
     `IdentityTokens.Create(customerId, appId, DateTimeOffset)`, `Create(customerId, secret, issuedAtSeconds,
     customerSinceSeconds)`, client `CreateIdentityToken(customerId, appId, DateTimeOffset)` (also on `IClikgateClient`).
+  - **A missing account date is not an error.** Every SDK's version 2 call accepts "no date" (`undefined`/`null`, `None`,
+    a missing option, Java's null `Instant`, .NET's `DateTimeOffset?` null) and then makes a version 1 token, so a
+    business can pass its nullable `created_at` column for every customer. It never throws for a missing date.
   - Vectors: `v2`, `v2_invalid_customer_since` and `forgeries` in `identity-token-vectors.json` (the builder's reference
     signer, cross-checked against the backend's `sign_identity_token_v2` when it exists). PHP needs the `intl` extension
     only for non-ASCII customer IDs in version 2 (`ConfigurationException` `intl_required` otherwise).

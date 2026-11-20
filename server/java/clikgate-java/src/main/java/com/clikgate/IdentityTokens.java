@@ -68,9 +68,12 @@ public final class IdentityTokens {
 
   /**
    * A version 2 token carrying when the person became your customer, issued now, signed with
-   * {@code appId}'s secret (or {@code CLIKGATE_IDENTITY_SECRET} when {@code appId} is null).
+   * {@code appId}'s secret (or {@code CLIKGATE_IDENTITY_SECRET} when {@code appId} is null). A null
+   * {@code customerSince} (no stored account date) makes a version 1 token, the same as
+   * {@link #create(String, String)}, so one call works for every customer.
    */
-  public static String create(String customerId, @Nullable String appId, Instant customerSince) {
+  public static String create(String customerId, @Nullable String appId, @Nullable Instant customerSince) {
+    if (customerSince == null) return create(customerId, appId);
     return createWith(onAndroid(), null, null, System::getenv, customerId, appId, null, null, customerSince.getEpochSecond());
   }
 
