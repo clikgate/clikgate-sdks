@@ -3,6 +3,13 @@
 All notable changes to these packages, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the packages use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and .NET versions are dropped only after their end of support.
 
 
+## [2.0.2] - unreleased
+
+### Fixed
+
+- **A null account date is accepted.** New overloads `IdentityTokens.Create(customerId, appId, DateTimeOffset? customerSince)` and `ClikgateClient.CreateIdentityToken(customerId, appId, DateTimeOffset?)` make a version 1 token when the date is null, the same as `Create(customerId, appId)`. One call, `CreateIdentityToken(user.Id, null, user.CreatedAt)`, now works for every customer, including those with no stored account date (a nullable `CreatedAt` column).
+- **Changed:** `IClikgateClient.CreateIdentityToken(customerId, appId, customerSince)` now takes a `DateTimeOffset?`. Calls compile unchanged (a `DateTimeOffset` converts); your own implementations or hand-written fakes of `IClikgateClient` change the parameter type. Recompile against 2.0.2.
+
 ## [2.0.1] - unreleased
 
 ### Existing users

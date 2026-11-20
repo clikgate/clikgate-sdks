@@ -87,6 +87,26 @@ public class IdentityTokensTests
     }
 
     [Fact]
+    public void A_null_account_date_makes_a_version_1_token()
+    {
+        var a = Vector("ascii");
+        using var c = new ClikgateClient(new ClikgateOptions
+        {
+            ApiKey = "cg_test_unit000000000000",
+            ShutdownHooks = false,
+            IdentitySecret = S(a, "secret"),
+        });
+        DateTimeOffset? unknown = null;
+        // No stored account date: one call for every customer, through the interface too, never an exception
+        IClikgateClient client = c;
+        var token = client.CreateIdentityToken("user_42", null, unknown);
+        Assert.Equal(2, token.Split('.').Length);
+        Assert.Equal(IdentityTokens.Create("user_42", S(a, "secret"), long.Parse(token.Substring(token.LastIndexOf('.') + 1), System.Globalization.CultureInfo.InvariantCulture)), token);
+        DateTimeOffset? known = DateTimeOffset.FromUnixTimeSeconds(1709370000L);
+        Assert.Equal(3, c.CreateIdentityToken("user_42", null, known).Split('.').Length);
+    }
+
+    [Fact]
     public void Issued_at_defaults_to_now()
     {
         var before = DateTimeOffset.UtcNow.ToUnixTimeSeconds();

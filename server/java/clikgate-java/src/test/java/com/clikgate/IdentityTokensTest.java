@@ -100,6 +100,20 @@ class IdentityTokensTest {
   }
 
   @Test
+  void aNullAccountDateMakesAVersion1Token() {
+    JsonNode a = vector("ascii");
+    Clikgate c = Clikgate.builder().apiKey("cg_test_unit000000000000").shutdownHooks(false).identitySecret(a.get("secret").asText()).build();
+    try {
+      // No stored account date: one call for every customer, never a NullPointerException
+      String token = c.createIdentityToken("user_42", null, null);
+      assertEquals(2, token.split("\\.").length);
+      assertEquals(IdentityTokens.create("user_42", a.get("secret").asText(), Long.parseLong(token.substring(token.lastIndexOf('.') + 1))), token);
+    } finally {
+      c.close();
+    }
+  }
+
+  @Test
   void issuedAtDefaultsToNow() {
     long before = System.currentTimeMillis() / 1000L;
     String token = IdentityTokens.createWith(false, "cgis_unit", null, env(new HashMap<>()), "user_42", null, null, null);
