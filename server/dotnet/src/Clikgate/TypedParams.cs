@@ -117,15 +117,16 @@ public sealed record CompleteStepParams
     internal JsonObject Wire()
     {
         var goal = Requester.RequireId(Goal, "goal");
+        var value = Value is MoneyValue v ? v.Wire : null;   // money errors (invalid_value) first, as in the other SDKs
         var occurredAt = OccurredAt ?? throw Errors.Local("invalid_argument", "OccurredAt is required: when the step's goal happened.", "occurred_at");
         var o = new JsonObject
         {
             ["goal"] = goal,
             ["occurred_at"] = Dates.Format(occurredAt),
         };
-        if (Value is MoneyValue v)
+        if (value is not null)
         {
-            o["value"] = v.Wire;
+            o["value"] = value;
         }
         if (Currency is not null)
         {
