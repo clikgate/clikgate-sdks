@@ -40,8 +40,7 @@ class ClikgateIdentity:
             return
         try:
             await self._clikgate.identify_user(
-                app_id=installation.app_id,
-                installation_id=installation.installation_id,
+                installation=installation,
                 customer_id=user.id,
                 customer_since=user.created_at,
             )

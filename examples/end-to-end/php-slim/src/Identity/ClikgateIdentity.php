@@ -47,7 +47,8 @@ final class ClikgateIdentity
             return;
         }
         try {
-            $this->clikgate->identifyUser($installation->toArray() + [
+            $this->clikgate->identifyUser([
+                'installation' => $installation,
                 'customerId' => $user->id,
                 'customerSince' => $user->createdAt,
             ]);

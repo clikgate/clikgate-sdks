@@ -37,7 +37,7 @@ export class ClikgateIdentity {
   async identifyInstallation(user: AppUser, installation: Installation | null): Promise<void> {
     if (!installation) return;
     try {
-      await this.clikgate.identifyUser({ ...installation, customerId: user.id, customerSince: user.createdAt });
+      await this.clikgate.identifyUser({ installation, customerId: user.id, customerSince: user.createdAt });
     } catch (err) {
       // Never block sign-in on this: the app calls /me at its next open, which tries again.
       console.warn('Clikgate identifyUser failed:', err instanceof Error ? err.message : err);
