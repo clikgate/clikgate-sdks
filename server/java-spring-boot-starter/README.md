@@ -67,6 +67,68 @@ Session login(@RequestBody Credentials credentials, @ClikgateInstallation Instal
 
 See the [Java SDK](../java/README.md#identify-your-users).
 
+## End to end: a typed backend
+
+Every call below goes through the `Clikgate` bean and returns a typed model with getters: no `Map` results and no casts. `clikgate.referrals()`, `people()`, `installs()`, `codes()` and `privacy()` are on the bean too (see the [Java SDK](../java/README.md#referrals-people-installs-codes-and-privacy)).
+
+```java
+@RestController
+class AppController {
+  private static final String PROGRAM = "rpg_01J…";   // Referrals › your program
+  private final Clikgate clikgate;
+
+  AppController(Clikgate clikgate) {
+    this.clikgate = clikgate;
+  }
+
+  // 1. Sign-in: return an identity token (path A) and, if the app sent its installation header, identify the user (path B).
+  @PostMapping("/login")
+  Map<String, Object> login(@RequestBody Credentials credentials, @ClikgateInstallation Installation installation) {
+    User user = auth.signIn(credentials);   // your own sign-in check first
+    if (installation != null) {
+      clikgate.identifyUser(IdentifyUserParams.builder().installation(installation).customerId(user.getId()).build());
+    }
+    return Map.of("user", user, "clikgateIdentityToken", clikgate.createIdentityToken(user.getId()));
+  }
+
+  // 2. "Invite friends": the user's referral code and link, created on first call.
+  @GetMapping("/me/referral")
+  Map<String, Object> referral(@AuthenticationPrincipal User user) {
+    Referrer referrer = clikgate.referrals().getOrCreateReferrer(PROGRAM, user.getId());
+    return Map.of("code", referrer.getCode(), "url", referrer.getUrl(), "qualified", referrer.getStats().getQualified());
+  }
+
+  // 3. A goal, from your server.
+  @PostMapping("/orders/{id}/placed")
+  void orderPlaced(@PathVariable String id) {
+    clikgate.goal("first_order", Goal.builder().reference(id).value(new BigDecimal("1500.50")).currency("NGN").build());
+  }
+
+  // 4. A payment your server verified with the gateway.
+  @PostMapping("/paystack/verified")
+  void paid(@RequestBody String paystackVerifyBody) {
+    PaymentConfirmation confirmation = clikgate.payments().fromPaystack(paystackVerifyBody);   // null: not a payment to report
+    if (confirmation != null) {
+      log.info("payment {} is {}", confirmation.getReference(), confirmation.getStatus());
+    }
+  }
+
+  // 5. Webhooks: verify the raw bytes, then read the typed object.
+  @PostMapping("/webhooks/clikgate")
+  void webhook(@RequestBody byte[] body, @RequestHeader("Clikgate-Signature") String signature) {
+    WebhookEvent event = Webhooks.verify(body, signature, System.getenv("CLIKGATE_WEBHOOK_SECRET"));
+    if (EventType.REFERRAL_QUALIFIED.equals(event.getType())) {
+      Referral referral = event.asReferral();
+      rewards.credit(referral.getReferrer().getCustomerId(), referral.getReferee().getCustomerId(), referral.getId());
+    }
+  }
+}
+```
+
+- `getOrCreateReferrer(programId, customerId)` is the short form of `getOrCreateReferrer(programId, GetOrCreateReferrerParams.builder().customerId(…).displayName(…).externalCode(…).build())`. `referrer.isCreated()` is true when this call created it.
+- `event.asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()` and `asConversion()` read `data.object` typed. Each throws `IllegalStateException` when the event belongs to another family, so check `event.getType()` against an `EventType` constant first. `EventType` constants are strings, so they also work in a `switch`.
+- Money in responses: `amountMinor` stays the wire's minor units, and `getAmount()` is the same amount as an exact `BigDecimal` in normal units (`50000` NGN is `500.00`, `1500` JPY is `1500`).
+
 ## Customers from before Clikgate
 
 Tell Clikgate who was already your customer before you added it, so they are never counted as a referral or a new customer. Send the account's creation date with the identity token (version 2) or from your server, and import the rest of your existing customers once. Use your own customer IDs, never emails or phone numbers: Clikgate stores a keyed fingerprint of each imported ID, not the ID itself. Not available in private mode. Guide: https://clikgate.com/docs/identify-users.

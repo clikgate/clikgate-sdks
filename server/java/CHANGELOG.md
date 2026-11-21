@@ -3,6 +3,23 @@
 All notable changes to these artifacts, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the artifacts use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Java versions are dropped only after their end of life.
 
 
+## [2.1.0] - unreleased
+
+### A typed surface for referrals, webhooks, privacy, people, installs and codes
+
+Purely additive: nothing is removed or renamed, and nothing changes on the wire. Every new method returns an immutable model with getters (no `Map` results, no casts) and goes through the same retries, idempotency keys, errors and logging as the rest of the SDK. Customer-owned data stays a map (link `metadata` and `deep_link_data`, referrer `attributes`).
+
+- **Added:** `clikgate.referrals()`: `getOrCreateReferrer(programId, GetOrCreateReferrerParams)` and the short form `getOrCreateReferrer(programId, customerId)` → `Referrer` (`isCreated()` is true when the API answered `201`), `getReferrer`, `findReferrer(programId, FindReferrerParams.byCustomerId(…) | byCode(…))` → `Referrer` or `null` on `404`, `get` → `Referral`, `list(ListReferralsParams)` (lazy `Iterable<Referral>`) and `listPage` → `Page<Referral>`, `qualify` / `disqualify(referralId, reason)`, `completeStep(referralId, CompleteStepParams)` (`goal` and `occurredAt` are required, as the API needs both), `importReferrers(programId, List<ReferrerImport>)` → `List<Job>` (batches of 1,000, one request and job each), `blockReferrer`, `unblockReferrer`, `updateReferrer(referrerId, UpdateReferrerParams)`.
+- **Added:** models `Referrer` (`getCustomerId()` reads `customer_user_id`, `getStats()` → `ReferrerStats`, `getAttributes()`), `Referral` (`getProgram()`, `getReferrer()`, `getReferee()`, `getStepsCompleted()`, `getLinkId()`, `getReward()` → `RewardInfo`), `RewardInfo.Side` (`getAmountMinor()` and `getAmount()`, an exact `BigDecimal` in normal units using the currency's ISO 4217 decimals), `Job` (`getResults()` → `Job.Result`) and the generic `Page<T>`. Timestamps are `Instant`.
+- **Added:** typed webhook accessors on `WebhookEvent`: `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()` (→ `PaymentReport`) and `asConversion()`. Each throws `IllegalStateException` when the event belongs to another family. Also `getApiVersion()`, `getCreatedAt()` and `getOrganizationId()`.
+- **Added:** `EventType`: a `String` constant for every webhook event type (`EventType.REFERRAL_QUALIFIED`, …) and `EventType.ALL`, so they work with `equals` and in a `switch`.
+- **Added:** `clikgate.privacy()`: `createRequest(CreatePrivacyRequestParams)` and `getRequest(id)` → `PrivacyRequest` (`getExportResult()`, `getErasedCounts()`).
+- **Added:** `LinkCreateParams` and `LinkUpdateParams` builders with a method per API field (`extra(field, value)` for newer ones; a null in `LinkUpdateParams` clears the field), next to the existing `Map` overloads. `Link` gains a getter for every field of the API's link. New `links().archive(id)`, `getByReference(externalReference)`, `pause(id)` and `resume(id)`, each → `Link`.
+- **Added:** `clikgate.people()`: `get(personId)` → `Person`, `search(q)` (lazy) and `searchPage(q, cursor, limit)` → `Page<PersonSummary>`, `setLabel(personId, label)` → `Person`. `clikgate.installs()`: `getByCustomer(customerId[, appId])` and `getByInstallation(installationId[, appId])` → `Install`. `clikgate.codes()`: `redeem(RedeemCodeParams)` → `CodeRedemption` (`externalId`, `code`, `channel`, and the optional `appId`, `occurredAt`, `metadata`, `subject(type, id)`, `agentId`, `location(country, region, city, storeId)`).
+- **Added:** `Conversion.getExternalId()`, `getAmountMinor()`, `getAmount()`, `getCurrency()`, `getClickId()`, `getGoal()`.
+- **Added (starter):** every new resource is on the `Clikgate` bean.
+- **Docs:** an end-to-end section that uses only typed methods: identity token, the installation header, goals, payments, a webhook with `asReferral()` and `EventType`, and `getOrCreateReferrer`.
+
 ## [2.0.3] - unreleased
 
 ### Identify users with the installation header

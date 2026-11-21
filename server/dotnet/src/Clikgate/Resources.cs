@@ -63,7 +63,10 @@ public sealed class Conversions
     }
 }
 
-/// <summary>Links: create, read, update (with approvals and locks), list and QR codes. Parameters use the API's field names.</summary>
+/// <summary>
+/// Links: create, read, update (with approvals and locks), pause, resume, archive, list and QR codes. Typed
+/// <see cref="LinkCreateParams"/> / <see cref="LinkUpdateParams"/>, or dictionaries with the API's field names.
+/// </summary>
 public sealed class Links
 {
     private readonly Core _core;
@@ -77,6 +80,45 @@ public sealed class Links
     public async Task<Link> CreateAsync(IDictionary<string, object?> parameters, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
     {
         var (_, data, _) = await _core.Requester.RequestAsync(new ApiRequest("POST", "/v1/links").WithBody(parameters).With(requestOptions), cancellationToken).ConfigureAwait(false);
+        return new Link(data as JsonObject);
+    }
+
+    /// <summary>Creates a link from typed parameters.</summary>
+    /// <example><code>var link = await clikgate.Links.CreateAsync(new LinkCreateParams { DestinationUrl = "https://example.com/spring", OgTitle = "Spring sale" });</code></example>
+    public async Task<Link> CreateAsync(LinkCreateParams parameters, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+    {
+        var p = parameters ?? throw new ArgumentNullException(nameof(parameters));
+        var (_, data, _) = await _core.Requester.RequestAsync(new ApiRequest("POST", "/v1/links").WithBody(p.ToJson()).With(requestOptions), cancellationToken).ConfigureAwait(false);
+        return new Link(data as JsonObject);
+    }
+
+    /// <summary>Fetches a link by your own ID for it (<c>external_reference</c>).</summary>
+    /// <example><code>var link = await clikgate.Links.GetByReferenceAsync("seller-881");</code></example>
+    public async Task<Link> GetByReferenceAsync(string reference, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+    {
+        var path = "/v1/links/by-reference/" + Requester.EncodePathSegment(Requester.RequireId(reference, "reference"));
+        var (_, data, _) = await _core.Requester.RequestAsync(new ApiRequest("GET", path).With(requestOptions), cancellationToken).ConfigureAwait(false);
+        return new Link(data as JsonObject);
+    }
+
+    /// <summary>Archives a link: it stops redirecting and leaves the list. Returns the archived link.</summary>
+    /// <example><code>await clikgate.Links.ArchiveAsync("lnk_01J…");</code></example>
+    public Task<Link> ArchiveAsync(string id, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default) =>
+        LinkAsync(new ApiRequest("DELETE", PathOf(id)).With(requestOptions), cancellationToken);
+
+    /// <summary>Pauses a link: it stops redirecting until resumed.</summary>
+    /// <example><code>await clikgate.Links.PauseAsync("lnk_01J…");</code></example>
+    public Task<Link> PauseAsync(string id, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default) =>
+        LinkAsync(new ApiRequest("POST", PathOf(id) + "/pause").With(requestOptions), cancellationToken);
+
+    /// <summary>Resumes a paused link.</summary>
+    /// <example><code>await clikgate.Links.ResumeAsync("lnk_01J…");</code></example>
+    public Task<Link> ResumeAsync(string id, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default) =>
+        LinkAsync(new ApiRequest("POST", PathOf(id) + "/resume").With(requestOptions), cancellationToken);
+
+    private async Task<Link> LinkAsync(ApiRequest req, CancellationToken ct)
+    {
+        var (_, data, _) = await _core.Requester.RequestAsync(req, ct).ConfigureAwait(false);
         return new Link(data as JsonObject);
     }
 
@@ -96,6 +138,20 @@ public sealed class Links
     public async Task<LinkUpdateResult> UpdateAsync(string id, IDictionary<string, object?> parameters, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
     {
         var (status, data, _) = await _core.Requester.RequestAsync(new ApiRequest("PATCH", PathOf(id)).WithBody(parameters).With(requestOptions), cancellationToken).ConfigureAwait(false);
+        return status == 202 ? new LinkUpdateResult(false, null, new LinkChangeRequest(data as JsonObject)) : new LinkUpdateResult(true, new Link(data as JsonObject), null);
+    }
+
+    /// <summary>Updates a link from typed parameters (a property set to null clears that field).</summary>
+    /// <example><code>var r = await clikgate.Links.UpdateAsync("lnk_01J…", new LinkUpdateParams { DestinationUrl = "https://example.com/summer" });</code></example>
+    public Task<LinkUpdateResult> UpdateAsync(string id, LinkUpdateParams parameters, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
+    {
+        var p = parameters ?? throw new ArgumentNullException(nameof(parameters));
+        return UpdateWireAsync(id, p.ToJson(), requestOptions, cancellationToken);
+    }
+
+    private async Task<LinkUpdateResult> UpdateWireAsync(string id, JsonObject body, RequestOptions? requestOptions, CancellationToken ct)
+    {
+        var (status, data, _) = await _core.Requester.RequestAsync(new ApiRequest("PATCH", PathOf(id)).WithBody(body).With(requestOptions), ct).ConfigureAwait(false);
         return status == 202 ? new LinkUpdateResult(false, null, new LinkChangeRequest(data as JsonObject)) : new LinkUpdateResult(true, new Link(data as JsonObject), null);
     }
 

@@ -3,6 +3,23 @@
 All notable changes to these packages, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the packages use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and .NET versions are dropped only after their end of support.
 
 
+## [2.1.0] - unreleased
+
+### A typed surface for referrals, webhooks, privacy, people, installs and codes
+
+Purely additive: nothing is removed or renamed, and nothing changes on the wire. The new results are records (equal when their JSON is equal; `Raw` keeps every field), every method takes a `CancellationToken`, and calls go through the same retries, idempotency keys, errors and logging as the rest of the SDK. Customer-owned data stays a `JsonObject` (link `Metadata` and `DeepLinkData`, referrer `Attributes`).
+
+- **Added:** `clikgate.Referrals`: `GetOrCreateReferrerAsync(programId, GetOrCreateReferrerParams)` and the short form `GetOrCreateReferrerAsync(programId, customerId, ct)` → `Referrer` (`Created` is true when the API answered `201`), `GetReferrerAsync`, `FindReferrerAsync(programId, new FindReferrerParams { CustomerId | Code })` → `Referrer?` (null on `404`; exactly one of the two, else `invalid_argument`), `GetAsync` → `Referral`, `ListAsync(ListReferralsParams?)` (`IAsyncEnumerable<Referral>`, lazy) and `ListPageAsync` → `Page<Referral>`, `QualifyAsync` / `DisqualifyAsync(referralId, reason)`, `CompleteStepAsync(referralId, CompleteStepParams)` (`Goal` and `OccurredAt` are required, as the API needs both), `ImportReferrersAsync(programId, rows)` → `IReadOnlyList<Job>` (batches of 1,000, one request and job each), `BlockReferrerAsync`, `UnblockReferrerAsync`, `UpdateReferrerAsync`.
+- **Added:** records `Referrer` (`CustomerId` reads `customer_user_id`, `Stats`, `Attributes`), `Referral` (`Program`, `Referrer`, `Referee`, `StepsCompleted`, `LinkId`, `Reward`), `RewardInfo` / `RewardSide` (`AmountMinor` and `Amount`, an exact `decimal` in normal units using the currency's ISO 4217 decimals), `Job` / `JobResult`, `Page<T>`, and the `WireRecord` base. Timestamps are `DateTimeOffset?`.
+- **Added:** typed webhook accessors on `WebhookEvent`: `AsReferral()`, `AsReferrer()`, `AsGoalEvent()`, `AsInstall()`, `AsPayment()` (→ `PaymentReport`) and `AsConversion()`. Like the `as` operator, each returns null when the event belongs to another family. Also `ApiVersion`, `CreatedAt`, `OrganizationId` and `Livemode`.
+- **Added:** `EventType`: a `const string` for every webhook event type (`EventType.REFERRAL_QUALIFIED`, …) and `EventType.All`, so they work with `==` and in `switch`.
+- **Added:** `clikgate.Privacy`: `CreateRequestAsync(CreatePrivacyRequestParams)` and `GetRequestAsync(id)` → `PrivacyRequest` (`ExportResult`, `ErasedCounts`).
+- **Added:** `LinkCreateParams` and `LinkUpdateParams` records with a property per API field (`Extra` for newer ones; a null in `LinkUpdateParams` clears the field), next to the existing dictionary overloads. `Link` gains a property for every field of the API's link. New `Links.ArchiveAsync(id)`, `GetByReferenceAsync(externalReference)`, `PauseAsync(id)` and `ResumeAsync(id)`, each → `Link`.
+- **Added:** `clikgate.People`: `GetAsync(personId)` → `Person`, `SearchAsync(q)` (lazy) and `SearchPageAsync(q, cursor, limit)` → `Page<PersonSummary>`, `SetLabelAsync(personId, label)` → `Person`. `clikgate.Installs`: `GetByCustomerAsync(customerId, appId?)` and `GetByInstallationAsync(installationId, appId?)` → `Install`. `clikgate.Codes`: `RedeemAsync(RedeemCodeParams)` → `CodeRedemption` (`ExternalId`, `Code`, `Channel`, and the optional `AppId`, `OccurredAt`, `Metadata`, `Subject` (`OfflineSubject`), `AgentId`, `Location` (`OfflineLocation`)).
+- **Added:** `Conversion.ExternalId`, `AmountMinor`, `Amount`, `Currency`, `ClickId`, `Goal`.
+- **Added:** `IClikgateClient` gains `Referrals`, `Privacy`, `People`, `Installs` and `Codes`, so they come through dependency injection (`Clikgate.AspNetCore`). A class of your own that implements `IClikgateClient` (a test double, for example) needs these five properties.
+- **Docs:** an end-to-end section that uses only typed methods: identity token, `GetClikgateInstallation()`, goals, payments, a webhook with `AsReferral()` and `EventType`, and `Referrals.GetOrCreateReferrerAsync`.
+
 ## [2.0.3] - unreleased
 
 ### Identify users with the installation header

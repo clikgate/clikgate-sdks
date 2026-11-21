@@ -219,11 +219,90 @@ await clikgate.Payments.ConfirmAsync(new PaymentConfirmParams
 - Pass `new PaymentHelperOptions { Goal = "order_paid", ClickId = clickId }` to choose the goal or the click.
 - Private mode allows every confirmation field. Anything extra is refused before it is sent.
 
+## End to end: a typed backend
+
+Every call below returns a typed object: no `JsonNode` results and no casts. The example is an ASP.NET Core minimal API with `Clikgate.AspNetCore` (`IClikgateClient` from dependency injection, `GetClikgateInstallation()`).
+
+```csharp
+const string referralProgramId = "rpg_01J…";   // Referrals › your program
+
+builder.Services.AddClikgate();
+var app = builder.Build();
+app.UseClikgateClickId();
+
+// 1. Sign-in: return an identity token (path A) and, if the app sent its installation header, identify the user (path B).
+app.MapPost("/login", async (HttpContext ctx, Credentials credentials, IClikgateClient clikgate) =>
+{
+    var user = await auth.SignInAsync(credentials);   // your own sign-in check first
+    if (ctx.GetClikgateInstallation() is { } installation)
+    {
+        await clikgate.IdentifyUserAsync(IdentifyUserParams.For(installation, user.Id));
+    }
+    return Results.Ok(new { user, clikgateIdentityToken = clikgate.CreateIdentityToken(user.Id) });
+});
+
+// 2. "Invite friends": the user's referral code and link, created on first call.
+app.MapGet("/me/referral", async (ClaimsPrincipal me, IClikgateClient clikgate, CancellationToken ct) =>
+{
+    var referrer = await clikgate.Referrals.GetOrCreateReferrerAsync(referralProgramId, me.UserId(), ct);
+    return Results.Ok(new { referrer.Code, referrer.Url, referrer.Stats.Qualified });
+});
+
+// 3. A goal, from your server.
+app.MapPost("/orders/{id}/placed", (string id, IClikgateClient clikgate) =>
+    clikgate.Goal("first_order", new GoalOptions { Reference = id, Value = 1500.50m, Currency = "NGN" }));
+
+// 4. A payment your server verified with the gateway.
+app.MapPost("/paystack/verified", async (JsonElement paystackVerifyBody, IClikgateClient clikgate) =>
+{
+    var confirmation = await clikgate.Payments.FromPaystackAsync(paystackVerifyBody);   // null: not a payment to report
+    if (confirmation is not null) logger.LogInformation("payment {Reference} is {Status}", confirmation.Reference, confirmation.Status);
+});
+
+// 5. Webhooks: verify the raw bytes, then read the typed object.
+app.MapPost("/webhooks/clikgate", async (HttpRequest req) =>
+{
+    using var ms = new MemoryStream();
+    await req.Body.CopyToAsync(ms);
+    var webhookEvent = Webhooks.Verify(ms.ToArray(), req.Headers["Clikgate-Signature"], secret);
+    if (webhookEvent.Type == EventType.REFERRAL_QUALIFIED && webhookEvent.AsReferral() is { } referral)
+    {
+        await rewards.CreditAsync(referral.Referrer!.CustomerId, referral.Referee!.CustomerId, referral.Id);
+    }
+    return Results.Ok();
+});
+```
+
+- `GetOrCreateReferrerAsync(programId, customerId, ct)` is the short form of `GetOrCreateReferrerAsync(programId, new GetOrCreateReferrerParams { CustomerId = …, DisplayName = …, ExternalCode = … })`. `referrer.Created` is true when this call created it.
+- `AsReferral()`, `AsReferrer()`, `AsGoalEvent()`, `AsInstall()`, `AsPayment()` and `AsConversion()` read `data.object` typed. Like the `as` operator, each returns null when the event belongs to another family. `EventType` members are `const string`s, so they also work in `switch`.
+- Money in responses: `AmountMinor` stays the wire's minor units, and `Amount` is the same amount as an exact `decimal` in normal units (`50000` NGN is `500.00`, `1500` JPY is `1500`).
+- The new results are records: two results with the same JSON are equal, and `Raw` keeps every field.
+
+## Referrals, people, installs, codes and privacy
+
+```csharp
+var byCode = await clikgate.Referrals.FindReferrerAsync(referralProgramId, new FindReferrerParams { Code = "ADA42" });   // null when none
+await foreach (var r in clikgate.Referrals.ListAsync(new ListReferralsParams { ProgramId = referralProgramId, Status = "qualified" }))
+    Console.WriteLine(r.Referee?.CustomerId);
+await clikgate.Referrals.CompleteStepAsync(referralId, new CompleteStepParams { Goal = "first_deposit", OccurredAt = deposit.CreatedAt, Value = 15_000m, Currency = "NGN" });
+await clikgate.Referrals.QualifyAsync(referralId, "Checked by support");
+var jobs = await clikgate.Referrals.ImportReferrersAsync(referralProgramId, [new ReferrerImport { CustomerId = "user_1" }, new ReferrerImport { CustomerId = "user_2", DisplayName = "Ada" }]);
+
+var person = await clikgate.People.SetLabelAsync("per_01J…", "Ada (VIP)");
+await foreach (var p in clikgate.People.SearchAsync("ada")) Console.WriteLine(p.Id);
+var install = await clikgate.Installs.GetByCustomerAsync(user.Id);
+var redemption = await clikgate.Codes.RedeemAsync(new RedeemCodeParams { ExternalId = "POS-991", Code = "ADA42", Channel = "pos" });
+var erasure = await clikgate.Privacy.CreateRequestAsync(new CreatePrivacyRequestParams { Type = "erasure", SubjectType = "customer_user", SubjectId = user.Id });
+```
+
+- `Referrals`: `GetOrCreateReferrerAsync`, `GetReferrerAsync`, `FindReferrerAsync` (null on `404`), `GetAsync`, `ListAsync` (`IAsyncEnumerable`, lazy) and `ListPageAsync`, `QualifyAsync`, `DisqualifyAsync`, `CompleteStepAsync` (`OccurredAt` is required, as the API needs it), `ImportReferrersAsync` (sent in batches of 1,000, one `Job` each), `BlockReferrerAsync`, `UnblockReferrerAsync`, `UpdateReferrerAsync`.
+- `People`: `GetAsync`, `SearchAsync` (lazy) and `SearchPageAsync`, `SetLabelAsync`. `Installs`: `GetByCustomerAsync`, `GetByInstallationAsync`. `Codes`: `RedeemAsync` (with the optional `Subject`, `AgentId` and `Location`). `Privacy`: `CreateRequestAsync`, `GetRequestAsync`. All are on `IClikgateClient`.
+
 ## Links and the rest of the API
 
 ```csharp
-var link = await clikgate.Links.CreateAsync(new Dictionary<string, object?> { ["destination_url"] = "https://example.com/spring" });
-var r = await clikgate.Links.UpdateAsync(link.Id!, new Dictionary<string, object?> { ["destination_url"] = "https://example.com/summer" });
+var link = await clikgate.Links.CreateAsync(new LinkCreateParams { DestinationUrl = "https://example.com/spring", OgTitle = "Spring sale" });
+var r = await clikgate.Links.UpdateAsync(link.Id!, new LinkUpdateParams { DestinationUrl = "https://example.com/summer" });
 if (!r.Applied) Console.WriteLine("waiting for a second person: " + r.ChangeRequest!.Id);
 await foreach (var l in clikgate.Links.ListAsync()) Console.WriteLine(l.ShortUrl);
 // Filter by your own link metadata (sent as metadata[seller_id]=sel_ada); analytics take it too.
@@ -231,6 +310,8 @@ var bySeller = new Dictionary<string, object?> { ["metadata"] = new Dictionary<s
 await foreach (var l in clikgate.Links.ListAsync(bySeller)) Console.WriteLine(l.Metadata["seller_id"]);
 ```
 
+- `LinkCreateParams` and `LinkUpdateParams` are records with a property per API field (a property set to null in `LinkUpdateParams` clears that field). The dictionary overloads still work.
+- `Links.PauseAsync(id)`, `ResumeAsync(id)`, `ArchiveAsync(id)` and `GetByReferenceAsync(externalReference)` return the `Link`, which has a property for every field.
 - A locked link throws `LinkLockedException`.
 - `clikgate.Api.<Resource>.<Operation>Async(…)` exposes every other API-key operation ("advanced"), generated from the OpenAPI document. It returns `JsonNode`, and is sent through the same pipeline.
 

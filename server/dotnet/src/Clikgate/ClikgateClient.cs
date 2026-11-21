@@ -36,6 +36,21 @@ public interface IClikgateClient : IAsyncDisposable, IDisposable
     /// <summary>Click-ID helpers using this client's parameter.</summary>
     ClickIds ClickIds { get; }
 
+    /// <summary>Referrals: referrers and referrals, typed.</summary>
+    Referrals Referrals { get; }
+
+    /// <summary>Privacy requests.</summary>
+    Privacy Privacy { get; }
+
+    /// <summary>People: read, search, label.</summary>
+    People People { get; }
+
+    /// <summary>App installs.</summary>
+    Installs Installs { get; }
+
+    /// <summary>Offline codes.</summary>
+    Codes Codes { get; }
+
     /// <summary>Every API-key operation, generated from openapi.json ("advanced").</summary>
     Api.ApiClient Api { get; }
 
@@ -169,6 +184,11 @@ public sealed class ClikgateClient : IClikgateClient
         Links = new Links(_core);
         Clicks = new Clicks(_core);
         KnownCustomers = new KnownCustomers(_core);
+        Referrals = new Referrals(_core);
+        Privacy = new Privacy(_core);
+        People = new People(_core);
+        Installs = new Installs(_core);
+        Codes = new Codes(_core);
         var core = _core;
         ClickIds = new ClickIds(() => explicitParam ?? core.PeekConfig()?.ClickIdParam ?? "cgid");
         Api = new Api.ApiClient(requester);
@@ -208,6 +228,21 @@ public sealed class ClikgateClient : IClikgateClient
 
     /// <inheritdoc/>
     public ClickIds ClickIds { get; }
+
+    /// <inheritdoc/>
+    public Referrals Referrals { get; }
+
+    /// <inheritdoc/>
+    public Privacy Privacy { get; }
+
+    /// <inheritdoc/>
+    public People People { get; }
+
+    /// <inheritdoc/>
+    public Installs Installs { get; }
+
+    /// <inheritdoc/>
+    public Codes Codes { get; }
 
     /// <inheritdoc/>
     public Api.ApiClient Api { get; }

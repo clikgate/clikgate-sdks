@@ -2,6 +2,13 @@
 
 All notable changes to these artifacts, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the artifacts use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Java versions are dropped only after their end of life.
 
+## [2.1.0] - unreleased
+
+### A typed surface
+
+- **Added:** the `Clikgate` bean carries the new typed resources of `clikgate-java` 2.1.0: `referrals()`, `people()`, `installs()`, `codes()` and `privacy()`, typed `LinkCreateParams` / `LinkUpdateParams`, `links().archive/getByReference/pause/resume`, and the typed webhook accessors (`event.asReferral()`, …) with `EventType` constants. Nothing changes in the auto-configuration or the properties.
+- **Docs:** an end-to-end controller that uses only typed methods: identity token, `@ClikgateInstallation`, goals, payments, a webhook with `asReferral()` and `EventType`, and `referrals().getOrCreateReferrer`.
+
 ## [2.0.3] - unreleased
 
 ### Identify users with the installation header

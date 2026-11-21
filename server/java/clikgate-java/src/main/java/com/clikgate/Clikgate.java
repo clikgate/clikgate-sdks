@@ -57,6 +57,11 @@ public final class Clikgate implements AutoCloseable {
   private final Links links;
   private final Clicks clicks;
   private final KnownCustomers knownCustomers;
+  private final Referrals referrals;
+  private final Privacy privacy;
+  private final People people;
+  private final Installs installs;
+  private final Codes codes;
   private final ClickIds clickIds;
   private final ApiClient api;
   private final Clock clock;
@@ -139,6 +144,11 @@ public final class Clikgate implements AutoCloseable {
     this.links = new Links(core);
     this.clicks = new Clicks(core);
     this.knownCustomers = new KnownCustomers(core);
+    this.referrals = new Referrals(core);
+    this.privacy = new Privacy(core);
+    this.people = new People(core);
+    this.installs = new Installs(core);
+    this.codes = new Codes(core);
     Core c = core;
     this.clickIds =
         new ClickIds(
@@ -202,6 +212,35 @@ public final class Clikgate implements AutoCloseable {
   /** Existing customers from before you added Clikgate: {@code importCustomers} and {@code remove}. */
   public KnownCustomers knownCustomers() {
     return knownCustomers;
+  }
+
+  /**
+   * Referrals: {@code getOrCreateReferrer}, {@code getReferrer}, {@code findReferrer}, {@code get}, {@code list},
+   * {@code qualify}, {@code disqualify}, {@code completeStep}, {@code importReferrers}, {@code blockReferrer},
+   * {@code unblockReferrer} and {@code updateReferrer}.
+   */
+  public Referrals referrals() {
+    return referrals;
+  }
+
+  /** Privacy requests: {@code createRequest} and {@code getRequest}. */
+  public Privacy privacy() {
+    return privacy;
+  }
+
+  /** People: {@code get}, {@code search} and {@code setLabel}. */
+  public People people() {
+    return people;
+  }
+
+  /** App installs: {@code getByCustomer} and {@code getByInstallation}. */
+  public Installs installs() {
+    return installs;
+  }
+
+  /** Offline codes: {@code redeem}. */
+  public Codes codes() {
+    return codes;
   }
 
   /** Click-ID helpers using this client's {@code clickIdParam} (or the organisation's, from config). */

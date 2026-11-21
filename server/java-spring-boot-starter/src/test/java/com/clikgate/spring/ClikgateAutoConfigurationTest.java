@@ -33,6 +33,22 @@ class ClikgateAutoConfigurationTest {
   }
 
   @Test
+  void theTypedResourcesAreOnTheBean() {
+    new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(ClikgateAutoConfiguration.class))
+        .withPropertyValues("clikgate.api-key=cg_test_spring000", "clikgate.private-mode=false")
+        .run(ctx -> {
+          Clikgate c = ctx.getBean(Clikgate.class);
+          assertThat(c.referrals()).isNotNull();
+          assertThat(c.privacy()).isNotNull();
+          assertThat(c.people()).isNotNull();
+          assertThat(c.installs()).isNotNull();
+          assertThat(c.codes()).isNotNull();
+          assertThat(c.links()).isNotNull();
+        });
+  }
+
+  @Test
   void identitySecretsComeFromProperties() {
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(ClikgateAutoConfiguration.class))
