@@ -7,14 +7,20 @@ namespace Clikgate\Laravel;
 use Clikgate\ClickIds;
 use Clikgate\Clicks;
 use Clikgate\Clikgate as Client;
+use Clikgate\Codes;
 use Clikgate\Conversions;
 use Clikgate\Exception\ConfigurationException;
 use Clikgate\Generated\ApiClient;
 use Clikgate\Goals;
+use Clikgate\Installs;
 use Clikgate\KnownCustomers;
 use Clikgate\Laravel\Jobs\SendGoal;
 use Clikgate\Links;
+use Clikgate\Model\WebhookEvent;
 use Clikgate\Payments;
+use Clikgate\People;
+use Clikgate\Privacy;
+use Clikgate\Referrals;
 use Clikgate\Webhooks;
 use Illuminate\Contracts\Foundation\Application;
 
@@ -106,6 +112,42 @@ final class ClikgateManager
         return $this->client()->knownCustomers;
     }
 
+    /**
+     * Referrals: referrers, referrals, overrides, steps and imports.
+     *
+     * ```php
+     * $referrer = Clikgate::referrals()->getOrCreateReferrer('rpg_…', ['customerId' => (string) $user->id]);
+     * ```
+     */
+    public function referrals(): Referrals
+    {
+        return $this->client()->referrals;
+    }
+
+    /** Privacy requests: `createRequest()`, `getRequest()`. */
+    public function privacy(): Privacy
+    {
+        return $this->client()->privacy;
+    }
+
+    /** People: `get()`, `search()`, `setLabel()`. */
+    public function people(): People
+    {
+        return $this->client()->people;
+    }
+
+    /** Installs: `getByCustomer()`, `getByInstallation()`. */
+    public function installs(): Installs
+    {
+        return $this->client()->installs;
+    }
+
+    /** Offline and referral codes: `redeem()`. */
+    public function codes(): Codes
+    {
+        return $this->client()->codes;
+    }
+
     public function clickIds(): ClickIds
     {
         return $this->client()->clickIds;
@@ -184,11 +226,10 @@ final class ClikgateManager
      *
      * ```php
      * $event = Clikgate::verifyWebhook($request->getContent(), $request->header('Clikgate-Signature'), config('services.clikgate.webhook_secret'));
+     * $referral = $event->asReferral();   // null for other event types; $event['type'] keeps working
      * ```
-     *
-     * @return array<string, mixed>
      */
-    public function verifyWebhook(string $rawBody, ?string $signatureHeader, string $secret, int $tolerance = 300): array
+    public function verifyWebhook(string $rawBody, ?string $signatureHeader, string $secret, int $tolerance = 300): WebhookEvent
     {
         return Webhooks::verify($rawBody, $signatureHeader, $secret, $tolerance);
     }

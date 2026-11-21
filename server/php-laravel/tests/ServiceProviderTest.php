@@ -227,6 +227,20 @@ final class ServiceProviderTest extends TestCase
         self::assertInstanceOf(\Clikgate\KnownCustomers::class, Clikgate::knownCustomers());
     }
 
+    public function testTypedResourcesAreReachableThroughTheFacade(): void
+    {
+        self::assertInstanceOf(\Clikgate\Referrals::class, Clikgate::referrals());
+        self::assertInstanceOf(\Clikgate\Privacy::class, Clikgate::privacy());
+        self::assertInstanceOf(\Clikgate\People::class, Clikgate::people());
+        self::assertInstanceOf(\Clikgate\Installs::class, Clikgate::installs());
+        self::assertInstanceOf(\Clikgate\Codes::class, Clikgate::codes());
+        $body = '{"id":"evt_1","object":"event","type":"referrer.created","data":{"object":{"object":"referrer","id":"rfr_1","customer_user_id":"user-42"}}}';
+        $t = time();
+        $event = Clikgate::verifyWebhook($body, "t={$t},v1=" . hash_hmac('sha256', "{$t}.{$body}", 'whsec_x'), 'whsec_x');
+        self::assertSame('referrer.created', $event['type']);
+        self::assertSame('user-42', $event->asReferrer()?->customerId);
+    }
+
     public function testMalformedIdentitySecretsFailOnlyWhenTokensAreCreated(): void
     {
         $this->app['config']->set('clikgate.identity_secrets', '{not json');

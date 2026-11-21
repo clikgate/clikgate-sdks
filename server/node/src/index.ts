@@ -54,6 +54,42 @@ export type { Logger, WarningCode } from './logger.js';
 export type { Clock, RequestOptions } from './http.js';
 export type { FetchLike } from './transport.js';
 export type { QrOptions, LinkIterator, Conversions, Links, Clicks } from './resources.js';
+export { REFERRER_IMPORT_BATCH } from './referrals.js';
+export type {
+  Referrals,
+  ReferrerCreateParams,
+  ReferrerLookup,
+  ReferralListParams,
+  CompleteStepParams,
+  ReferrerImportRow,
+  ReferrerUpdateParams,
+} from './referrals.js';
+export type { Privacy, PrivacyRequestParams, People, PeopleSearchOptions, Installs, Codes, CodeRedeemParams } from './lookups.js';
+export type { PageIterator } from './pager.js';
+export { EventType, type EventTypeValue } from './event-types.js';
+export { currencyExponent, minorToAmount } from './currency.js';
+export type {
+  Referrer,
+  ReferrerResult,
+  ReferrerStats,
+  Referral,
+  ReferralStep,
+  RewardInfo,
+  RewardSide,
+  Job,
+  JobResult,
+  PrivacyRequest,
+  Person,
+  PersonSummary,
+  PersonSearchPage,
+  Install,
+  PaymentReport,
+  ConversionObject,
+  CodeRedemption,
+  WebhookGoalEvent,
+  LinkCreateParams,
+  LinkUpdateParams,
+} from './models.js';
 export type { Goals } from './goals.js';
 export {
   buildFromPaystack,
@@ -83,6 +119,10 @@ export type {
   ServerSdkConfig,
   ConfigGoal,
   WebhookEvent,
+  WebhookEventAccessors,
+  WebhookEventData,
+  WebhookEventOf,
+  TypedWebhookEvent,
   QrCode,
 } from './types.js';
 export {

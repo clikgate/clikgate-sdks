@@ -1,0 +1,493 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "webhook_events",
+  "description": "Typed webhook events: asReferral, asReferrer, asGoalEvent, asInstall, asPayment, asConversion and EventType (SPEC 29)",
+  "cases": [
+    {
+      "id": "webhook_events.referral",
+      "description": "asReferral on referral.qualified gives the typed referral, with reward amounts",
+      "steps": [
+        {
+          "call": "webhooks.typed",
+          "args": {
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"referral.qualified\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"id\":\"ref_01JCK8Z9V7Q4M2N6P8R0S2T4RL\",\"object\":\"referral\",\"program_id\":\"rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP\",\"referrer_id\":\"rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR\",\"status\":\"qualified\",\"source\":\"link\",\"match_type\":\"deterministic\",\"current_step\":2,\"steps_completed\":[{\"index\":0,\"goal\":\"signup\",\"completed_at\":\"2026-10-21T10:00:00Z\",\"source_id\":\"goal:cnv_1\"},{\"index\":1,\"identify\":true,\"completed_at\":\"2026-10-21T11:00:00Z\",\"source_id\":\"identify:user-77\"}],\"step_deadline_at\":null,\"hold_until\":null,\"qualified_at\":\"2026-10-22T10:00:00Z\",\"disqualified_at\":null,\"rejected_at\":null,\"reason\":null,\"reason_detail\":null,\"reason_message\":null,\"fraud_flags\":[],\"referee_uninstalled_after_qualification\":false,\"program\":{\"id\":\"rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP\",\"name\":\"Invite friends\"},\"referrer\":{\"id\":\"rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR\",\"customer_user_id\":\"user-42\",\"code\":\"ADA42\"},\"referee\":{\"install_id\":\"ins_01JCK8Z9V7Q4M2N6P8R0S2T4IN\",\"installation_id\":\"6a1f0c2e-0000-4000-8000-000000000001\",\"customer_user_id\":\"user-77\"},\"link\":{\"id\":\"lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA\"},\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"reward_snapshot\":{\"referrer\":{\"amount_minor\":50000,\"currency\":\"NGN\"},\"referee\":{\"description\":\"A free month\"},\"note\":\"Paid in app\"},\"created_at\":\"2026-10-21T09:30:00Z\",\"updated_at\":\"2026-10-22T10:00:00Z\",\"livemode\":false},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=766d7a7222b4040251dd337150f88b35539508193ffb03ce61b83e5f698da45b",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b",
+            "now": 1793016000,
+            "tolerance": 300,
+            "as": "referral"
+          },
+          "expect": {
+            "result": {
+              "id": "ref_01JCK8Z9V7Q4M2N6P8R0S2T4RL",
+              "object": "referral",
+              "status": "qualified",
+              "referrer": {
+                "customer_user_id": "user-42"
+              },
+              "reward_snapshot": {
+                "referrer": {
+                  "amount_minor": 50000,
+                  "currency": "NGN",
+                  "amount": "500.00"
+                },
+                "referee": {
+                  "description": "A free month",
+                  "amount": {
+                    "$absent": true
+                  }
+                },
+                "note": "Paid in app"
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhook_events.referral.step_completed",
+      "description": "asReferral works for every referral.* event (data.object is the referral)",
+      "steps": [
+        {
+          "call": "webhooks.typed",
+          "args": {
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"referral.step_completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"id\":\"ref_01JCK8Z9V7Q4M2N6P8R0S2T4RL\",\"object\":\"referral\",\"program_id\":\"rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP\",\"referrer_id\":\"rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR\",\"status\":\"in_progress\",\"source\":\"link\",\"match_type\":\"deterministic\",\"current_step\":2,\"steps_completed\":[{\"index\":0,\"goal\":\"signup\",\"completed_at\":\"2026-10-21T10:00:00Z\",\"source_id\":\"goal:cnv_1\"},{\"index\":1,\"identify\":true,\"completed_at\":\"2026-10-21T11:00:00Z\",\"source_id\":\"identify:user-77\"}],\"step_deadline_at\":null,\"hold_until\":null,\"qualified_at\":\"2026-10-22T10:00:00Z\",\"disqualified_at\":null,\"rejected_at\":null,\"reason\":null,\"reason_detail\":null,\"reason_message\":null,\"fraud_flags\":[],\"referee_uninstalled_after_qualification\":false,\"program\":{\"id\":\"rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP\",\"name\":\"Invite friends\"},\"referrer\":{\"id\":\"rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR\",\"customer_user_id\":\"user-42\",\"code\":\"ADA42\"},\"referee\":{\"install_id\":\"ins_01JCK8Z9V7Q4M2N6P8R0S2T4IN\",\"installation_id\":\"6a1f0c2e-0000-4000-8000-000000000001\",\"customer_user_id\":\"user-77\"},\"link\":{\"id\":\"lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA\"},\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"created_at\":\"2026-10-21T09:30:00Z\",\"updated_at\":\"2026-10-22T10:00:00Z\",\"livemode\":false},\"previous_attributes\":null,\"step_index\":1,\"identify\":true}}",
+            "header": "t=1793016000,v1=1625b46bbd0187f26365d94a76d6a4ed982adaf5ef9b4d9564875bb0a3e582e5",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b",
+            "now": 1793016000,
+            "tolerance": 300,
+            "as": "referral"
+          },
+          "expect": {
+            "result": {
+              "id": "ref_01JCK8Z9V7Q4M2N6P8R0S2T4RL",
+              "status": "in_progress"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhook_events.referral.newer_type",
+      "description": "A referral.* type this SDK release does not list still gives the referral (forward compatibility)",
+      "steps": [
+        {
+          "call": "webhooks.typed",
+          "args": {
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"referral.paused\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"id\":\"ref_01JCK8Z9V7Q4M2N6P8R0S2T4RL\",\"object\":\"referral\",\"program_id\":\"rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP\",\"referrer_id\":\"rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR\",\"status\":\"qualified\",\"source\":\"link\",\"match_type\":\"deterministic\",\"current_step\":2,\"steps_completed\":[{\"index\":0,\"goal\":\"signup\",\"completed_at\":\"2026-10-21T10:00:00Z\",\"source_id\":\"goal:cnv_1\"},{\"index\":1,\"identify\":true,\"completed_at\":\"2026-10-21T11:00:00Z\",\"source_id\":\"identify:user-77\"}],\"step_deadline_at\":null,\"hold_until\":null,\"qualified_at\":\"2026-10-22T10:00:00Z\",\"disqualified_at\":null,\"rejected_at\":null,\"reason\":null,\"reason_detail\":null,\"reason_message\":null,\"fraud_flags\":[],\"referee_uninstalled_after_qualification\":false,\"program\":{\"id\":\"rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP\",\"name\":\"Invite friends\"},\"referrer\":{\"id\":\"rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR\",\"customer_user_id\":\"user-42\",\"code\":\"ADA42\"},\"referee\":{\"install_id\":\"ins_01JCK8Z9V7Q4M2N6P8R0S2T4IN\",\"installation_id\":\"6a1f0c2e-0000-4000-8000-000000000001\",\"customer_user_id\":\"user-77\"},\"link\":{\"id\":\"lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA\"},\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"reward_snapshot\":{\"referrer\":{\"amount_minor\":50000,\"currency\":\"NGN\"},\"referee\":{\"description\":\"A free month\"},\"note\":\"Paid in app\"},\"created_at\":\"2026-10-21T09:30:00Z\",\"updated_at\":\"2026-10-22T10:00:00Z\",\"livemode\":false},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=1ea67d78b8b148e99a7b0fb05d47d8ec0724c59587b9f2fe94ce8a67f21932a5",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b",
+            "now": 1793016000,
+            "tolerance": 300,
+            "as": "referral"
+          },
+          "expect": {
+            "result": {
+              "id": "ref_01JCK8Z9V7Q4M2N6P8R0S2T4RL"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhook_events.mismatch.null",
+      "description": "An accessor for another family gives null on a type mismatch (never a wrong object)",
+      "steps": [
+        {
+          "call": "webhooks.typed",
+          "args": {
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"referral.qualified\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"id\":\"ref_01JCK8Z9V7Q4M2N6P8R0S2T4RL\",\"object\":\"referral\",\"program_id\":\"rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP\",\"referrer_id\":\"rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR\",\"status\":\"qualified\",\"source\":\"link\",\"match_type\":\"deterministic\",\"current_step\":2,\"steps_completed\":[{\"index\":0,\"goal\":\"signup\",\"completed_at\":\"2026-10-21T10:00:00Z\",\"source_id\":\"goal:cnv_1\"},{\"index\":1,\"identify\":true,\"completed_at\":\"2026-10-21T11:00:00Z\",\"source_id\":\"identify:user-77\"}],\"step_deadline_at\":null,\"hold_until\":null,\"qualified_at\":\"2026-10-22T10:00:00Z\",\"disqualified_at\":null,\"rejected_at\":null,\"reason\":null,\"reason_detail\":null,\"reason_message\":null,\"fraud_flags\":[],\"referee_uninstalled_after_qualification\":false,\"program\":{\"id\":\"rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP\",\"name\":\"Invite friends\"},\"referrer\":{\"id\":\"rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR\",\"customer_user_id\":\"user-42\",\"code\":\"ADA42\"},\"referee\":{\"install_id\":\"ins_01JCK8Z9V7Q4M2N6P8R0S2T4IN\",\"installation_id\":\"6a1f0c2e-0000-4000-8000-000000000001\",\"customer_user_id\":\"user-77\"},\"link\":{\"id\":\"lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA\"},\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"reward_snapshot\":{\"referrer\":{\"amount_minor\":50000,\"currency\":\"NGN\"},\"referee\":{\"description\":\"A free month\"},\"note\":\"Paid in app\"},\"created_at\":\"2026-10-21T09:30:00Z\",\"updated_at\":\"2026-10-22T10:00:00Z\",\"livemode\":false},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=766d7a7222b4040251dd337150f88b35539508193ffb03ce61b83e5f698da45b",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b",
+            "now": 1793016000,
+            "tolerance": 300,
+            "as": "referrer"
+          },
+          "expect": {
+            "result": null
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhook_events.mismatch.goal_on_referral",
+      "description": "asGoalEvent on a referral event gives null",
+      "steps": [
+        {
+          "call": "webhooks.typed",
+          "args": {
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"referral.created\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"id\":\"ref_01JCK8Z9V7Q4M2N6P8R0S2T4RL\",\"object\":\"referral\",\"program_id\":\"rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP\",\"referrer_id\":\"rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR\",\"status\":\"qualified\",\"source\":\"link\",\"match_type\":\"deterministic\",\"current_step\":2,\"steps_completed\":[{\"index\":0,\"goal\":\"signup\",\"completed_at\":\"2026-10-21T10:00:00Z\",\"source_id\":\"goal:cnv_1\"},{\"index\":1,\"identify\":true,\"completed_at\":\"2026-10-21T11:00:00Z\",\"source_id\":\"identify:user-77\"}],\"step_deadline_at\":null,\"hold_until\":null,\"qualified_at\":\"2026-10-22T10:00:00Z\",\"disqualified_at\":null,\"rejected_at\":null,\"reason\":null,\"reason_detail\":null,\"reason_message\":null,\"fraud_flags\":[],\"referee_uninstalled_after_qualification\":false,\"program\":{\"id\":\"rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP\",\"name\":\"Invite friends\"},\"referrer\":{\"id\":\"rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR\",\"customer_user_id\":\"user-42\",\"code\":\"ADA42\"},\"referee\":{\"install_id\":\"ins_01JCK8Z9V7Q4M2N6P8R0S2T4IN\",\"installation_id\":\"6a1f0c2e-0000-4000-8000-000000000001\",\"customer_user_id\":\"user-77\"},\"link\":{\"id\":\"lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA\"},\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"reward_snapshot\":{\"referrer\":{\"amount_minor\":50000,\"currency\":\"NGN\"},\"referee\":{\"description\":\"A free month\"},\"note\":\"Paid in app\"},\"created_at\":\"2026-10-21T09:30:00Z\",\"updated_at\":\"2026-10-22T10:00:00Z\",\"livemode\":false},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=79af781fea369003d7f2a7bb6022c94e37b60125bd4d7ba3e6cd7d823de1e8e4",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b",
+            "now": 1793016000,
+            "tolerance": 300,
+            "as": "goal_event"
+          },
+          "expect": {
+            "result": null
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhook_events.referrer",
+      "description": "asReferrer on referrer.blocked gives the typed referrer",
+      "steps": [
+        {
+          "call": "webhooks.typed",
+          "args": {
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"referrer.blocked\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"id\":\"rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR\",\"object\":\"referrer\",\"program_id\":\"rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP\",\"customer_user_id\":\"user-42\",\"display_name\":\"Ada\",\"code\":\"ADA42\",\"external_code\":null,\"link_id\":\"lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA\",\"url\":\"https://ciz.to/r/ADA42\",\"short_url\":\"https://ciz.to/a\",\"status\":\"blocked\",\"blocked_reason\":\"Fake installs\",\"blocked_at\":null,\"stats\":{\"installs\":4,\"signups\":3,\"in_progress\":1,\"qualified\":2,\"disqualified\":1,\"rejected\":0,\"clicks\":9,\"referee_uninstall_rate_7d\":0.25},\"attributes\":{\"tier\":\"gold\"},\"leaderboard_opt_out\":false,\"quality_score\":null,\"quality_band\":null,\"last_activity_at\":\"2026-10-25T10:00:00Z\",\"created_at\":\"2026-10-20T09:30:00Z\",\"updated_at\":\"2026-10-25T10:00:00Z\",\"livemode\":false},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=7d1f0182fb73ab9342cab8e6ac3170a32608ce021b1ad54dff0ef4398d45459d",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b",
+            "now": 1793016000,
+            "tolerance": 300,
+            "as": "referrer"
+          },
+          "expect": {
+            "result": {
+              "id": "rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR",
+              "status": "blocked",
+              "blocked_reason": "Fake installs",
+              "stats": {
+                "clicks": 9
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhook_events.goal_event.completed",
+      "description": "asGoalEvent on goal.completed gives the goal event as webhooks show it",
+      "steps": [
+        {
+          "call": "webhooks.typed",
+          "args": {
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.completed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE\",\"goal\":\"order_paid\",\"value\":\"7500.00\",\"value_minor\":750000,\"currency\":\"NGN\",\"first_for_click\":true,\"is_first_customer\":true,\"link\":{\"id\":\"lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA\"},\"campaign\":null,\"clicked_at\":\"2026-10-26T10:00:00Z\",\"occurred_at\":\"2026-10-26T11:00:00Z\",\"status\":\"attributed\",\"received_as\":null,\"goal_group\":null,\"reference\":\"T123456\",\"person\":{\"id\":\"per_01JCK8Z9V7Q4M2N6P8R0S2T4PE\",\"label\":null}},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=d416e0e0f91f640e97d3ea67dd339013a2f90c3cd61750707cdc834910e7947e",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b",
+            "now": 1793016000,
+            "tolerance": 300,
+            "as": "goal_event"
+          },
+          "expect": {
+            "result": {
+              "object": "goal_event",
+              "goal": "order_paid",
+              "value": "7500.00",
+              "value_minor": 750000,
+              "reference": "T123456",
+              "person": {
+                "id": "per_01JCK8Z9V7Q4M2N6P8R0S2T4PE"
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhook_events.goal_event.reversed",
+      "description": "asGoalEvent on goal.reversed",
+      "steps": [
+        {
+          "call": "webhooks.typed",
+          "args": {
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"goal.reversed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"goal_event\",\"id\":\"cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE\",\"goal\":\"order_paid\",\"value\":\"7500.00\",\"value_minor\":750000,\"currency\":\"NGN\",\"first_for_click\":true,\"is_first_customer\":true,\"link\":{\"id\":\"lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA\"},\"campaign\":null,\"clicked_at\":\"2026-10-26T10:00:00Z\",\"occurred_at\":\"2026-10-26T11:00:00Z\",\"status\":\"attributed\",\"received_as\":null,\"goal_group\":null,\"reference\":\"T123456\",\"person\":{\"id\":\"per_01JCK8Z9V7Q4M2N6P8R0S2T4PE\",\"label\":null}},\"previous_attributes\":null,\"reversal\":{\"id\":\"rev_1\",\"value\":\"2500.00\",\"value_minor\":250000,\"reason\":\"refund\",\"remaining_value\":\"5000.00\"}}}",
+            "header": "t=1793016000,v1=e8dee2feecfd0f5c42e74d742ba864b220caa2f56908b48a760453caf1a36490",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b",
+            "now": 1793016000,
+            "tolerance": 300,
+            "as": "goal_event"
+          },
+          "expect": {
+            "result": {
+              "id": "cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE",
+              "goal": "order_paid"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhook_events.install",
+      "description": "asInstall on install.attributed gives the typed install",
+      "steps": [
+        {
+          "call": "webhooks.typed",
+          "args": {
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"install.attributed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"id\":\"ins_01JCK8Z9V7Q4M2N6P8R0S2T4IN\",\"object\":\"install\",\"app_id\":\"app_01JCK8Z9V7Q4M2N6P8R0S2T4AP\",\"installation_id\":\"6a1f0c2e-0000-4000-8000-000000000001\",\"platform\":\"android\",\"first_open_at\":\"2026-10-20T09:30:00Z\",\"app_version\":\"3.2.0\",\"sdk_version\":\"2.4.0\",\"os_version\":\"15\",\"device_model\":\"Pixel 9\",\"country\":\"NG\",\"installer_package\":\"com.android.vending\",\"is_reinstall\":false,\"previous_install_id\":null,\"attribution_status\":\"attributed\",\"install_kind\":\"new\",\"new_phone_of_existing_customer\":false,\"match_type\":\"deterministic\",\"confidence\":1,\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"clicked_at\":\"2026-10-20T09:28:00Z\",\"attributed_at\":\"2026-10-20T09:30:01Z\",\"link\":{\"id\":\"lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA\",\"kind\":\"standard\",\"external_reference\":null,\"campaign_id\":null,\"metadata\":{}},\"campaign_id\":null,\"attestation_status\":\"verified\",\"fraud_flags\":[],\"customer_user_id\":\"user-42\",\"identity_verified\":true,\"last_seen_at\":\"2026-10-25T10:00:00Z\",\"active_days_count\":4,\"opt_out\":false,\"push_provider\":null,\"has_push_token\":false,\"uninstall_status\":\"installed\",\"uninstalled_detected_at\":null,\"uninstall_evidence\":null,\"uninstall_reverted_at\":null,\"created_at\":\"2026-10-20T09:30:00Z\",\"is_paid_ad\":false,\"person\":{\"id\":\"per_01JCK8Z9V7Q4M2N6P8R0S2T4PE\",\"label\":null},\"livemode\":false},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=bb9ee57f42b45667d80bb65f0e2eb1ced16b9f91749cd7b05666ef30a11e3734",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b",
+            "now": 1793016000,
+            "tolerance": 300,
+            "as": "install"
+          },
+          "expect": {
+            "result": {
+              "id": "ins_01JCK8Z9V7Q4M2N6P8R0S2T4IN",
+              "installation_id": "6a1f0c2e-0000-4000-8000-000000000001",
+              "attribution_status": "attributed"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhook_events.install.mismatch",
+      "description": "asInstall on app.reengaged gives null (only install.* events)",
+      "steps": [
+        {
+          "call": "webhooks.typed",
+          "args": {
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"app.reengaged\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"id\":\"ins_01JCK8Z9V7Q4M2N6P8R0S2T4IN\",\"object\":\"install\",\"app_id\":\"app_01JCK8Z9V7Q4M2N6P8R0S2T4AP\",\"installation_id\":\"6a1f0c2e-0000-4000-8000-000000000001\",\"platform\":\"android\",\"first_open_at\":\"2026-10-20T09:30:00Z\",\"app_version\":\"3.2.0\",\"sdk_version\":\"2.4.0\",\"os_version\":\"15\",\"device_model\":\"Pixel 9\",\"country\":\"NG\",\"installer_package\":\"com.android.vending\",\"is_reinstall\":false,\"previous_install_id\":null,\"attribution_status\":\"attributed\",\"install_kind\":\"new\",\"new_phone_of_existing_customer\":false,\"match_type\":\"deterministic\",\"confidence\":1,\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"clicked_at\":\"2026-10-20T09:28:00Z\",\"attributed_at\":\"2026-10-20T09:30:01Z\",\"link\":{\"id\":\"lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA\",\"kind\":\"standard\",\"external_reference\":null,\"campaign_id\":null,\"metadata\":{}},\"campaign_id\":null,\"attestation_status\":\"verified\",\"fraud_flags\":[],\"customer_user_id\":\"user-42\",\"identity_verified\":true,\"last_seen_at\":\"2026-10-25T10:00:00Z\",\"active_days_count\":4,\"opt_out\":false,\"push_provider\":null,\"has_push_token\":false,\"uninstall_status\":\"installed\",\"uninstalled_detected_at\":null,\"uninstall_evidence\":null,\"uninstall_reverted_at\":null,\"created_at\":\"2026-10-20T09:30:00Z\",\"is_paid_ad\":false,\"person\":{\"id\":\"per_01JCK8Z9V7Q4M2N6P8R0S2T4PE\",\"label\":null},\"livemode\":false},\"previous_attributes\":null,\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\"}}",
+            "header": "t=1793016000,v1=331c797998176d607bb105a34fa2a392f66e50775a229281e4b28e6ca77a7abc",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b",
+            "now": 1793016000,
+            "tolerance": 300,
+            "as": "install"
+          },
+          "expect": {
+            "result": null
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhook_events.payment",
+      "description": "asPayment on payment.verified gives the payment report",
+      "steps": [
+        {
+          "call": "webhooks.typed",
+          "args": {
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"payment.verified\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"object\":\"payment_report\",\"id\":\"prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR\",\"provider\":\"paystack\",\"reference\":\"T123456\",\"source\":\"app\",\"goal\":\"order_paid\",\"status\":\"verified\",\"status_reason\":null,\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"installation_id\":null,\"link_id\":\"lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA\",\"channel\":null,\"confirmation\":null,\"counted\":true,\"goal_event_id\":\"cnv_7\",\"refunded_amount_minor\":0,\"resolution\":null,\"occurred_at\":\"2026-10-26T11:00:00Z\",\"created_at\":\"2026-10-26T11:00:01Z\",\"decided_at\":\"2026-10-26T11:00:05Z\",\"expires_at\":\"2026-10-27T11:00:01Z\",\"livemode\":false},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=240642668b88db6583b8feb674c6c5a289119368926999159c1f11bc685a1b98",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b",
+            "now": 1793016000,
+            "tolerance": 300,
+            "as": "payment"
+          },
+          "expect": {
+            "result": {
+              "id": "prp_01JCK8Z9V7Q4M2N6P8R0S2T4PR",
+              "provider": "paystack",
+              "status": "verified"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhook_events.conversion",
+      "description": "asConversion on conversion.attributed gives the typed conversion",
+      "steps": [
+        {
+          "call": "webhooks.typed",
+          "args": {
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"conversion.attributed\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":{\"id\":\"cnv_01JCK8Z9V7Q4M2N6P8R0S2T4CV\",\"object\":\"conversion\",\"external_id\":\"ORD-1001\",\"status\":\"attributed\",\"unattributed_reason\":null,\"source\":\"api\",\"type\":\"purchase\",\"custom_type\":null,\"amount_minor\":150050,\"currency\":\"NGN\",\"reversed_amount_minor\":0,\"click_id\":\"clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6\",\"clicked_at\":\"2026-10-26T10:00:00Z\",\"occurred_at\":\"2026-10-26T11:00:00Z\",\"received_at\":\"2026-10-26T11:00:01Z\",\"link\":null,\"campaign\":null,\"metadata\":{},\"created_at\":\"2026-10-26T11:00:01Z\",\"livemode\":false},\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=c4c90755110f45edfabbb3a32be1025606e9974612d440da5e24aedf573d9b08",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b",
+            "now": 1793016000,
+            "tolerance": 300,
+            "as": "conversion"
+          },
+          "expect": {
+            "result": {
+              "object": "conversion",
+              "external_id": "ORD-1001",
+              "amount_minor": 150050
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhook_events.data_object_not_an_object",
+      "description": "An accessor gives null when data.object is not an object",
+      "steps": [
+        {
+          "call": "webhooks.typed",
+          "args": {
+            "raw_body": "{\"id\":\"evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV\",\"object\":\"event\",\"type\":\"referral.created\",\"api_version\":\"2026-10-01\",\"created_at\":\"2026-10-26T12:00:00Z\",\"organization_id\":\"org_01JCK8Z9V7Q4M2N6P8R0S2T4OR\",\"livemode\":false,\"data\":{\"object\":\"ref_1\",\"previous_attributes\":null}}",
+            "header": "t=1793016000,v1=3d84b44815ecc6c17b289030f47d5db9ef967cfb8b9ae4650b495903c6b04223",
+            "secret": "whsec_test_5f2bc1d0a9e84f7b",
+            "now": 1793016000,
+            "tolerance": 300,
+            "as": "referral"
+          },
+          "expect": {
+            "result": null
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "webhook_events.event_types",
+      "description": "EventType lists every webhook event type the API sends, as wire strings",
+      "steps": [
+        {
+          "call": "webhooks.event_types",
+          "args": {},
+          "expect": {
+            "result": {
+              "value": [
+                "ab_test.likely_winner",
+                "alert.resolved",
+                "alert.triggered",
+                "app.push_credentials_invalid",
+                "app.reengaged",
+                "app_banner.paused",
+                "app_banner.published",
+                "campaign.paused",
+                "campaign.resumed",
+                "challenge.cancelled",
+                "challenge.ended",
+                "challenge.finalized",
+                "challenge.scheduled",
+                "challenge.started",
+                "click.created",
+                "code.redeemed",
+                "conversion.attributed",
+                "conversion.reversed",
+                "conversion.unattributed",
+                "credit_note.issued",
+                "domain.group_changed",
+                "domain.settings_updated",
+                "domain.status_changed",
+                "fraud.install_flagged",
+                "funnel.stuck",
+                "goal.completed",
+                "goal.reversed",
+                "identity.duplicate_detected",
+                "install.attributed",
+                "install.attribution_updated",
+                "install.organic",
+                "install.uninstall_reverted",
+                "install.uninstalled",
+                "invoice.issued",
+                "invoice.paid",
+                "invoice.voided",
+                "job.completed",
+                "leaderboard.period_closed",
+                "leaderboard.period_finalized",
+                "leaderboard.rank_changed",
+                "leaderboard.target_reached",
+                "leaderboard.target_revoked",
+                "link.archived",
+                "link.created",
+                "link.destination_changed",
+                "link.expired",
+                "link.flagged",
+                "link.paused",
+                "link.resumed",
+                "link.stats.hourly",
+                "link.updated",
+                "organization.deleted",
+                "organization.feature_changed",
+                "organization.feature_data_purged",
+                "partner.approved",
+                "partner_earning.approved",
+                "partner_payout.paid",
+                "partner_reward.applied",
+                "partner_reward.approved",
+                "partner_reward.removed",
+                "partner_reward.reversed",
+                "payment.not_confirmed",
+                "payment.refunded",
+                "payment.rejected",
+                "payment.verified",
+                "person.device_changed",
+                "privacy.request_completed",
+                "receipt.issued",
+                "referral.created",
+                "referral.disqualified",
+                "referral.holding",
+                "referral.qualified",
+                "referral.referee_uninstalled",
+                "referral.rejected",
+                "referral.step_completed",
+                "referrer.blocked",
+                "referrer.created",
+                "referrer.quality_changed",
+                "referrer.unblocked",
+                "sale.matched",
+                "sale.refunded",
+                "skan.postback_received",
+                "subscription.activated",
+                "subscription.cancelled",
+                "subscription.changed",
+                "subscription.expired",
+                "subscription.grace_started",
+                "subscription.renewed",
+                "subscription.trial_converted",
+                "subscription.trial_ended",
+                "subscription.trial_extended",
+                "subscription.trial_started",
+                "subscription.updated",
+                "usage.threshold_reached",
+                "webhook.test",
+                "webhook_endpoint.disabled",
+                "whatsapp.conversation_attributed"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

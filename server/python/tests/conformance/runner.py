@@ -34,6 +34,7 @@ from clikgate import (  # noqa: E402
     ClikgateError,
     Clock,
     ErrorContext,
+    EventType,
     Installation,
     Provider,
     format_value,
@@ -240,6 +241,11 @@ def local_step(client: Any, call: str, a: Dict[str, Any], run: Run) -> Tuple[boo
         return True, client.webhooks.verify(a["raw_body"], a.get("header"), a["secret"], tolerance=a["tolerance"], now=a["now"])
     if call == "webhooks.verify_any":
         return True, client.webhooks.verify_any(a["raw_body"], a.get("header"), a["secrets"], tolerance=a["tolerance"], now=a["now"])
+    if call == "webhooks.typed":
+        event = client.webhooks.verify(a["raw_body"], a.get("header"), a["secret"], tolerance=a["tolerance"], now=a["now"])
+        return True, getattr(event, _ACCESSORS[a["as"]])()
+    if call == "webhooks.event_types":
+        return True, {"value": sorted(e.value for e in EventType)}
     if call == "installations.parse_header":
         return True, {"value": _installation_wire(parse_installation_header(a.get("value")))}
     if call == "installations.from_request":
@@ -323,7 +329,120 @@ def cookie_kwargs(a: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+_ACCESSORS = {
+    "referral": "as_referral",
+    "referrer": "as_referrer",
+    "goal_event": "as_goal_event",
+    "install": "as_install",
+    "payment": "as_payment",
+    "conversion": "as_conversion",
+}
+
+
+def _referral_filters(p: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    q = dict(p or {})
+    if "from" in q:
+        q["from_"] = q.pop("from")
+    return q
+
+
+def typed_call(client: Any, call: str, a: Dict[str, Any]) -> Optional[Tuple[Any, Tuple[Any, ...], Dict[str, Any], bool]]:
+    """The typed-surface calls (SPEC 28-32): (method, args, kwargs, is_iterator), or None for other calls."""
+    ro = req_opts(a)
+    r, p = client.referrals, client.people
+    opt = {
+        k: a[k]
+        for k in ("display_name", "external_code", "reason", "attributes", "app_id", "occurred_at", "metadata")
+        if a.get(k) is not None
+    }
+    table: Dict[str, Any] = {
+        "referrals.get_or_create_referrer": (
+            r.get_or_create_referrer,
+            (a.get("program_id"),),
+            {"customer_id": a.get("customer_id"), **opt},
+            False,
+        ),
+        "referrals.get_referrer": (r.get_referrer, (a.get("id"),), {}, False),
+        "referrals.find_referrer": (
+            r.find_referrer,
+            (a.get("program_id"),),
+            {"customer_id": a.get("customer_id"), "code": a.get("code")},
+            False,
+        ),
+        "referrals.get": (r.get, (a.get("id"),), {}, False),
+        "referrals.list": (r.list, (), _referral_filters(a.get("params")), True),
+        "referrals.list_page": (r.list_page, (), _referral_filters(a.get("params")), False),
+        "referrals.qualify": (r.qualify, (a.get("id"),), {"reason": a.get("reason")}, False),
+        "referrals.disqualify": (r.disqualify, (a.get("id"),), {"reason": a.get("reason")}, False),
+        "referrals.complete_step": (
+            r.complete_step,
+            (a.get("id"),),
+            {"goal": a.get("goal"), "occurred_at": a.get("occurred_at"), "value": a.get("value"), "currency": a.get("currency")},
+            False,
+        ),
+        "referrals.import_referrers": (r.import_referrers, (a.get("program_id"), a.get("rows")), {}, False),
+        "referrals.block_referrer": (r.block_referrer, (a.get("id"),), {"reason": a.get("reason")}, False),
+        "referrals.unblock_referrer": (r.unblock_referrer, (a.get("id"),), {}, False),
+        "referrals.update_referrer": (
+            r.update_referrer,
+            (a.get("id"),),
+            {"display_name": a.get("display_name"), "attributes": a.get("attributes")},
+            False,
+        ),
+        "privacy.create_request": (
+            client.privacy.create_request,
+            (),
+            {"type": a.get("type"), "subject_type": a.get("subject_type"), "subject_id": a.get("subject_id"), "app_id": a.get("app_id")},
+            False,
+        ),
+        "privacy.get_request": (client.privacy.get_request, (a.get("id"),), {}, False),
+        "links.archive": (client.links.archive, (a.get("id"),), {}, False),
+        "links.get_by_reference": (client.links.get_by_reference, (a.get("reference"),), {}, False),
+        "links.pause": (client.links.pause, (a.get("id"),), {}, False),
+        "links.resume": (client.links.resume, (a.get("id"),), {}, False),
+        "people.get": (p.get, (a.get("id"),), {}, False),
+        "people.set_label": (p.set_label, (a.get("id"), a.get("label")), {}, False),
+        "people.search": (p.search, (a.get("q"),), {}, True),
+        "people.search_page": (p.search_page, (a.get("q"),), {"cursor": a.get("cursor"), "limit": a.get("limit")}, False),
+        "installs.get_by_customer": (client.installs.get_by_customer, (a.get("customer_id"),), {"app_id": a.get("app_id")}, False),
+        "installs.get_by_installation": (
+            client.installs.get_by_installation,
+            (a.get("installation_id"),),
+            {"app_id": a.get("app_id")},
+            False,
+        ),
+        "codes.redeem": (
+            client.codes.redeem,
+            (),
+            {
+                k: a.get(k)
+                for k in ("external_id", "code", "channel", "app_id", "occurred_at", "metadata", "subject", "agent_id", "location")
+            },
+            False,
+        ),
+    }
+    entry = table.get(call)
+    if entry is None:
+        return None
+    fn, args, kwargs, is_iter = entry
+    if ro is not None and not is_iter:
+        kwargs = {**kwargs, "request_options": ro}
+    return fn, args, kwargs, is_iter
+
+
 def sync_step(client: Clikgate, call: str, a: Dict[str, Any]) -> Any:
+    typed = typed_call(client, call, a)
+    if typed is not None:
+        fn, args, kwargs, is_iter = typed
+        if not is_iter:
+            return fn(*args, **kwargs)
+        items = []
+        for item in fn(*args, **kwargs):
+            items.append(item)
+            if a.get("max_items") is not None and len(items) >= a["max_items"]:
+                break
+        return {"items": items}
+
     ro = req_opts(a)
     if call == "goals.send":
         return client.goals.send(a.get("key"), request_options=ro, **goal_kwargs(a))  # type: ignore[arg-type]
@@ -375,6 +494,17 @@ def sync_step(client: Clikgate, call: str, a: Dict[str, Any]) -> Any:
 
 
 async def async_step(client: AsyncClikgate, call: str, a: Dict[str, Any]) -> Any:
+    typed = typed_call(client, call, a)
+    if typed is not None:
+        fn, args, kwargs, is_iter = typed
+        if not is_iter:
+            return await fn(*args, **kwargs)
+        items = []
+        async for item in fn(*args, **kwargs):
+            items.append(item)
+            if a.get("max_items") is not None and len(items) >= a["max_items"]:
+                break
+        return {"items": items}
     ro = req_opts(a)
     if call == "goals.send":
         return await client.goals.send(a.get("key"), request_options=ro, **goal_kwargs(a))  # type: ignore[arg-type]

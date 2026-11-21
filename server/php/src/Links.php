@@ -6,8 +6,20 @@ namespace Clikgate;
 
 use Clikgate\Http\ApiRequest;
 use Clikgate\Http\Requester;
+use Clikgate\Model\Link;
+use Clikgate\Model\LinkChangeRequest;
+use Clikgate\Model\LinkUpdateResult;
+use Clikgate\Model\Page;
 
-/** Links: create, read, update (with approvals and locks), list and QR codes. */
+/**
+ * Links: create, read, update (with approvals and locks), list, archive, pause and resume, and QR codes.
+ *
+ * The methods return typed models ({@see Link}, {@see LinkUpdateResult}, {@see Page}). They keep array access over the
+ * wire keys, so `$link['short_url']` and `$result['change_request']['id']` still work.
+ *
+ * @phpstan-type LinkCreateParams array{destination_url?: string, slug?: ?string, domain?: ?string, fallback_url?: ?string, title?: ?string, og_title?: ?string, og_description?: ?string, og_image_url?: ?string, tags?: list<string>, metadata?: array<string, mixed>, attribution_window_days?: ?int, utm_template?: ?string, expires_at?: \DateTimeInterface|string|null, external_reference?: ?string, campaign_id?: ?string, end_goal_key?: ?string, kind?: ?string, app_ids?: list<string>, deep_link_path?: ?string, deep_link_data?: array<string, mixed>, app_behavior?: ?string, ios_interstitial?: ?string}
+ * @phpstan-type LinkUpdateParams array{destination_url?: ?string, fallback_url?: ?string, title?: ?string, og_title?: ?string, og_description?: ?string, og_image_url?: ?string, tags?: ?list<string>, metadata?: ?array<string, mixed>, attribution_window_days?: ?int, utm_template?: ?string, expires_at?: \DateTimeInterface|string|null, campaign_id?: ?string, end_goal_key?: ?string, app_ids?: ?list<string>, deep_link_path?: ?string, deep_link_data?: ?array<string, mixed>, app_behavior?: ?string, ios_interstitial?: ?string}
+ */
 final class Links
 {
     /** @internal */
@@ -18,19 +30,17 @@ final class Links
      *
      * ```php
      * $link = $clikgate->links->create(['destination_url' => 'https://example.com/spring', 'og_title' => 'Spring sale']);
-     * echo $link['short_url'];
+     * echo $link->shortUrl;   // or $link['short_url']
      * ```
      *
-     * @param array<string, mixed> $params
-     * @param array<string, mixed> $requestOptions
-     *
-     * @return array<string, mixed> the link
+     * @param LinkCreateParams|array<string, mixed> $params the API's field names
+     * @param array<string, mixed>                  $requestOptions
      */
-    public function create(array $params, array $requestOptions = []): array
+    public function create(array $params, array $requestOptions = []): Link
     {
         [, $data] = $this->core->requester->request((new ApiRequest('POST', '/v1/links'))->withBody($params)->withOptions($requestOptions));
 
-        return self::arr($data);
+        return new Link(self::arr($data));
     }
 
     /**
@@ -41,14 +51,12 @@ final class Links
      * ```
      *
      * @param array<string, mixed> $requestOptions
-     *
-     * @return array<string, mixed>
      */
-    public function get(string $id, array $requestOptions = []): array
+    public function get(string $id, array $requestOptions = []): Link
     {
         [, $data] = $this->core->requester->request((new ApiRequest('GET', self::path($id)))->withOptions($requestOptions));
 
-        return self::arr($data);
+        return new Link(self::arr($data));
     }
 
     /**
@@ -57,24 +65,21 @@ final class Links
      *
      * ```php
      * $result = $clikgate->links->update('lnk_01J…', ['destination_url' => 'https://example.com/summer']);
-     * if (!$result['applied']) { echo 'waiting for approval: ', $result['change_request']['id']; }
+     * if (!$result->applied) { echo 'waiting for approval: ', $result->changeRequest?->id; }
      * ```
      *
-     * @param array<string, mixed> $params
-     * @param array<string, mixed> $requestOptions
-     *
-     * @return array{applied: bool, link: array<string, mixed>|null, change_request: array<string, mixed>|null, warnings: list<mixed>}
+     * @param LinkUpdateParams|array<string, mixed> $params
+     * @param array<string, mixed>                  $requestOptions
      */
-    public function update(string $id, array $params, array $requestOptions = []): array
+    public function update(string $id, array $params, array $requestOptions = []): LinkUpdateResult
     {
         [$status, $data] = $this->core->requester->request((new ApiRequest('PATCH', self::path($id)))->withBody($params)->withOptions($requestOptions));
         $body = self::arr($data);
         if (202 === $status) {
-            return ['applied' => false, 'link' => null, 'change_request' => $body, 'warnings' => []];
+            return new LinkUpdateResult(false, null, new LinkChangeRequest($body));
         }
-        $warnings = $body['warnings'] ?? [];
 
-        return ['applied' => true, 'link' => $body, 'change_request' => null, 'warnings' => \is_array($warnings) ? array_values($warnings) : []];
+        return new LinkUpdateResult(true, new Link($body), null);
     }
 
     /**
@@ -87,41 +92,103 @@ final class Links
      * @param array<string, mixed> $params
      * @param array<string, mixed> $requestOptions
      *
-     * @return array<string, mixed> `{object, data, has_more, next_cursor}`
+     * @return Page<Link> `data`, `hasMore`, `nextCursor`
      */
-    public function listPage(array $params = [], array $requestOptions = []): array
+    public function listPage(array $params = [], array $requestOptions = []): Page
     {
         [, $data] = $this->core->requester->request((new ApiRequest('GET', '/v1/links', $params))->withOptions($requestOptions));
 
-        return self::arr($data);
+        return new Page(self::arr($data), static fn(array $l): Link => new Link($l));
     }
 
     /**
      * Iterate over every link, fetching pages lazily.
      *
      * ```php
-     * foreach ($clikgate->links->list(['status' => 'active', 'limit' => 100]) as $link) { echo $link['short_url'], "\n"; }
+     * foreach ($clikgate->links->list(['status' => 'active', 'limit' => 100]) as $link) { echo $link->shortUrl, "\n"; }
      * ```
      *
      * @param array<string, mixed> $params
      * @param array<string, mixed> $requestOptions
      *
-     * @return \Generator<int, array<string, mixed>>
+     * @return \Generator<int, Link>
      */
     public function list(array $params = [], array $requestOptions = []): \Generator
     {
         $cursor = null;
         while (true) {
             $page = $this->listPage(null === $cursor ? $params : [...$params, 'starting_after' => $cursor], $requestOptions);
-            foreach (\is_array($page['data'] ?? null) ? $page['data'] : [] as $item) {
-                yield self::arr($item);
-            }
-            $next = $page['next_cursor'] ?? null;
-            if (true !== ($page['has_more'] ?? false) || !\is_string($next) || '' === $next) {
+            yield from $page->data;
+            if (!$page->hasMore || null === $page->nextCursor || '' === $page->nextCursor) {
                 return;
             }
-            $cursor = $next;
+            $cursor = $page->nextCursor;
         }
+    }
+
+    /**
+     * Archive a link (`DELETE /v1/links/{id}`): it stops redirecting. Returns the archived link.
+     *
+     * ```php
+     * $link = $clikgate->links->archive('lnk_01J…');
+     * ```
+     *
+     * @param array<string, mixed> $requestOptions
+     */
+    public function archive(string $id, array $requestOptions = []): Link
+    {
+        [, $data] = $this->core->requester->request((new ApiRequest('DELETE', self::path($id)))->withOptions($requestOptions));
+
+        return new Link(self::arr($data));
+    }
+
+    /**
+     * Fetch a link by your own external reference (`external_reference`).
+     *
+     * ```php
+     * $link = $clikgate->links->getByReference('order-1001');
+     * ```
+     *
+     * @param array<string, mixed> $requestOptions
+     */
+    public function getByReference(string $reference, array $requestOptions = []): Link
+    {
+        $path = '/v1/links/by-reference/' . Requester::encodePathSegment(Requester::requireId($reference, 'reference'));
+        [, $data] = $this->core->requester->request((new ApiRequest('GET', $path))->withOptions($requestOptions));
+
+        return new Link(self::arr($data));
+    }
+
+    /**
+     * Pause a link: visitors see the paused page until you resume it.
+     *
+     * ```php
+     * $link = $clikgate->links->pause('lnk_01J…');
+     * ```
+     *
+     * @param array<string, mixed> $requestOptions
+     */
+    public function pause(string $id, array $requestOptions = []): Link
+    {
+        [, $data] = $this->core->requester->request((new ApiRequest('POST', self::path($id) . '/pause'))->withOptions($requestOptions));
+
+        return new Link(self::arr($data));
+    }
+
+    /**
+     * Resume a paused link.
+     *
+     * ```php
+     * $link = $clikgate->links->resume('lnk_01J…');
+     * ```
+     *
+     * @param array<string, mixed> $requestOptions
+     */
+    public function resume(string $id, array $requestOptions = []): Link
+    {
+        [, $data] = $this->core->requester->request((new ApiRequest('POST', self::path($id) . '/resume'))->withOptions($requestOptions));
+
+        return new Link(self::arr($data));
     }
 
     /**

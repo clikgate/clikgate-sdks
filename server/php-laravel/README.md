@@ -14,6 +14,49 @@ use Clikgate\Laravel\Facades\Clikgate;
 Clikgate::goal('account_opened', ['clickId' => $application->click_id, 'reference' => $application->reference, 'value' => '2000000']);
 ```
 
+## End to end
+
+One flow with the typed methods only.
+
+```php
+use Clikgate\Enum\EventType;
+use Clikgate\Enum\Provider;
+use Clikgate\Laravel\Facades\Clikgate;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+// 1. Sign-in: after YOUR own sign-in check. The customer ID is the signed-in user's ID, never read from the request.
+Route::post('/login', function (Request $request) {
+    if (!Auth::attempt($request->only('email', 'password'))) {
+        abort(401);
+    }
+    $user = Auth::user();
+    $customerId = (string) $user->id;
+    // Path B: the app's Clikgate-Installation header, no secret (a missing or invalid header is ignored)
+    Clikgate::identifyUser(['installation' => $request->header('Clikgate-Installation'), 'customerId' => $customerId]);
+    // Path A: an identity token the app passes to the mobile SDK; 4. and the user's referral code and link
+    $referrer = Clikgate::referrals()->getOrCreateReferrer('rpg_01J…', ['customerId' => $customerId, 'displayName' => $user->name]);
+
+    return ['user' => $user, 'clikgateIdentityToken' => Clikgate::createIdentityToken($customerId, ['customerSince' => $user->created_at]), 'referralCode' => $referrer->code, 'referralUrl' => $referrer->url];
+});
+
+// 2. Goals (queued with CLIKGATE_QUEUE) and 3. payments, right after your own verification with the gateway
+Clikgate::goal('account_opened', ['clickId' => $request->clikgateClickId(), 'reference' => 'APP-55231', 'isFirst' => true]);
+Clikgate::payments()->confirm(['provider' => Provider::Paystack, 'reference' => 'T123456', 'status' => 'success', 'amount' => '7500', 'currency' => 'NGN', 'goal' => 'order_paid']);
+
+// 5. Webhooks: the raw body, then the typed object
+Route::post('/webhooks/clikgate', function (Request $request) {
+    $event = Clikgate::verifyWebhook($request->getContent(), $request->header('Clikgate-Signature'), (string) config('services.clikgate.webhook_secret'));
+    $referral = $event->asReferral();   // null for other event types
+    if (null !== $referral && EventType::ReferralQualified === $event->type) {
+        // Clikgate never pays rewards: grant yours, once per $event->id
+        grantReward($referral->referrer->customerId, $referral->reward?->referrer?->amount);   // '500.00'
+    }
+
+    return response()->noContent();
+});
+```
+
 ## Keep the click ID
 
 ```php
@@ -95,8 +138,9 @@ Set `CLIKGATE_QUEUE=redis` (any queue connection) and, optionally, `CLIKGATE_QUE
 
 - `Clikgate::payments()->fromPaystack($verifyResponse)` (and `fromFlutterwave`, `fromMonnify`, `fromStripe`, `confirm([...])`): confirm a payment **right after your own verification with the gateway**, never with data from the browser or the app (see the PHP SDK's Payments section).
 - `Clikgate::goal('order_paid', ['reference' => 'T123456', 'provider' => Provider::Paystack])` reports a payment on a Payment goal; results carry `status` (`GoalStatus`: `counted`, `waiting`, `received`, `refused`). See the PHP SDK's Payment goals section.
-- `Clikgate::goals()->send(…)`, `Clikgate::links()`, `Clikgate::clickIds()` and `Clikgate::api()`.
-- `Clikgate::verifyWebhook($request->getContent(), $request->header('Clikgate-Signature'), $secret)`.
+- `Clikgate::goals()->send(…)`, `Clikgate::links()`, `Clikgate::clickIds()` and `Clikgate::api()`. Link methods return typed models (`$link->shortUrl`) that keep array access (`$link['short_url']`).
+- `Clikgate::referrals()`, `Clikgate::privacy()`, `Clikgate::people()`, `Clikgate::installs()` and `Clikgate::codes()`: typed resources (see the PHP SDK's "Referrals, privacy, people, installs and codes" section).
+- `Clikgate::verifyWebhook($request->getContent(), $request->header('Clikgate-Signature'), $secret)` returns a `Clikgate\Model\WebhookEvent`: `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()`, `asConversion()`; compare `$event->type` with the `EventType` string constants; `$event['type']` keeps working.
 - `app(\Clikgate\Clikgate::class)` gives the client itself.
 
 See [`clikgate/clikgate-php`](https://github.com/clikgate/clikgate-php#readme). The full example is in `examples/routes/web.php`.

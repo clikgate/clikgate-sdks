@@ -34,6 +34,13 @@ Contents:
 23. [Goal kinds, goal status and the shared enums](#23-goal-kinds-goal-status-and-the-shared-enums)
 24. [People: `identifyUser` and goal labels](#24-people-identifyuser-and-goal-labels)
 25. [Hashed email and phone for ad network matching](#25-hashed-email-and-phone-for-ad-network-matching)
+26. [Identity tokens: `createIdentityToken`](#26-identity-tokens-createidentitytoken)
+27. [Existing customers: account dates and known customers](#27-existing-customers-account-dates-and-known-customers)
+28. [Typed models and referrals: `clikgate.referrals`](#28-typed-models-and-referrals-clikgatereferrals)
+29. [Typed webhook events](#29-typed-webhook-events)
+30. [Privacy requests: `clikgate.privacy`](#30-privacy-requests-clikgateprivacy)
+31. [Links: typed inputs, the full model and more methods](#31-links-typed-inputs-the-full-model-and-more-methods)
+32. [People, installs and codes](#32-people-installs-and-codes)
 
 ---
 
@@ -78,6 +85,7 @@ dotted method paths (`goals.send`). Each SDK maps them with its language's conve
 - **Results:**
   - Results are the wire objects. Node and Python return the JSON with its `snake_case` keys (typed as interfaces or TypedDicts).
   - Java, .NET and PHP MAY return typed models. Their conformance runner serialises them back to the wire JSON.
+  - The resources of sections 28-32 return typed models in every SDK (section 28).
 - **Options:** argument objects use the language's case (`clickId` in Node, `click_id` in Python). SDKs convert to `snake_case` on the wire.
 
 ## 3. Client options
@@ -638,7 +646,7 @@ hex = lowercase hex HMAC-SHA256(key = UTF-8 bytes of the whole secret including 
 - **Surface:** `client.api.<resource>.<operation>(…)` exposes every API-key operation in `openapi.json`. Resources come from the OpenAPI tag (`Ad Spend` becomes Node `adSpend`, Python `ad_spend`). Operations come from the summary (`List Links` becomes `listLinks` / `list_links`).
 - **One code path:** generated code MUST call the SDK's own request function, so the transport, User-Agent, retries, idempotency keys, errors and logging are the hand-written ones. There is no second HTTP stack.
 - **Scope:** the generator (`server/codegen/`) keeps the operations the backend marks `x-clikgate-auth: api_key`. It drops `dashboard_session`, `staff`, `public`, `sdk_key` and `cli` operations. The filter is shared by all languages, so every SDK exposes the same operations.
-- **Status:** the hand-written areas (goals, conversions, links, clicks, click IDs, webhooks, the private-mode guard) are what the docs teach. `api.*` is "advanced".
+- **Status:** the hand-written areas (goals, conversions, links, clicks, click IDs, webhooks, the private-mode guard, referrals, privacy, people, installs, codes) are what the docs teach. `api.*` is "advanced".
 - **Guard and goal keys:** the private-mode guard (section 12) and the goal key rules (section 7) belong to the hand-written goal and conversion methods. `api.goals.recordGoalEvent` sends what it is given (the server still enforces private mode). The docs point to `goals.send`.
 - **Regeneration:** one command, `node server/codegen/generate.mjs`. CI fails on drift (`--check`).
 
@@ -1186,3 +1194,291 @@ goal. Clikgate never hashes on the business's behalf in private mode: **hash on 
   that.
 - Conformance: suite `ads_matching` (call `hash_for_ads`, and goal / conversion / guard cases).
 
+
+## 28. Typed models and referrals: `clikgate.referrals`
+
+Every method in sections 28-32 returns a **typed model**. Customer-owned free-form data stays a map: link
+`metadata`, referrer `attributes`, deep-link `deep_link_data`, code `metadata`.
+
+| Language | Models | Optional arguments |
+|---|---|---|
+| Node | interfaces over the wire JSON (`snake_case` keys, as section 2), exported from the package root | an options object (`{ customerId, displayName }`) |
+| Python | `TypedDict`s over the wire JSON (`snake_case` keys), exported from `clikgate` | keyword arguments (`customer_id=...`) |
+| PHP | `final` readonly classes in `Clikgate\Model` with camelCase properties (`$referrer->customerId`). They implement `ArrayAccess` (reads the wire keys: `$referrer['customer_user_id']`), `JsonSerializable` and `toArray()` (the wire JSON plus the derived fields) | an array (`['customerId' => …]`) |
+| Java | immutable classes with getters (`getCustomerId()`), `getRaw()` | builders |
+| .NET | records (`CustomerId`), `Raw` | params records |
+
+- **Same pipeline:** every method uses the hand-written request function: retries (section 6), idempotency keys on POST
+  and PATCH (section 7), errors (section 5) and logging. Nothing changes on the wire.
+- **Forward compatibility** (section 23.3): unknown fields are kept (Node and Python: the JSON as is; PHP: `toArray()`
+  and `ArrayAccess`; Java and .NET: the raw JSON).
+- **Typed names:** the wire field `customer_user_id` is the **customer ID** (canonical `customer_id`): Java
+  `getCustomerId()`, .NET `CustomerId`, PHP `customerId`. A referral's `reward_snapshot` is `reward`
+  (`getReward()`, `Reward`, `->reward`) and its `link.id` is `link_id` (`getLinkId()`, `LinkId`, `->linkId`). Node
+  and Python keep the wire keys (`customer_user_id`, `reward_snapshot`, `link`) and **add** the customer ID under the
+  typed name on a referrer and on a referral's `referrer` and `referee`: Node `referrer.customerId`,
+  `referral.referrer.customerId`, `referral.referee.customerId` (null until the referee is identified); Python
+  `customer_id` in the same places. Java `getReferrer().getCustomerId()`, .NET `Referrer.CustomerId`, PHP
+  `->referrer->customerId`. These added keys are not part of the canonical conformance results.
+- **Reward amounts** (section 8 rules for responses): a reward side's `amount_minor` (integer, minor units) stays as on
+  the wire. When it has both `amount_minor` and `currency`, the SDK adds **`amount`**, the same amount in normal units
+  as a decimal string with exactly the currency's ISO 4217 exponent of fraction digits: `50000 NGN` → `"500.00"`,
+  `1500 JPY` → `"1500"`, `12345 KWD` → `"12.345"`. The currency is matched case-insensitively. Exponents other than 2:
+  0 for `BIF CLP DJF GNF ISK JPY KMF KRW PYG RWF UGX UYI VND VUV XAF XOF XPF`, 3 for `BHD IQD JOD KWD LYD OMR TND`, 4 for
+  `CLF UYW` (the backend's ISO 4217 list); every other code has 2. No float is ever involved. Java and .NET expose
+  `amount` as `BigDecimal` / `decimal` with that scale; their runners serialise it as the string above.
+
+### 28.1 Methods
+
+| Canonical | HTTP | Returns |
+|---|---|---|
+| `referrals.get_or_create_referrer(program_id, {customer_id, display_name?, external_code?})` | `POST /v1/referral-programs/{program_id}/referrers` `{customer_user_id, display_name?, external_code?}` | `Referrer` with **`created`**: `true` when the API answered `201`, `false` for `200` |
+| `referrals.get_referrer(referrer_id)` | `GET /v1/referrers/{id}` | `Referrer` |
+| `referrals.find_referrer(program_id, {customer_id} \| {code})` | `GET …/referrers/by-user/{customer_id}` or `GET …/referrers/by-code/{code}` | `Referrer`, or **null on 404**; every other error throws |
+| `referrals.get(referral_id)` | `GET /v1/referrals/{id}` | `Referral` |
+| `referrals.list({program_id?, referrer_id?, referee_customer_id?, status?, from?, to?, limit?})` | `GET /v1/referrals` | an auto-paging iterator of `Referral` (section 11 pagination) |
+| `referrals.list_page(same)` | `GET /v1/referrals` | one page `{object, data: Referral[], has_more, next_cursor}` |
+| `referrals.qualify(referral_id, {reason})` / `referrals.disqualify(referral_id, {reason})` | `POST /v1/referrals/{id}/override` `{action: "qualify" \| "disqualify", reason}` | `Referral` |
+| `referrals.complete_step(referral_id, {goal, occurred_at, value?, currency?})` | `POST /v1/referrals/{id}/steps` | `Referral` |
+| `referrals.import_referrers(program_id, rows[{customer_id, external_code?, display_name?}])` | `POST …/referrers/import` `{referrers: [{customer_user_id, …}]}` | `Job[]`, one per batch |
+| `referrals.block_referrer(referrer_id, {reason?})` | `POST /v1/referrers/{id}/block` (`{reason}` or `{}`) | `Referrer` |
+| `referrals.unblock_referrer(referrer_id)` | `POST /v1/referrers/{id}/unblock` (no body) | `Referrer` |
+| `referrals.update_referrer(referrer_id, {display_name?, attributes?})` | `PATCH /v1/referrers/{id}` | `Referrer` |
+
+| Language | Example |
+|---|---|
+| Node | `await clikgate.referrals.getOrCreateReferrer(programId, { customerId: user.id, displayName: user.name })` |
+| Python | `clikgate.referrals.get_or_create_referrer(program_id, customer_id=user.id, display_name=user.name)` (also async) |
+| PHP | `$clikgate->referrals->getOrCreateReferrer($programId, ['customerId' => $user->id, 'displayName' => $user->name])` |
+| Laravel | `Clikgate::referrals()->getOrCreateReferrer(...)` |
+| Java | `clikgate.referrals().getOrCreateReferrer(programId, GetOrCreateReferrerParams.builder().customerId(id).build())` |
+| .NET | `await clikgate.Referrals.GetOrCreateReferrerAsync(programId, new GetOrCreateReferrerParams { CustomerId = id })` |
+
+- **Java and .NET parameter types:** `GetOrCreateReferrerParams`, `UpdateReferrerParams` (section 28),
+  `CreatePrivacyRequestParams` (section 30) and `RedeemCodeParams` (section 32). The other methods take plain
+  arguments.
+
+- **Arguments:** `customer_id` is sent as `customer_user_id` everywhere (the referrer rows of `import_referrers`, the
+  `referee_customer_id` filter as `referee_customer_user_id`). Unset optional fields are omitted (section 4).
+- **Local checks** (`InvalidRequestError`, `http_status` null, nothing sent): an empty `program_id`, `referrer_id`,
+  `referral_id` or `customer_id` is `invalid_argument` (param the argument). `find_referrer` needs exactly one of
+  `customer_id` and `code` (`invalid_argument`, param `customer_id`). `complete_step` formats `value` as section 8
+  (`invalid_value`).
+- **`complete_step`:** `occurred_at` is **required**, because the API requires it: missing (null, absent or an empty
+  string) it is a local `invalid_argument` with param `occurred_at`, and nothing is sent. It takes a datetime or an RFC
+  3339 string, formatted as section 4. `goal` follows the goal key rule of the API (`^[a-z][a-z0-9_]{1,39}$`, checked
+  by the server).
+- **`list` dates:** `from` and `to` take a datetime or an RFC 3339 string, sent as section 4 query values.
+- **`import_referrers` batches:** rows are sent in order in batches of **1000** (the API's limit), one request per
+  batch, each with its own `Idempotency-Key` (a caller's key gets `-<batch index>` appended when there are several
+  batches; one batch keeps it as is). The result is the list of `Job`s in order. An empty list sends nothing and
+  returns `[]`. A failing batch throws; earlier batches stay submitted.
+- **Never logged:** customer IDs, display names and attributes.
+
+### 28.2 Models
+
+**`Referrer`** (`object: "referrer"`): `id`, `program_id`, `customer_user_id` (the customer ID), `display_name`, `code`,
+`external_code`, `link_id`, `url` (the code URL, else the short link), `short_url`, `status` (`active` \| `blocked`),
+`blocked_reason`, `blocked_at`, `stats` (**`ReferrerStats`**: `clicks`, `installs`, `signups`, `in_progress`,
+`qualified`, `disqualified`, `rejected`, and `referee_uninstall_rate_7d` (0 to 1, or null; absent until first
+refreshed)), `attributes` (map), `leaderboard_opt_out`, `quality_score`, `quality_band`, `last_activity_at`,
+`created_at`, `updated_at`, `livemode`; plus `created` on `get_or_create_referrer` results.
+
+**`Referral`** (`object: "referral"`): `id`, `program_id`, `referrer_id`, `status`, `source`, `match_type`,
+`current_step`, `steps_completed` (`[{index, goal?, identify?, completed_at, source_id?}]`), `step_deadline_at`,
+`hold_until`, `qualified_at`, `disqualified_at`, `rejected_at`, `reason`, `reason_detail`, `reason_message`,
+`fraud_flags`, `referee_uninstalled_after_qualification`, `program` `{id, name}`, `referrer` `{id, customer_user_id,
+code}`, `referee` `{install_id, installation_id, customer_user_id}`, `link` (`{id}` or null), `click_id`,
+`reward_snapshot` (**`RewardInfo`**, absent when the program had no reward information), `created_at`, `updated_at`,
+`livemode`.
+
+**`RewardInfo`**: `referrer` and `referee` (each a **`RewardSide`** `{amount_minor?, currency?, description?,
+amount?}`, absent when not set) and `note?`. Clikgate never pays rewards; this is for your records.
+
+**`Job`** (`object: "job"`): `id`, `type`, `status`, `total`, `succeeded`, `failed`, `results` (`[{index?, ok?,
+referrer_id?, created?, error?: {type, code, message?, param?}, …}]`), `created_at`, `finished_at`, `livemode`.
+
+### 28.3 Conformance
+
+Suite `referrals`. Results are the wire objects plus `created` and `amount`:
+
+| `call` | `args` | Canonical result |
+|---|---|---|
+| `referrals.get_or_create_referrer` | `program_id`, `customer_id`, `display_name?`, `external_code?` | the referrer + `created` |
+| `referrals.get_referrer` | `id` | the referrer |
+| `referrals.find_referrer` | `program_id`, `customer_id?`, `code?` | the referrer or `null` |
+| `referrals.get` | `id` | the referral |
+| `referrals.list` | `params?` (`program_id`, `referrer_id`, `referee_customer_id`, `status`, `from`, `to`, `limit`), `max_items?` | `{"items": [referral, …]}` |
+| `referrals.list_page` | `params?` | the page |
+| `referrals.qualify`, `referrals.disqualify` | `id`, `reason` | the referral |
+| `referrals.complete_step` | `id`, `goal`, `occurred_at`, `value?`, `currency?` | the referral |
+| `referrals.import_referrers` | `program_id`, `rows` (`[{customer_id, external_code?, display_name?}]`) | the list of jobs |
+| `referrals.block_referrer` | `id`, `reason?` | the referrer |
+| `referrals.unblock_referrer` | `id` | the referrer |
+| `referrals.update_referrer` | `id`, `display_name?`, `attributes?` | the referrer |
+
+## 29. Typed webhook events
+
+`webhooks.verify` / `verify_any` (section 14, with and without a client) return a **`WebhookEvent`**: `id`, `type`,
+`api_version`, `created_at`, `organization_id`, `livemode` and `data` (the raw map, unchanged, so existing code keeps
+working). It gains typed accessors that read `data.object`:
+
+| Canonical | Event types | Gives |
+|---|---|---|
+| `as_referral()` | `referral.*` | `Referral` (section 28.2, with reward amounts) |
+| `as_referrer()` | `referrer.*` | `Referrer` |
+| `as_goal_event()` | `goal.completed`, `goal.reversed` (`goal.*`) | the goal event as webhooks show it: `object`, `id`, `goal`, `value`, `value_minor`, `currency`, `first_for_click`, `is_first_customer`, `link` `{id}`, `campaign` `{id}`, `clicked_at`, `occurred_at`, `status` (the attribution state), `received_as`, `goal_group` `{id, name}`, `reference` (absent in private mode), `person` `{id, label}` and `backfilled` (`goal.completed`) |
+| `as_install()` | `install.*` | `Install` (section 32) |
+| `as_payment()` | `payment.*` | `PaymentReport`: the payment report (`object: "payment_report"`, `id`, `provider`, `reference`, `source`, `goal`, `status`, `status_reason`, `click_id`, `installation_id`, `link_id`, `channel`, `confirmation`, `counted`, `goal_event_id`, `refunded_amount_minor`, `occurred_at`, `created_at`, `decided_at`, `expires_at`, `livemode`, …) |
+| `as_conversion()` | `conversion.*` | `Conversion` (`id`, `external_id`, `status`, `type`, `amount_minor`, `currency`, `reversed_amount_minor`, `click_id`, `link`, `campaign`, `metadata`, `goal`, `value`, `occurred_at`, `received_at`, `created_at`, `livemode`, …) |
+
+- **Matching** is by the type's family prefix (`referral.`, `referrer.`, `goal.`, `install.`, `payment.`,
+  `conversion.`), so a newer type in a family (one this SDK release doesn't list) still gives the object. `app.reengaged`
+  is not `install.*`. `person.device_changed` has no accessor: its `data.object` is a device change (`object:
+  "device_change"`), not a person; read it from `data`.
+- **A mismatch** (another family, or `data.object` not an object) gives **null** in Node, Python and PHP (`?Referral`,
+  `Referral | null`, `Optional[Referral]`). Java and .NET also return `null` (`@Nullable`, nullable reference types), so
+  the same `if` works everywhere and nothing throws for an event you didn't expect.
+- **Names** (section 2 casing): Node `event.asReferral()`; Python `event.as_referral()`; PHP `$event->asReferral()`;
+  Java `event.asReferral()`; .NET `event.AsReferral()`. The same for the other five.
+- **Shape:** Node returns a plain event object with the accessors as non-enumerable methods (so `JSON.stringify(event)` is
+  unchanged). Python returns a `WebhookEvent`, a `dict` subclass (so `event["type"]` keeps working) with the accessors
+  and read-only attributes `id`, `type`, `api_version`, `created_at`, `organization_id`, `livemode`, `data`. PHP
+  returns `Clikgate\Model\WebhookEvent` with readonly properties (`->id`, `->type`, `->apiVersion`, …), `ArrayAccess`
+  for the wire keys (`$event['type']`, `$event['data']['object']` keep working) and `toArray()`; the docs use
+  `$event->type`.
+- **Discriminated union** (Node and Python): `event.typed()` returns the same event typed as `TypedWebhookEvent`, a
+  union discriminated by `type` whose `data.object` is typed per family (Node: `const e = event.typed(); if (e.type ===
+  EventType.ReferralQualified) e.data.object.referrer`; Python: `e = event.typed()` narrowed by `e["type"] ==
+  "referral.qualified"`). The union describes the raw `data`; the accessors add the derived fields (`amount`).
+
+### 29.1 `EventType`
+
+Every webhook event type the API sends, as **plain string constants** holding the wire string (`referral.qualified`),
+never language enums that need unwrapping, so `event.type === EventType.ReferralQualified` (and the same comparison in
+every language) is true for a `referral.qualified` event:
+
+| Language | Constant | Kind |
+|---|---|---|
+| Node | `EventType.ReferralQualified` | PascalCase keys on a `const` object with string values; type `EventTypeValue` |
+| Python | `EventType.REFERRAL_QUALIFIED` | a `str`-valued enum whose members compare equal to the string (`EventType.REFERRAL_QUALIFIED == "referral.qualified"`) |
+| PHP | `EventType::ReferralQualified` | class constants holding strings (`final class Clikgate\Enum\EventType`; `EventType::all()` lists them) |
+| Java | `EventType.REFERRAL_QUALIFIED` | `public static final String` |
+| .NET | `EventType.REFERRAL_QUALIFIED` | `const string` |
+
+ Names are the type
+upper-cased with `.` and `_` as word breaks (`link.stats.hourly` → `LINK_STATS_HOURLY` / `LinkStatsHourly`). `type`
+itself stays a plain string (PHP `$event->type`, Python `event.type` and `event["type"]`), so an event type added later
+is never an error.
+
+The list (97 types): `ab_test.likely_winner`, `alert.resolved`, `alert.triggered`, `app.push_credentials_invalid`,
+`app.reengaged`, `app_banner.paused`, `app_banner.published`, `campaign.paused`, `campaign.resumed`,
+`challenge.cancelled`, `challenge.ended`, `challenge.finalized`, `challenge.scheduled`, `challenge.started`,
+`click.created`, `code.redeemed`, `conversion.attributed`, `conversion.reversed`, `conversion.unattributed`,
+`credit_note.issued`, `domain.group_changed`, `domain.settings_updated`, `domain.status_changed`,
+`fraud.install_flagged`, `funnel.stuck`, `goal.completed`, `goal.reversed`, `identity.duplicate_detected`,
+`install.attributed`, `install.attribution_updated`, `install.organic`, `install.uninstall_reverted`,
+`install.uninstalled`, `invoice.issued`, `invoice.paid`, `invoice.voided`, `job.completed`,
+`leaderboard.period_closed`, `leaderboard.period_finalized`, `leaderboard.rank_changed`, `leaderboard.target_reached`,
+`leaderboard.target_revoked`, `link.archived`, `link.created`, `link.destination_changed`, `link.expired`,
+`link.flagged`, `link.paused`, `link.resumed`, `link.stats.hourly`, `link.updated`, `organization.deleted`,
+`organization.feature_changed`, `organization.feature_data_purged`, `partner.approved`, `partner_earning.approved`,
+`partner_payout.paid`, `partner_reward.applied`, `partner_reward.approved`, `partner_reward.removed`,
+`partner_reward.reversed`, `payment.not_confirmed`, `payment.refunded`, `payment.rejected`, `payment.verified`,
+`person.device_changed`, `privacy.request_completed`, `receipt.issued`, `referral.created`, `referral.disqualified`,
+`referral.holding`, `referral.qualified`, `referral.referee_uninstalled`, `referral.rejected`,
+`referral.step_completed`, `referrer.blocked`, `referrer.created`, `referrer.quality_changed`, `referrer.unblocked`,
+`sale.matched`, `sale.refunded`, `skan.postback_received`, `subscription.activated`, `subscription.cancelled`,
+`subscription.changed`, `subscription.expired`, `subscription.grace_started`, `subscription.renewed`,
+`subscription.trial_converted`, `subscription.trial_ended`, `subscription.trial_extended`, `subscription.trial_started`,
+`subscription.updated`, `usage.threshold_reached`, `webhook.test`, `webhook_endpoint.disabled`,
+`whatsapp.conversation_attributed`.
+
+### 29.2 Conformance
+
+Suite `webhook_events`:
+
+| `call` | `args` | Canonical result |
+|---|---|---|
+| `webhooks.typed` | the `webhooks.verify` args + `as` (`referral` \| `referrer` \| `goal_event` \| `install` \| `payment` \| `conversion`) | the typed object as wire JSON (with `amount`), or `null` on a mismatch |
+| `webhooks.event_types` | — | `{"value": [every EventType wire string, sorted]}` |
+
+## 30. Privacy requests: `clikgate.privacy`
+
+| Canonical | HTTP | Returns |
+|---|---|---|
+| `privacy.create_request({type, subject_type, subject_id, app_id?})` | `POST /v1/privacy/requests` | `PrivacyRequest` (`202`); Java and .NET take `CreatePrivacyRequestParams` |
+| `privacy.get_request(request_id)` | `GET /v1/privacy/requests/{id}` | `PrivacyRequest` |
+
+- `type`: `access` \| `export` \| `delete` \| `erasure`. `subject_type`: `installation` \| `customer_user` \| `email` \|
+  `phone` \| `person` \| `click`. The SDK sends them as given (a typed language offers the values as a string union or
+  constants); the API validates.
+- **`PrivacyRequest`** (`object: "privacy_request"`): `id`, `app_id`, `type`, `subject_type`, `status`, `result` (null
+  until completed; an export's `{download_url, expires_at, installs, goal_name_events}`, or an erasure's counts per
+  kind), `error`, `created_at`, `completed_at`, `livemode`.
+- **Never logged:** the subject ID.
+- Conformance suite `privacy`: `privacy.create_request` (`type`, `subject_type`, `subject_id`, `app_id?`) and
+  `privacy.get_request` (`id`), each giving the request.
+
+## 31. Links: typed inputs, the full model and more methods
+
+- **Typed inputs:** `LinkCreateParams` (the API's `AddLinkSchema`) and `LinkUpdateParams` (`UpdateLinkSchema`). Node
+  exports them as types (aliases of the generated ones); Python as `TypedDict`s taken as the first positional argument
+  (`clikgate.links.create({"destination_url": …})`); PHP as array shapes. The existing map inputs keep working (Node
+  `Record<string, unknown>` overloads, Python keyword arguments, PHP arrays, Java and .NET map overloads).
+- **`Link`** has every `LinkInfoResponse` field (`urls`, `domain_group_id`, `click_id_param`, `utm_template`,
+  `attribution_window_days`, `external_reference`, `campaign_id`, `end_goal_key`, `og_description`, `expires_at`,
+  `paused_reason`, `kind`, `app_ids`, `deep_link_path`, `deep_link_data`, `app_behavior`, `ios_interstitial`,
+  `referral_program_id`, `referrer_id`, `locked`, `locked_by`, `locked_at`, `open_in_app`, …). Existing fields and
+  getters are unchanged.
+- **PHP** link methods return `Clikgate\Model\Link` (and `LinkUpdateResult`, `LinkChangeRequest`, `LinkPage`) instead
+  of arrays. They implement `ArrayAccess`, so `$link['short_url']` and `$result['change_request']['id']` keep working.
+
+| Canonical | HTTP | Returns |
+|---|---|---|
+| `links.archive(id)` | `DELETE /v1/links/{id}` | `Link` (status `archived`) |
+| `links.get_by_reference(reference)` | `GET /v1/links/by-reference/{reference}` | `Link` |
+| `links.pause(id)` | `POST /v1/links/{id}/pause` (no body) | `Link` |
+| `links.resume(id)` | `POST /v1/links/{id}/resume` (no body) | `Link` |
+
+Conformance suite `links_more`: `links.archive` / `links.pause` / `links.resume` (`id`) and `links.get_by_reference`
+(`reference`), each giving the link.
+
+## 32. People, installs and codes
+
+| Canonical | HTTP | Returns |
+|---|---|---|
+| `people.get(person_id)` | `GET /v1/people/{id}` | `Person` |
+| `people.search(q)` | `POST /v1/people/search` `{q, cursor?}` | an auto-paging iterator of `PersonSummary` |
+| `people.search_page(q, {cursor?, limit?})` | `POST /v1/people/search` `{q, cursor?, limit?}` | one page `{object, data: PersonSummary[], has_more, next_cursor}` |
+| `people.set_label(person_id, label)` | `PATCH /v1/people/{id}` `{label}` | `Person` |
+| `installs.get_by_customer(customer_id, {app_id?})` | `GET /v1/installs/by-customer-user/{customer_id}?app_id=` | `Install` |
+| `installs.get_by_installation(installation_id, {app_id?})` | `GET /v1/installs/by-installation/{installation_id}?app_id=` | `Install` |
+| `codes.redeem({external_id, code, channel, app_id?, occurred_at?, metadata?, subject?, agent_id?, location?})` | `POST /v1/codes/redeem` | `CodeRedemption` (`201`) |
+
+- **`people.search` pages** use the body's `cursor` (not `starting_after`): the iterator sends `cursor = next_cursor`
+  and stops when `has_more` is false or `next_cursor` is null. The search text goes in the body, never in the URL, and
+  is never logged. Each page is a POST with its own idempotency key.
+- **`app_id`** for installs: the API currently requires it (`422` otherwise). The SDK sends it when given and lets the
+  API decide when it isn't.
+- **`codes.redeem`:** `channel` is `ussd`, `sms_keyword`, `agent`, `pos`, `in_store`, `call_center`, `event`, `print`,
+  `radio` or `other` (sent as given); `occurred_at` is formatted as section 4; `metadata` is a free-form map;
+  `subject` (`{type, id?}`, the redeeming subject), `agent_id` (Node and PHP `agentId`) and `location` (`{country?,
+  region?, city?, store_id?}`) are sent as given when present. Java and .NET take them on `RedeemCodeParams`.
+- **.NET** people methods: `People.GetAsync`, `People.SearchAsync` (an `IAsyncEnumerable<PersonSummary>`),
+  `People.SearchPageAsync` and `People.SetLabelAsync`.
+- **`Person`** (`object: "person"`): `id`, `label`, `label_source`, `label_updated_at`, `customer_user_id`,
+  `customer_user_id_hint`, `click_id`, `merged_into`, `created_at`, `last_seen_at`, `links`, `label_history`,
+  `timeline`, `can_unmerge`, `progress?`, `livemode`. **`PersonSummary`**: `id`, `label`, `click_id`,
+  `customer_user_id`, `last_seen_at`, `goals`, `goal_value_minor` (map of currency to minor units), `matched_on`,
+  `app?`, `joined_via?`, `referrer?`, `referred_by?`, `livemode`.
+- **`Install`** (`object: "install"`): the API's install (`id`, `app_id`, `installation_id`, `platform`,
+  `first_open_at`, `attribution_status`, `match_type`, `click_id`, `link`, `customer_user_id`, `uninstall_status`,
+  `person`, `livemode`, …).
+- **`CodeRedemption`** (`object: "code_redemption"`): `offline_touch_id`, `code` `{code, kind, link_id, campaign_id,
+  referrer_id, program_id}`, `referral` (a `Referral`, or null), `linked`, `referral_error` (`{code, message}` or
+  null), `livemode`.
+- Conformance suite `people_installs_codes`: `people.get` (`id`), `people.set_label` (`id`, `label`), `people.search`
+  (`q`, `max_items?`; `{"items": […]}`), `people.search_page` (`q`, `cursor?`, `limit?`), `installs.get_by_customer`
+  (`customer_id`, `app_id?`), `installs.get_by_installation` (`installation_id`, `app_id?`), `codes.redeem` (the fields
+  above, `agent_id` in snake case).

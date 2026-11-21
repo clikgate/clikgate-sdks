@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { SignatureVerificationError, localError } from './errors.js';
-import type { WebhookEvent } from './types.js';
+import type { TypedWebhookEvent, WebhookEvent, WebhookEventAccessors } from './types.js';
+import { toReferral, toReferrer } from './currency.js';
 
 /** Options for webhook verification. */
 export interface VerifyOptions {
@@ -69,7 +70,37 @@ function verifyWith(rawBody: RawBody, signatureHeader: string | null | undefined
     throw fail('invalid_payload', 'The body is not JSON.');
   }
   if (!event || typeof event !== 'object' || Array.isArray(event)) throw fail('invalid_payload', 'The body is not an event object.');
-  return event as WebhookEvent;
+  return withAccessors(event as Record<string, unknown>);
+}
+
+function objectOf(event: Record<string, unknown>, family: string): Record<string, unknown> | null {
+  const type = event.type;
+  if (typeof type !== 'string' || !type.startsWith(`${family}.`)) return null;
+  const data = event.data;
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+  const object = (data as Record<string, unknown>).object;
+  return object && typeof object === 'object' && !Array.isArray(object) ? (object as Record<string, unknown>) : null;
+}
+
+/** @internal Add the typed accessors as non-enumerable methods (JSON.stringify(event) is unchanged). */
+export function withAccessors(event: Record<string, unknown>): WebhookEvent {
+  const accessors: WebhookEventAccessors = {
+    asReferral: () => {
+      const o = objectOf(event, 'referral');
+      return o ? toReferral(o) : null;
+    },
+    asReferrer: () => {
+      const o = objectOf(event, 'referrer');
+      return o ? toReferrer(o) : null;
+    },
+    asGoalEvent: () => objectOf(event, 'goal') as ReturnType<WebhookEventAccessors['asGoalEvent']>,
+    asInstall: () => objectOf(event, 'install') as ReturnType<WebhookEventAccessors['asInstall']>,
+    asPayment: () => objectOf(event, 'payment') as ReturnType<WebhookEventAccessors['asPayment']>,
+    asConversion: () => objectOf(event, 'conversion') as ReturnType<WebhookEventAccessors['asConversion']>,
+    typed: () => event as unknown as TypedWebhookEvent,
+  };
+  for (const [name, fn] of Object.entries(accessors)) Object.defineProperty(event, name, { value: fn, enumerable: false, writable: true, configurable: true });
+  return event as unknown as WebhookEvent;
 }
 
 /**
@@ -82,10 +113,11 @@ export const webhooks = {
    *
    * @example
    * import express from 'express';
-   * import { webhooks } from '@clikgate/node';
+   * import { webhooks, EventType } from '@clikgate/node';
    * app.post('/webhooks/clikgate', express.raw({ type: 'application/json' }), (req, res) => {
    *   const event = webhooks.verify(req.body, req.get('Clikgate-Signature'), process.env.CLIKGATE_WEBHOOK_SECRET!);
-   *   if (event.type === 'goal.completed') { … }   // dedupe on event.id: delivery is at-least-once
+   *   const referral = event.asReferral();   // null for other event types
+   *   if (referral && event.type === EventType.ReferralQualified) { … }   // dedupe on event.id: delivery is at-least-once
    *   res.sendStatus(200);
    * });
    */

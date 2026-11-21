@@ -3,6 +3,20 @@
 All notable changes to this package. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package uses [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Node versions are dropped only after their end of life.
 
 
+## [2.1.0] - unreleased
+
+### Typed referrals, webhook events, privacy, people, installs and codes
+
+Additive: nothing is removed or renamed, and nothing changes on the wire.
+
+- **Added:** `clikgate.referrals`: `getOrCreateReferrer(programId, { customerId, displayName?, externalCode? })` (`created` is true when the referrer is new), `getReferrer`, `findReferrer(programId, { customerId } | { code })` (`null` when there is none), `get`, `list` (auto-paging) and `listPage`, `qualify`, `disqualify`, `completeStep` (`occurredAt` is required), `importReferrers` (1000 rows per request, one job per request), `blockReferrer`, `unblockReferrer` and `updateReferrer`. Results are typed: `Referrer`, `Referral`, `RewardInfo`, `Job`.
+- **Added:** reward sides keep `amount_minor` and gain `amount`, the same value in normal units as a decimal string with the currency's digits (`50000` NGN is `"500.00"`). `minorToAmount()` and `currencyExponent()` are exported.
+- **Added:** `customerId` next to `customer_user_id` on referrers and on a referral's `referrer` and `referee`.
+- **Added:** verified webhook events have `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()` and `asConversion()` (each `null` for an event of another family) and `typed()`, which gives the event as `TypedWebhookEvent`, a union narrowed by `type`. The accessors are non-enumerable, so `JSON.stringify(event)` and `event.data` are unchanged.
+- **Added:** `EventType`, every webhook event type as a string constant (`EventType.ReferralQualified === 'referral.qualified'`).
+- **Added:** `clikgate.privacy` (`createRequest`, `getRequest`), `clikgate.people` (`get`, `search` (auto-paging) and `searchPage`, `setLabel`), `clikgate.installs` (`getByCustomer`, `getByInstallation`) and `clikgate.codes.redeem` (with `subject`, `agentId` and `location`), with typed results.
+- **Added:** `links.archive`, `links.pause`, `links.resume` and `links.getByReference`. `links.create` and `links.update` take the typed `LinkCreateParams` / `LinkUpdateParams`; plain objects still work. `Link` has every field of the API's link.
+
 ## [2.0.3] - unreleased
 
 ### Identify users with the installation header

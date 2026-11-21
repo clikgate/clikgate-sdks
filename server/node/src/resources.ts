@@ -4,6 +4,8 @@ import { encodePathSegment, requireId, type RequestOptions } from './http.js';
 import { formatValue } from './money.js';
 import { checkHashedFields } from './ads-hashing.js';
 import type { Click, Conversion, GoalEvent, Link, LinkChangeRequest, LinkUpdateResult, ListPage, QrCode } from './types.js';
+import type { LinkCreateParams, LinkUpdateParams } from './models.js';
+import { paginate, type PageIterator } from './pager.js';
 
 type Params = Record<string, unknown>;
 
@@ -67,11 +69,8 @@ export interface QrOptions {
   light?: string;
 }
 
-/** An async iterator over every link that also exposes the first page. */
-export interface LinkIterator extends AsyncIterable<Link> {
-  /** Collect up to `max` links (default: all). */
-  toArray(max?: number): Promise<Link[]>;
-}
+/** An async iterator over every link. */
+export type LinkIterator = PageIterator<Link>;
 
 /** Links: create, read, update (with approvals and locks), list and QR codes. */
 export class Links {
@@ -85,7 +84,9 @@ export class Links {
    * const link = await clikgate.links.create({ destination_url: 'https://example.com/spring', og_title: 'Spring sale', og_image_url: 'https://example.com/og.png' });
    * console.log(link.short_url, link.warnings);
    */
-  async create(params: Params, requestOptions: RequestOptions = {}): Promise<Link> {
+  async create(params: LinkCreateParams, requestOptions?: RequestOptions): Promise<Link>;
+  async create(params: Params, requestOptions?: RequestOptions): Promise<Link>;
+  async create(params: LinkCreateParams | Params, requestOptions: RequestOptions = {}): Promise<Link> {
     const { data } = await this.core.requester.request<Link>({ method: 'POST', path: '/v1/links', body: params, ...requestOptions });
     return data;
   }
@@ -110,7 +111,9 @@ export class Links {
    * const result = await clikgate.links.update('lnk_01J…', { destination_url: 'https://example.com/summer' });
    * if (!result.applied) console.log('waiting for approval:', result.change_request.id);
    */
-  async update(id: string, params: Params, requestOptions: RequestOptions = {}): Promise<LinkUpdateResult> {
+  async update(id: string, params: LinkUpdateParams, requestOptions?: RequestOptions): Promise<LinkUpdateResult>;
+  async update(id: string, params: Params, requestOptions?: RequestOptions): Promise<LinkUpdateResult>;
+  async update(id: string, params: LinkUpdateParams | Params, requestOptions: RequestOptions = {}): Promise<LinkUpdateResult> {
     const { status, data } = await this.core.requester.request<Link | LinkChangeRequest>({
       method: 'PATCH',
       path: `/v1/links/${encodePathSegment(requireId(id))}`,
@@ -142,28 +145,52 @@ export class Links {
    * }
    */
   list(params: Params = {}, requestOptions: RequestOptions = {}): LinkIterator {
-    const listPage = (p: Params) => this.listPage(p, requestOptions);
-    async function* iterate(): AsyncGenerator<Link> {
-      let cursor: string | null = null;
-      for (;;) {
-        const page: ListPage<Link> = await listPage(cursor ? { ...params, starting_after: cursor } : params);
-        for (const item of page.data ?? []) yield item;
-        if (!page.has_more || !page.next_cursor) return;
-        cursor = page.next_cursor;
-      }
-    }
-    return {
-      [Symbol.asyncIterator]: iterate,
-      async toArray(max = Number.POSITIVE_INFINITY) {
-        const out: Link[] = [];
-        if (max <= 0) return out;
-        for await (const l of iterate()) {
-          out.push(l);
-          if (out.length >= max) break;
-        }
-        return out;
-      },
-    };
+    return paginate((cursor) => this.listPage(cursor ? { ...params, starting_after: cursor } : params, requestOptions));
+  }
+
+  /**
+   * Archive a link (`DELETE /v1/links/{id}`): it stops redirecting. Returns the archived link.
+   *
+   * @example
+   * const link = await clikgate.links.archive('lnk_01J…');
+   */
+  async archive(id: string, requestOptions: RequestOptions = {}): Promise<Link> {
+    const { data } = await this.core.requester.request<Link>({ method: 'DELETE', path: `/v1/links/${encodePathSegment(requireId(id))}`, ...requestOptions });
+    return data;
+  }
+
+  /**
+   * Fetch a link by your own external reference (`external_reference`).
+   *
+   * @example
+   * const link = await clikgate.links.getByReference('order-1001');
+   */
+  async getByReference(reference: string, requestOptions: RequestOptions = {}): Promise<Link> {
+    const path = `/v1/links/by-reference/${encodePathSegment(requireId(reference, 'reference'))}`;
+    const { data } = await this.core.requester.request<Link>({ method: 'GET', path, ...requestOptions });
+    return data;
+  }
+
+  /**
+   * Pause a link: visitors see the paused page until you resume it.
+   *
+   * @example
+   * const link = await clikgate.links.pause('lnk_01J…');
+   */
+  async pause(id: string, requestOptions: RequestOptions = {}): Promise<Link> {
+    const { data } = await this.core.requester.request<Link>({ method: 'POST', path: `/v1/links/${encodePathSegment(requireId(id))}/pause`, ...requestOptions });
+    return data;
+  }
+
+  /**
+   * Resume a paused link.
+   *
+   * @example
+   * const link = await clikgate.links.resume('lnk_01J…');
+   */
+  async resume(id: string, requestOptions: RequestOptions = {}): Promise<Link> {
+    const { data } = await this.core.requester.request<Link>({ method: 'POST', path: `/v1/links/${encodePathSegment(requireId(id))}/resume`, ...requestOptions });
+    return data;
   }
 
   /**

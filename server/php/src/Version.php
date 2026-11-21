@@ -7,5 +7,5 @@ namespace Clikgate;
 /** The SDK version (kept equal to the tag by scripts/check-version.php). */
 final class Version
 {
-    public const VERSION = '2.0.3';
+    public const VERSION = '2.1.0';
 }

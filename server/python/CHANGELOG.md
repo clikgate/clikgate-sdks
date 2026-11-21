@@ -3,6 +3,19 @@
 All notable changes to this package. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package uses [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Python versions are dropped only after their end of life.
 
 
+## [2.1.0] - unreleased
+
+### Typed referrals, webhook events, privacy, people, installs and codes
+
+Additive: nothing is removed or renamed, and nothing changes on the wire.
+
+- **Added:** `clikgate.referrals`: `get_or_create_referrer` (with `created`), `get_referrer`, `find_referrer` (`None` when there is none), `get`, `list` / `list_page`, `qualify`, `disqualify`, `complete_step` (`occurred_at` required), `import_referrers` (batches of 1000, one job per batch), `block_referrer`, `unblock_referrer` and `update_referrer`. Results are typed dicts (`Referrer`, `Referral`, `RewardInfo`, `Job`).
+- **Added:** reward sides carry `amount`, the decimal string in normal units next to `amount_minor` (`50000` NGN is `"500.00"`), plus `currency_exponent()` and `minor_to_amount()`.
+- **Added:** typed webhook events. `webhooks.verify` returns a `WebhookEvent`, still a `dict`, with attributes (`event.type`, `event.id`, …) and `as_referral()`, `as_referrer()`, `as_goal_event()`, `as_install()`, `as_payment()`, `as_conversion()` (each `None` for other event types), `typed()` (the `TypedWebhookEvent` union) and the `EventType` enum of every event type.
+- **Added:** `clikgate.privacy.create_request` / `get_request`, `clikgate.people.get` / `search` / `search_page` / `set_label`, `clikgate.installs.get_by_customer` / `get_by_installation` and `clikgate.codes.redeem` (with `subject`, `agent_id` and `location`), with typed results.
+- **Added:** `links.archive`, `links.pause`, `links.resume` and `links.get_by_reference`. `links.create` / `links.update` also take a typed `LinkCreateParams` / `LinkUpdateParams` as the first argument (keyword arguments still work), and the `Link` type lists every field of the API's link.
+- Everything is on `AsyncClikgate` too.
+
 ## [2.0.3] - unreleased
 
 ### Identify users with the installation header

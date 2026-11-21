@@ -1,0 +1,358 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "links_more",
+  "description": "Links: archive, pause, resume, fetch by reference, the full link model (SPEC 29)",
+  "cases": [
+    {
+      "id": "links.archive",
+      "description": "archive deletes the link and returns it archived",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "archived",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.archive",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA"
+          },
+          "expect": {
+            "result": {
+              "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+              "status": "archived"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "DELETE",
+            "path": "/v1/links/lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "query": {},
+            "no_body": true
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.pause",
+      "description": "pause posts without a body and returns the paused link",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "paused",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.pause",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA"
+          },
+          "expect": {
+            "result": {
+              "status": "paused"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/links/lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA/pause",
+            "no_body": true
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.resume",
+      "description": "resume posts without a body and returns the active link",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.resume",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA"
+          },
+          "expect": {
+            "result": {
+              "status": "active"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/links/lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA/resume",
+            "no_body": true
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.get_by_reference",
+      "description": "get_by_reference fetches a link by your external reference; the path is percent-encoded",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false,
+            "external_reference": "order 1001/a"
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.get_by_reference",
+          "args": {
+            "reference": "order 1001/a"
+          },
+          "expect": {
+            "result": {
+              "external_reference": "order 1001/a"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/links/by-reference/order%201001%2Fa",
+            "no_body": true
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.get_by_reference.not_found",
+      "description": "get_by_reference maps 404 to NotFoundError",
+      "client": {
+        "max_retries": 0
+      },
+      "responses": [
+        {
+          "status": 404,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "not_found",
+              "code": "resource_missing",
+              "message": "No such link.",
+              "param": "external_reference",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.get_by_reference",
+          "args": {
+            "reference": "missing"
+          },
+          "expect": {
+            "error": {
+              "class": "NotFoundError",
+              "http_status": 404
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/links/by-reference/missing"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "links.get.full_model",
+      "description": "Every link field is returned, including the ones added to the typed model",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "link",
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "short_url": "https://dev.ciz.to/spring",
+            "domain": "dev.ciz.to",
+            "slug": "spring",
+            "status": "active",
+            "destination_url": "https://example.com/spring",
+            "fallback_url": null,
+            "title": "Spring sale",
+            "og_title": null,
+            "og_image_url": null,
+            "tags": [],
+            "metadata": {},
+            "warnings": [],
+            "created_at": "2026-10-26T11:00:00Z",
+            "updated_at": "2026-10-26T11:00:00Z",
+            "livemode": false,
+            "urls": [
+              {
+                "domain": "dev.ciz.to",
+                "url": "https://dev.ciz.to/spring",
+                "role": "primary"
+              }
+            ],
+            "kind": "standard",
+            "app_ids": [
+              "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP"
+            ],
+            "deep_link_path": "/products/42",
+            "deep_link_data": {
+              "product_id": 42
+            },
+            "external_reference": "order-1001",
+            "campaign_id": null,
+            "attribution_window_days": 7,
+            "click_id_param": "cgid",
+            "locked": false,
+            "locked_by": null,
+            "locked_at": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "links.get",
+          "args": {
+            "id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA"
+          },
+          "expect": {
+            "result": {
+              "urls": [
+                {
+                  "role": "primary"
+                }
+              ],
+              "kind": "standard",
+              "deep_link_data": {
+                "product_id": 42
+              },
+              "external_reference": "order-1001",
+              "attribution_window_days": 7
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/links/lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

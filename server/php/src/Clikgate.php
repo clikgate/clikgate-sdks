@@ -66,6 +66,16 @@ final class Clikgate
     public readonly Clicks $clicks;
     /** Existing customers from before you added Clikgate: `import()` and `remove()`. */
     public readonly KnownCustomers $knownCustomers;
+    /** Referrals: referrers (`getOrCreateReferrer()`, `findReferrer()`), referrals, overrides, steps and imports. */
+    public readonly Referrals $referrals;
+    /** Privacy requests: `createRequest()`, `getRequest()`. */
+    public readonly Privacy $privacy;
+    /** People: `get()`, `search()`, `setLabel()`. */
+    public readonly People $people;
+    /** Installs: `getByCustomer()`, `getByInstallation()`. */
+    public readonly Installs $installs;
+    /** Offline and referral codes: `redeem()`. */
+    public readonly Codes $codes;
     /** Click-ID helpers using this client's `clickIdParam` (or the organisation's, from config). */
     public readonly ClickIds $clickIds;
     /** Every API-key operation, generated from openapi.json ("advanced"). */
@@ -159,6 +169,11 @@ final class Clikgate
         $this->links = new Links($this->core);
         $this->clicks = new Clicks($this->core);
         $this->knownCustomers = new KnownCustomers($this->core);
+        $this->referrals = new Referrals($this->core);
+        $this->privacy = new Privacy($this->core);
+        $this->people = new People($this->core);
+        $this->installs = new Installs($this->core);
+        $this->codes = new Codes($this->core);
         $core = $this->core;
         $this->clickIds = new ClickIds(static function () use ($clickIdParam, $core): string {
             $fromConfig = $core->peekConfig()['click_id_param'] ?? null;

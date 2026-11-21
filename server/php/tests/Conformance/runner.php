@@ -210,6 +210,25 @@ function helperInput(mixed $response): array|string
     return is_array($response) || is_string($response) ? $response : json_encode($response, JSON_THROW_ON_ERROR);
 }
 
+/** Drop null values (an option that wasn't given). */
+function nn(array $a): array
+{
+    return array_filter($a, static fn($v) => null !== $v);
+}
+
+function referralParams(array $p): array
+{
+    return nn([
+        'programId' => $p['program_id'] ?? null,
+        'referrerId' => $p['referrer_id'] ?? null,
+        'refereeCustomerId' => $p['referee_customer_id'] ?? null,
+        'status' => $p['status'] ?? null,
+        'from' => $p['from'] ?? null,
+        'to' => $p['to'] ?? null,
+        'limit' => $p['limit'] ?? null,
+    ]);
+}
+
 function cookieOptions(array $a): array
 {
     $o = [];
@@ -323,6 +342,70 @@ function runCase(string $base, array $c): array
                 'clicks.get' => $client->clicks->get((string) $a['id']),
                 'webhooks.verify' => (static fn() => \Clikgate\Webhooks::verify($a['raw_body'], $a['header'] ?? null, (string) $a['secret'], (int) $a['tolerance'], (int) $a['now']))(),
                 'webhooks.verify_any' => (static fn() => \Clikgate\Webhooks::verifyAny($a['raw_body'], $a['header'] ?? null, $a['secrets'], (int) $a['tolerance'], (int) $a['now']))(),
+                'referrals.get_or_create_referrer' => $client->referrals->getOrCreateReferrer((string) $a['program_id'], nn(['customerId' => $a['customer_id'] ?? null, 'displayName' => $a['display_name'] ?? null, 'externalCode' => $a['external_code'] ?? null]), $ro),
+                'referrals.get_referrer' => $client->referrals->getReferrer((string) $a['id']),
+                'referrals.find_referrer' => $client->referrals->findReferrer((string) $a['program_id'], nn(['customerId' => $a['customer_id'] ?? null, 'code' => $a['code'] ?? null])),
+                'referrals.get' => $client->referrals->get((string) $a['id']),
+                'referrals.list' => (static function () use ($client, $a): array {
+                    $items = [];
+                    foreach ($client->referrals->list(referralParams($a['params'] ?? [])) as $r) {
+                        $items[] = $r;
+                        if (isset($a['max_items']) && count($items) >= $a['max_items']) {
+                            break;
+                        }
+                    }
+
+                    return ['items' => $items];
+                })(),
+                'referrals.list_page' => $client->referrals->listPage(referralParams($a['params'] ?? [])),
+                'referrals.qualify' => $client->referrals->qualify((string) $a['id'], ['reason' => (string) $a['reason']], $ro),
+                'referrals.disqualify' => $client->referrals->disqualify((string) $a['id'], ['reason' => (string) $a['reason']], $ro),
+                'referrals.complete_step' => $client->referrals->completeStep((string) $a['id'], nn(['goal' => $a['goal'] ?? null, 'occurredAt' => $a['occurred_at'] ?? null, 'value' => $a['value'] ?? null, 'currency' => $a['currency'] ?? null]), $ro),
+                'referrals.import_referrers' => $client->referrals->importReferrers((string) $a['program_id'], array_map(static fn(array $r): array => nn(['customerId' => $r['customer_id'] ?? null, 'externalCode' => $r['external_code'] ?? null, 'displayName' => $r['display_name'] ?? null]), $a['rows'] ?? []), $ro),
+                'referrals.block_referrer' => $client->referrals->blockReferrer((string) $a['id'], nn(['reason' => $a['reason'] ?? null]), $ro),
+                'referrals.unblock_referrer' => $client->referrals->unblockReferrer((string) $a['id'], $ro),
+                'referrals.update_referrer' => $client->referrals->updateReferrer((string) $a['id'], nn(['displayName' => $a['display_name'] ?? null, 'attributes' => $a['attributes'] ?? null]), $ro),
+                'privacy.create_request' => $client->privacy->createRequest(nn(['type' => $a['type'] ?? null, 'subjectType' => $a['subject_type'] ?? null, 'subjectId' => $a['subject_id'] ?? null, 'appId' => $a['app_id'] ?? null]), $ro),
+                'privacy.get_request' => $client->privacy->getRequest((string) $a['id']),
+                'links.archive' => $client->links->archive((string) $a['id']),
+                'links.get_by_reference' => $client->links->getByReference((string) $a['reference']),
+                'links.pause' => $client->links->pause((string) $a['id'], $ro),
+                'links.resume' => $client->links->resume((string) $a['id'], $ro),
+                'people.get' => $client->people->get((string) $a['id']),
+                'people.set_label' => $client->people->setLabel((string) $a['id'], $a['label'] ?? null, $ro),
+                'people.search' => (static function () use ($client, $a): array {
+                    $items = [];
+                    foreach ($client->people->search((string) $a['q']) as $p) {
+                        $items[] = $p;
+                        if (isset($a['max_items']) && count($items) >= $a['max_items']) {
+                            break;
+                        }
+                    }
+
+                    return ['items' => $items];
+                })(),
+                'people.search_page' => $client->people->searchPage((string) $a['q'], nn(['cursor' => $a['cursor'] ?? null, 'limit' => $a['limit'] ?? null])),
+                'installs.get_by_customer' => $client->installs->getByCustomer((string) $a['customer_id'], nn(['appId' => $a['app_id'] ?? null])),
+                'installs.get_by_installation' => $client->installs->getByInstallation((string) $a['installation_id'], nn(['appId' => $a['app_id'] ?? null])),
+                'codes.redeem' => $client->codes->redeem(nn(['externalId' => $a['external_id'] ?? null, 'code' => $a['code'] ?? null, 'channel' => $a['channel'] ?? null, 'appId' => $a['app_id'] ?? null, 'occurredAt' => $a['occurred_at'] ?? null, 'metadata' => $a['metadata'] ?? null, 'subject' => $a['subject'] ?? null, 'agentId' => $a['agent_id'] ?? null, 'location' => $a['location'] ?? null]), $ro),
+                'webhooks.typed' => (static function () use ($a) {
+                    $event = \Clikgate\Webhooks::verify($a['raw_body'], $a['header'] ?? null, (string) $a['secret'], (int) $a['tolerance'], (int) $a['now']);
+
+                    return match ($a['as']) {
+                        'referral' => $event->asReferral(),
+                        'referrer' => $event->asReferrer(),
+                        'goal_event' => $event->asGoalEvent(),
+                        'install' => $event->asInstall(),
+                        'payment' => $event->asPayment(),
+                        'conversion' => $event->asConversion(),
+                    };
+                })(),
+                'webhooks.event_types' => (static function (): array {
+                    $values = \Clikgate\Enum\EventType::all();
+                    sort($values, SORT_STRING);
+
+                    return ['value' => $values];
+                })(),
                 'installations.parse_header' => ['value' => installationWire(\Clikgate\Installation::parseHeader($a['value'] ?? null))],
                 'installations.from_request' => ['value' => installationWire(\Clikgate\Installation::fromRequest(['headers' => $a['request']['headers'] ?? []]))],
                 'click_ids.is_valid' => ['value' => $client->clickIds->isValid($a['id'] ?? null)],

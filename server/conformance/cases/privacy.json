@@ -1,0 +1,229 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "suite": "privacy",
+  "description": "Privacy requests: create and fetch (SPEC 30)",
+  "cases": [
+    {
+      "id": "privacy.create_request",
+      "description": "create_request posts type, subject_type and subject_id; 202 returns the request",
+      "responses": [
+        {
+          "status": 202,
+          "json": {
+            "id": "prq_01JCK8Z9V7Q4M2N6P8R0S2T4PQ",
+            "object": "privacy_request",
+            "app_id": null,
+            "type": "erasure",
+            "subject_type": "customer_user",
+            "status": "pending",
+            "result": null,
+            "error": null,
+            "created_at": "2026-10-26T12:00:00Z",
+            "completed_at": null,
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "privacy.create_request",
+          "args": {
+            "type": "erasure",
+            "subject_type": "customer_user",
+            "subject_id": "user-42"
+          },
+          "expect": {
+            "result": {
+              "id": "prq_01JCK8Z9V7Q4M2N6P8R0S2T4PQ",
+              "object": "privacy_request",
+              "status": "pending",
+              "result": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/privacy/requests",
+            "query": {},
+            "json": {
+              "type": "erasure",
+              "subject_type": "customer_user",
+              "subject_id": "user-42"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "privacy.create_request.app_id",
+      "description": "app_id is sent when given",
+      "responses": [
+        {
+          "status": 202,
+          "json": {
+            "id": "prq_01JCK8Z9V7Q4M2N6P8R0S2T4PQ",
+            "object": "privacy_request",
+            "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP",
+            "type": "export",
+            "subject_type": "installation",
+            "status": "pending",
+            "result": null,
+            "error": null,
+            "created_at": "2026-10-26T12:00:00Z",
+            "completed_at": null,
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "privacy.create_request",
+          "args": {
+            "type": "export",
+            "subject_type": "installation",
+            "subject_id": "6a1f0c2e-0000-4000-8000-000000000001",
+            "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP"
+          },
+          "expect": {
+            "result": {
+              "type": "export",
+              "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/privacy/requests",
+            "json": {
+              "type": "export",
+              "subject_type": "installation",
+              "subject_id": "6a1f0c2e-0000-4000-8000-000000000001",
+              "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "privacy.get_request.export",
+      "description": "get_request returns the request; a completed export carries its download link",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "id": "prq_01JCK8Z9V7Q4M2N6P8R0S2T4PQ",
+            "object": "privacy_request",
+            "app_id": null,
+            "type": "export",
+            "subject_type": "customer_user",
+            "status": "completed",
+            "result": {
+              "download_url": "https://api.clikgate.com/v1/exports/download?key=p",
+              "expires_at": 1793520000,
+              "installs": 2,
+              "goal_name_events": 5
+            },
+            "error": null,
+            "created_at": "2026-10-26T12:00:00Z",
+            "completed_at": "2026-10-26T12:05:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "privacy.get_request",
+          "args": {
+            "id": "prq_01JCK8Z9V7Q4M2N6P8R0S2T4PQ"
+          },
+          "expect": {
+            "result": {
+              "status": "completed",
+              "result": {
+                "download_url": {
+                  "$any": true
+                },
+                "installs": 2
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/privacy/requests/prq_01JCK8Z9V7Q4M2N6P8R0S2T4PQ",
+            "query": {},
+            "no_body": true
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "privacy.get_request.not_found",
+      "description": "get_request maps 404 to NotFoundError",
+      "client": {
+        "max_retries": 0
+      },
+      "responses": [
+        {
+          "status": 404,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "not_found",
+              "code": "resource_missing",
+              "message": "No such privacy request.",
+              "param": "request_id",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "privacy.get_request",
+          "args": {
+            "id": "prq_01JCK8Z9V7Q4M2N6P8R0S2T4PQ"
+          },
+          "expect": {
+            "error": {
+              "class": "NotFoundError",
+              "http_status": 404
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/v1/privacy/requests/prq_01JCK8Z9V7Q4M2N6P8R0S2T4PQ"
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    }
+  ]
+}

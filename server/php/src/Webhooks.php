@@ -6,6 +6,7 @@ namespace Clikgate;
 
 use Clikgate\Exception\ErrorMapper;
 use Clikgate\Exception\SignatureVerificationException;
+use Clikgate\Model\WebhookEvent;
 
 /**
  * Webhook verification (`Clikgate-Signature`). No API key or client needed: `Webhooks::verify(...)`.
@@ -22,12 +23,13 @@ final class Webhooks
      *
      * ```php
      * $event = Webhooks::verify(file_get_contents('php://input'), $_SERVER['HTTP_CLIKGATE_SIGNATURE'] ?? null, getenv('CLIKGATE_WEBHOOK_SECRET'));
-     * if ('goal.completed' === $event['type']) { … }   // dedupe on $event['id']: delivery is at-least-once
+     * $referral = $event->asReferral();   // null for other event types
+     * if (null !== $referral && EventType::ReferralQualified === $event->type) { … }   // dedupe on $event->id: delivery is at-least-once
      * ```
      *
-     * @return array<string, mixed> the event
+     * The event keeps array access over the wire keys (`$event['type']`, `$event['data']['object']`).
      */
-    public static function verify(mixed $rawBody, ?string $signatureHeader, string $secret, int $tolerance = 300, ?int $now = null): array
+    public static function verify(mixed $rawBody, ?string $signatureHeader, string $secret, int $tolerance = 300, ?int $now = null): WebhookEvent
     {
         if ('' === $secret) {
             throw ErrorMapper::local('invalid_argument', 'secret must be the endpoint secret (whsec_…).', 'secret');
@@ -44,10 +46,8 @@ final class Webhooks
      * ```
      *
      * @param list<string> $secrets
-     *
-     * @return array<string, mixed>
      */
-    public static function verifyAny(mixed $rawBody, ?string $signatureHeader, array $secrets, int $tolerance = 300, ?int $now = null): array
+    public static function verifyAny(mixed $rawBody, ?string $signatureHeader, array $secrets, int $tolerance = 300, ?int $now = null): WebhookEvent
     {
         if ([] === $secrets || \in_array('', $secrets, true)) {
             throw ErrorMapper::local('invalid_argument', 'secrets must be a non-empty list of endpoint secrets.', 'secrets');
@@ -58,10 +58,8 @@ final class Webhooks
 
     /**
      * @param list<string> $secrets
-     *
-     * @return array<string, mixed>
      */
-    private static function check(mixed $rawBody, ?string $header, array $secrets, int $tolerance, ?int $now): array
+    private static function check(mixed $rawBody, ?string $header, array $secrets, int $tolerance, ?int $now): WebhookEvent
     {
         if (!\is_string($rawBody)) {
             throw self::fail('invalid_payload', 'Pass the raw request body (a string), not parsed JSON: re-serialising changes the bytes Clikgate signed.');
@@ -119,7 +117,7 @@ final class Webhooks
         }
 
         /** @var array<string, mixed> $event */
-        return $event;
+        return new WebhookEvent($event);
     }
 
     private static function fail(string $code, string $message): SignatureVerificationException

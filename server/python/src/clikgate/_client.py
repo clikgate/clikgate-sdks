@@ -30,8 +30,10 @@ from ._identity import CustomerSince
 from ._identity import _create as _create_identity_token
 from ._installation import parse_installation_header
 from ._known_customers import AsyncKnownCustomers, KnownCustomers
+from ._lookups import AsyncCodes, AsyncInstalls, AsyncPeople, AsyncPrivacy, Codes, Installs, People, Privacy
 from ._money import MoneyInput
 from ._payments import AsyncPayments, Payments
+from ._referrals import AsyncReferrals, Referrals
 from ._resources import AsyncClicks, AsyncConversions, AsyncLinks, Clicks, Conversions, Links
 from ._types import ServerSdkConfig, WebhookEvent
 from ._user_agent import user_agent
@@ -412,6 +414,16 @@ class Clikgate:
         self.clicks = Clicks(self._core)
         #: Existing customers from before you added Clikgate: ``import_customers`` and ``remove``.
         self.known_customers = KnownCustomers(self._core)
+        #: Referrals: referrers (``get_or_create_referrer``, ``find_referrer``), referrals, overrides, steps and imports.
+        self.referrals = Referrals(self._core)
+        #: Privacy requests: ``create_request``, ``get_request``.
+        self.privacy = Privacy(self._core)
+        #: People: ``get``, ``search``, ``set_label``.
+        self.people = People(self._core)
+        #: Installs: ``get_by_customer``, ``get_by_installation``.
+        self.installs = Installs(self._core)
+        #: Offline and referral codes: ``redeem``.
+        self.codes = Codes(self._core)
         explicit = r.click_id_param
         #: Click-ID helpers using this client's ``click_id_param`` (or the organisation's, from config).
         self.click_ids = ClickIds(lambda: explicit or (config.peek() or {}).get("click_id_param") or "cgid")
@@ -715,6 +727,12 @@ class AsyncClikgate:
         self.clicks = AsyncClicks(self._core)
         #: Existing customers from before you added Clikgate: ``import_customers`` and ``remove``.
         self.known_customers = AsyncKnownCustomers(self._core)
+        #: Referrals (async). See :class:`Clikgate`.
+        self.referrals = AsyncReferrals(self._core)
+        self.privacy = AsyncPrivacy(self._core)
+        self.people = AsyncPeople(self._core)
+        self.installs = AsyncInstalls(self._core)
+        self.codes = AsyncCodes(self._core)
         explicit = r.click_id_param
         self.click_ids = ClickIds(lambda: explicit or (config.peek() or {}).get("click_id_param") or "cgid")
         self.api = AsyncApiClient(requester)

@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, TypedDict, Union
 
 from ._enums import GoalKind, GoalStatus
+from ._webhook_event import WebhookEvent
 
 __all__ = [
     "PaymentConfirmation",
@@ -25,6 +26,7 @@ __all__ = [
     "LinkChangeRequest",
     "LinkPage",
     "LinkUpdateResult",
+    "LinkUrl",
     "LinkWarning",
     "QrCode",
     "ServerSdkConfig",
@@ -117,8 +119,16 @@ class LinkWarning(TypedDict, total=False):
     param: Optional[str]
 
 
+class LinkUrl(TypedDict, total=False):
+    """One of a link's URLs (its domains)."""
+
+    domain: str
+    url: str
+    role: str
+
+
 class Link(TypedDict, total=False):
-    """A link (``/v1/links``). Only the most used fields are listed; the rest are kept."""
+    """A link (``/v1/links``): every field of the API's link; newer fields are kept as they are."""
 
     object: Literal["link"]
     id: str
@@ -139,6 +149,40 @@ class Link(TypedDict, total=False):
     domain_badge: Optional[Literal["premium"]]
     #: True when destination, fallback and deep-link changes are refused (``409 link_locked``).
     locked: bool
+    locked_by: Optional[str]
+    locked_at: Optional[str]
+    domain_group_id: str
+    urls: List[LinkUrl]
+    click_id_param: str
+    utm_template: Optional[str]
+    attribution_window_days: int
+    #: Your own reference for the link (``links.get_by_reference``).
+    external_reference: Optional[str]
+    campaign_id: Optional[str]
+    end_goal_key: Optional[str]
+    og_description: Optional[str]
+    expires_at: Optional[str]
+    paused_reason: Optional[str]
+    kind: str
+    app_ids: List[str]
+    deep_link_path: Optional[str]
+    #: Your own free-form data passed to the app.
+    deep_link_data: Dict[str, Any]
+    app_behavior: str
+    ios_interstitial: str
+    referral_program_id: Optional[str]
+    referrer_id: Optional[str]
+    whatsapp_channel_id: Optional[str]
+    whatsapp_message: Optional[str]
+    offline_code: Optional[str]
+    legacy_free_on_paid_domain: bool
+    under_review: bool
+    open_in_app: str
+    in_app_browser_page: str
+    open_in_app_target: Optional[Dict[str, Any]]
+    made_for: Optional[str]
+    share_urls: Optional[Dict[str, Any]]
+    suggestion: Optional[Dict[str, Any]]
     created_at: str
     updated_at: str
     livemode: bool
@@ -258,20 +302,6 @@ class ServerSdkConfig(TypedDict, total=False):
     click_id_param: str
     goals: List[ConfigGoal]
     minimum_sdk_versions: Dict[str, str]
-
-
-class WebhookEvent(TypedDict, total=False):
-    """A webhook event."""
-
-    id: str
-    object: Literal["event"]
-    #: e.g. ``goal.completed``, ``link.destination_changed``, ``subscription.updated``.
-    type: str
-    api_version: str
-    created_at: str
-    organization_id: str
-    livemode: bool
-    data: Dict[str, Any]
 
 
 @dataclass(frozen=True)

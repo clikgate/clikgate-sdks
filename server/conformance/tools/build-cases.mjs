@@ -2670,6 +2670,785 @@ add('ads_matching', 'Hashed email and phone for ad network matching: hash_for_ad
   },
 ]);
 
+// ---------------------------------------------------------------------------------------------
+// Typed surface: referrals, typed webhook events, privacy, people, installs and codes (SPEC 28-32).
+// Results are the wire objects with snake_case keys, plus the derived fields the SDKs add:
+// `created` on get_or_create_referrer and `amount` (normal units) next to every reward `amount_minor`.
+
+const PROGRAM = 'rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP';
+const REFERRER = 'rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR';
+const REFERRAL = 'ref_01JCK8Z9V7Q4M2N6P8R0S2T4RL';
+const PERSON = 'per_01JCK8Z9V7Q4M2N6P8R0S2T4PE';
+const INSTALL = 'ins_01JCK8Z9V7Q4M2N6P8R0S2T4IN';
+const PRIVACY = 'prq_01JCK8Z9V7Q4M2N6P8R0S2T4PQ';
+const JOB = 'job_01JCK8Z9V7Q4M2N6P8R0S2T4JB';
+
+const referrerWire = (over = {}) => ({
+  id: REFERRER,
+  object: 'referrer',
+  program_id: PROGRAM,
+  customer_user_id: 'user-42',
+  display_name: 'Ada',
+  code: 'ADA42',
+  external_code: null,
+  link_id: LINK,
+  url: 'https://ciz.to/r/ADA42',
+  short_url: 'https://ciz.to/a',
+  status: 'active',
+  blocked_reason: null,
+  blocked_at: null,
+  stats: { installs: 4, signups: 3, in_progress: 1, qualified: 2, disqualified: 1, rejected: 0, clicks: 9, referee_uninstall_rate_7d: 0.25 },
+  attributes: { tier: 'gold' },
+  leaderboard_opt_out: false,
+  quality_score: null,
+  quality_band: null,
+  last_activity_at: '2026-10-25T10:00:00Z',
+  created_at: '2026-10-20T09:30:00Z',
+  updated_at: '2026-10-25T10:00:00Z',
+  livemode: false,
+  ...over,
+});
+const REWARD_WIRE = { referrer: { amount_minor: 50000, currency: 'NGN' }, referee: { description: 'A free month' }, note: 'Paid in app' };
+const REWARD_TYPED = { referrer: { amount_minor: 50000, currency: 'NGN', amount: '500.00' }, referee: { description: 'A free month', amount: { $absent: true } }, note: 'Paid in app' };
+const referralWire = (over = {}) => ({
+  id: REFERRAL,
+  object: 'referral',
+  program_id: PROGRAM,
+  referrer_id: REFERRER,
+  status: 'qualified',
+  source: 'link',
+  match_type: 'deterministic',
+  current_step: 2,
+  steps_completed: [
+    { index: 0, goal: 'signup', completed_at: '2026-10-21T10:00:00Z', source_id: 'goal:cnv_1' },
+    { index: 1, identify: true, completed_at: '2026-10-21T11:00:00Z', source_id: 'identify:user-77' },
+  ],
+  step_deadline_at: null,
+  hold_until: null,
+  qualified_at: '2026-10-22T10:00:00Z',
+  disqualified_at: null,
+  rejected_at: null,
+  reason: null,
+  reason_detail: null,
+  reason_message: null,
+  fraud_flags: [],
+  referee_uninstalled_after_qualification: false,
+  program: { id: PROGRAM, name: 'Invite friends' },
+  referrer: { id: REFERRER, customer_user_id: 'user-42', code: 'ADA42' },
+  referee: { install_id: INSTALL, installation_id: INSTALLATION_ID, customer_user_id: 'user-77' },
+  link: { id: LINK },
+  click_id: CLICK,
+  reward_snapshot: REWARD_WIRE,
+  created_at: '2026-10-21T09:30:00Z',
+  updated_at: '2026-10-22T10:00:00Z',
+  livemode: false,
+  ...over,
+});
+const jobWire = (over = {}) => ({
+  id: JOB,
+  object: 'job',
+  type: 'referrers.import',
+  status: 'queued',
+  total: 2,
+  succeeded: 0,
+  failed: 0,
+  results: [],
+  created_at: '2026-10-26T12:00:00Z',
+  finished_at: null,
+  livemode: false,
+  ...over,
+});
+const privacyWire = (over = {}) => ({
+  id: PRIVACY,
+  object: 'privacy_request',
+  app_id: null,
+  type: 'erasure',
+  subject_type: 'customer_user',
+  status: 'pending',
+  result: null,
+  error: null,
+  created_at: '2026-10-26T12:00:00Z',
+  completed_at: null,
+  livemode: false,
+  ...over,
+});
+const personWire = (over = {}) => ({
+  object: 'person',
+  id: PERSON,
+  label: 'Ada (VIP)',
+  label_source: 'api',
+  label_updated_at: '2026-10-25T10:00:00Z',
+  customer_user_id: 'user-42',
+  customer_user_id_hint: null,
+  click_id: CLICK,
+  merged_into: null,
+  created_at: '2026-10-20T09:30:00Z',
+  last_seen_at: '2026-10-25T10:00:00Z',
+  links: [{ kind: 'installation', ref: INSTALLATION_ID, linked_by: 'identify', verified: true, linked_at: '2026-10-20T09:30:00Z', ended_at: null }],
+  label_history: [{ label: 'Ada (VIP)', source: 'api', set_at: '2026-10-25T10:00:00Z', applied: true }],
+  timeline: [],
+  can_unmerge: false,
+  livemode: false,
+  ...over,
+});
+const personSummaryWire = (id, over = {}) => ({
+  object: 'person_summary',
+  id,
+  label: 'Ada',
+  click_id: null,
+  customer_user_id: 'user-42',
+  last_seen_at: '2026-10-25T10:00:00Z',
+  goals: 2,
+  goal_value_minor: { NGN: 750000 },
+  matched_on: 'label',
+  livemode: false,
+  ...over,
+});
+const installWire = (over = {}) => ({
+  id: INSTALL,
+  object: 'install',
+  app_id: APP_ID,
+  installation_id: INSTALLATION_ID,
+  platform: 'android',
+  first_open_at: '2026-10-20T09:30:00Z',
+  app_version: '3.2.0',
+  sdk_version: '2.4.0',
+  os_version: '15',
+  device_model: 'Pixel 9',
+  country: 'NG',
+  installer_package: 'com.android.vending',
+  is_reinstall: false,
+  previous_install_id: null,
+  attribution_status: 'attributed',
+  install_kind: 'new',
+  new_phone_of_existing_customer: false,
+  match_type: 'deterministic',
+  confidence: 1,
+  click_id: CLICK,
+  clicked_at: '2026-10-20T09:28:00Z',
+  attributed_at: '2026-10-20T09:30:01Z',
+  link: { id: LINK, kind: 'standard', external_reference: null, campaign_id: null, metadata: {} },
+  campaign_id: null,
+  attestation_status: 'verified',
+  fraud_flags: [],
+  customer_user_id: 'user-42',
+  identity_verified: true,
+  last_seen_at: '2026-10-25T10:00:00Z',
+  active_days_count: 4,
+  opt_out: false,
+  push_provider: null,
+  has_push_token: false,
+  uninstall_status: 'installed',
+  uninstalled_detected_at: null,
+  uninstall_evidence: null,
+  uninstall_reverted_at: null,
+  created_at: '2026-10-20T09:30:00Z',
+  is_paid_ad: false,
+  person: { id: PERSON, label: null },
+  livemode: false,
+  ...over,
+});
+const redemptionWire = (over = {}) => ({
+  object: 'code_redemption',
+  offline_touch_id: 'oft_01JCK8Z9V7Q4M2N6P8R0S2T4OT',
+  code: { code: 'ADA42', kind: 'referral', link_id: LINK, campaign_id: null, referrer_id: REFERRER, program_id: PROGRAM },
+  referral: referralWire({ status: 'installed', source: 'code_entry', match_type: 'code_entry', current_step: 0, steps_completed: [], qualified_at: null, reward_snapshot: undefined, link: null, click_id: null }),
+  linked: true,
+  referral_error: null,
+  livemode: false,
+  ...over,
+});
+const paymentReportWire = {
+  object: 'payment_report',
+  id: PRP,
+  provider: 'paystack',
+  reference: 'T123456',
+  source: 'app',
+  goal: 'order_paid',
+  status: 'verified',
+  status_reason: null,
+  click_id: CLICK,
+  installation_id: null,
+  link_id: LINK,
+  channel: null,
+  confirmation: null,
+  counted: true,
+  goal_event_id: 'cnv_7',
+  refunded_amount_minor: 0,
+  resolution: null,
+  occurred_at: '2026-10-26T11:00:00Z',
+  created_at: '2026-10-26T11:00:01Z',
+  decided_at: '2026-10-26T11:00:05Z',
+  expires_at: '2026-10-27T11:00:01Z',
+  livemode: false,
+};
+const conversionWire = {
+  id: 'cnv_01JCK8Z9V7Q4M2N6P8R0S2T4CV',
+  object: 'conversion',
+  external_id: 'ORD-1001',
+  status: 'attributed',
+  unattributed_reason: null,
+  source: 'api',
+  type: 'purchase',
+  custom_type: null,
+  amount_minor: 150050,
+  currency: 'NGN',
+  reversed_amount_minor: 0,
+  click_id: CLICK,
+  clicked_at: '2026-10-26T10:00:00Z',
+  occurred_at: '2026-10-26T11:00:00Z',
+  received_at: '2026-10-26T11:00:01Z',
+  link: null,
+  campaign: null,
+  metadata: {},
+  created_at: '2026-10-26T11:00:01Z',
+  livemode: false,
+};
+const goalWebhookObject = {
+  object: 'goal_event',
+  id: 'cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE',
+  goal: 'order_paid',
+  value: '7500.00',
+  value_minor: 750000,
+  currency: 'NGN',
+  first_for_click: true,
+  is_first_customer: true,
+  link: { id: LINK },
+  campaign: null,
+  clicked_at: '2026-10-26T10:00:00Z',
+  occurred_at: '2026-10-26T11:00:00Z',
+  status: 'attributed',
+  received_as: null,
+  goal_group: null,
+  reference: 'T123456',
+  person: { id: PERSON, label: null },
+};
+
+const RFP = `/v1/referral-programs/${PROGRAM}`;
+const listOf = (data, has_more = false, next_cursor = null) => ({ object: 'list', data, has_more, next_cursor });
+
+add('referrals', 'Referrals: referrers, referrals, overrides, steps, imports; typed models and reward amounts (SPEC 28)', [
+  {
+    id: 'referrals.get_or_create_referrer.created',
+    description: 'get_or_create_referrer posts customer_user_id (the customer ID) and the optional fields; 201 gives created true',
+    responses: [ok(referrerWire(), 201)],
+    steps: [
+      {
+        call: 'referrals.get_or_create_referrer',
+        args: { program_id: PROGRAM, customer_id: 'user-42', display_name: 'Ada' },
+        expect: { result: { id: REFERRER, object: 'referrer', customer_user_id: 'user-42', code: 'ADA42', stats: { clicks: 9, in_progress: 1 }, attributes: { tier: 'gold' }, created: true } },
+      },
+    ],
+    expect: { requests: [{ method: 'POST', path: `${RFP}/referrers`, query: {}, json: { customer_user_id: 'user-42', display_name: 'Ada' } }] },
+  },
+  {
+    id: 'referrals.get_or_create_referrer.existing',
+    description: 'An existing referrer answers 200: created false; external_code is sent when given',
+    responses: [ok(referrerWire({ external_code: 'ADA-OLD' }))],
+    steps: [{ call: 'referrals.get_or_create_referrer', args: { program_id: PROGRAM, customer_id: 'user-42', external_code: 'ADA-OLD' }, expect: { result: { id: REFERRER, external_code: 'ADA-OLD', created: false } } }],
+    expect: { requests: [{ method: 'POST', path: `${RFP}/referrers`, json: { customer_user_id: 'user-42', external_code: 'ADA-OLD' } }] },
+  },
+  {
+    id: 'referrals.get_or_create_referrer.empty_customer_id',
+    description: 'An empty customer ID is refused locally with invalid_argument',
+    steps: [{ call: 'referrals.get_or_create_referrer', args: { program_id: PROGRAM, customer_id: '' }, expect: { error: { class: 'InvalidRequestError', code: 'invalid_argument', param: 'customer_id', http_status: null } } }],
+    expect: { requests: [] },
+  },
+  {
+    id: 'referrals.get_referrer',
+    description: 'get_referrer fetches one referrer',
+    responses: [ok(referrerWire())],
+    steps: [{ call: 'referrals.get_referrer', args: { id: REFERRER }, expect: { result: { id: REFERRER, status: 'active', link_id: LINK, livemode: false } } }],
+    expect: { requests: [{ method: 'GET', path: `/v1/referrers/${REFERRER}`, query: {}, no_body: true }] },
+  },
+  {
+    id: 'referrals.get_referrer.not_found',
+    description: 'get_referrer maps 404 to NotFoundError',
+    client: { max_retries: 0 },
+    responses: [err(404, 'not_found', 'resource_missing', 'No such referrer.', 'referrer_id')],
+    steps: [{ call: 'referrals.get_referrer', args: { id: REFERRER }, expect: { error: { class: 'NotFoundError', code: 'resource_missing', http_status: 404 } } }],
+    expect: { requests: [{ method: 'GET', path: `/v1/referrers/${REFERRER}` }] },
+  },
+  {
+    id: 'referrals.find_referrer.by_customer',
+    description: 'find_referrer with a customer ID uses the by-user route',
+    responses: [ok(referrerWire())],
+    steps: [{ call: 'referrals.find_referrer', args: { program_id: PROGRAM, customer_id: 'user-42' }, expect: { result: { id: REFERRER, customer_user_id: 'user-42' } } }],
+    expect: { requests: [{ method: 'GET', path: `${RFP}/referrers/by-user/user-42`, query: {} }] },
+  },
+  {
+    id: 'referrals.find_referrer.by_code',
+    description: 'find_referrer with a code uses the by-code route; the path is percent-encoded',
+    responses: [ok(referrerWire({ code: 'ADA 42/x' }))],
+    steps: [{ call: 'referrals.find_referrer', args: { program_id: PROGRAM, code: 'ADA 42/x' }, expect: { result: { code: 'ADA 42/x' } } }],
+    expect: { requests: [{ method: 'GET', path: `${RFP}/referrers/by-code/ADA%2042%2Fx` }] },
+  },
+  {
+    id: 'referrals.find_referrer.not_found_is_null',
+    description: 'find_referrer returns null on 404 instead of throwing',
+    client: { max_retries: 0 },
+    responses: [err(404, 'not_found', 'resource_missing', 'No such referrer.', 'customer_user_id')],
+    steps: [{ call: 'referrals.find_referrer', args: { program_id: PROGRAM, customer_id: 'user-404' }, expect: { result: null } }],
+    expect: { requests: [{ method: 'GET', path: `${RFP}/referrers/by-user/user-404` }] },
+  },
+  {
+    id: 'referrals.find_referrer.other_errors_throw',
+    description: 'Only 404 becomes null: a 401 still throws AuthenticationError',
+    client: { max_retries: 0 },
+    responses: [err(401, 'authentication', 'invalid_api_key', 'Invalid API key.')],
+    steps: [{ call: 'referrals.find_referrer', args: { program_id: PROGRAM, code: 'ADA42' }, expect: { error: { class: 'AuthenticationError', code: 'invalid_api_key', http_status: 401 } } }],
+    expect: { requests: [{ method: 'GET', path: `${RFP}/referrers/by-code/ADA42` }] },
+  },
+  {
+    id: 'referrals.find_referrer.needs_exactly_one',
+    description: 'find_referrer needs exactly one of customer_id and code (invalid_argument, nothing sent)',
+    steps: [
+      { call: 'referrals.find_referrer', args: { program_id: PROGRAM, customer_id: 'user-42', code: 'ADA42' }, expect: { error: { class: 'InvalidRequestError', code: 'invalid_argument', http_status: null } } },
+      { call: 'referrals.find_referrer', args: { program_id: PROGRAM }, expect: { error: { class: 'InvalidRequestError', code: 'invalid_argument', http_status: null } } },
+    ],
+    expect: { requests: [] },
+  },
+  {
+    id: 'referrals.get',
+    description: 'get fetches a referral; every reward side with amount_minor and currency gains amount in normal units',
+    responses: [ok(referralWire())],
+    steps: [
+      {
+        call: 'referrals.get',
+        args: { id: REFERRAL },
+        expect: { result: { id: REFERRAL, object: 'referral', status: 'qualified', referrer: { customer_user_id: 'user-42' }, referee: { installation_id: INSTALLATION_ID }, link: { id: LINK }, reward_snapshot: REWARD_TYPED, steps_completed: [{ goal: 'signup' }, { identify: true }] } },
+      },
+    ],
+    expect: { requests: [{ method: 'GET', path: `/v1/referrals/${REFERRAL}`, query: {}, no_body: true }] },
+  },
+  {
+    id: 'referrals.money.exponents',
+    description: 'amount uses the currency exponent: JPY has no minor digits, KWD three; the currency is matched case-insensitively',
+    responses: [ok(referralWire({ reward_snapshot: { referrer: { amount_minor: 1500, currency: 'JPY' }, referee: { amount_minor: 12345, currency: 'kwd' } } }))],
+    steps: [{ call: 'referrals.get', args: { id: REFERRAL }, expect: { result: { reward_snapshot: { referrer: { amount_minor: 1500, amount: '1500' }, referee: { amount_minor: 12345, amount: '12.345' } } } } }],
+    expect: { requests: [{ method: 'GET', path: `/v1/referrals/${REFERRAL}` }] },
+  },
+  {
+    id: 'referrals.money.no_reward',
+    description: 'A referral without reward information has no reward_snapshot',
+    responses: [ok(referralWire({ reward_snapshot: undefined }))],
+    steps: [{ call: 'referrals.get', args: { id: REFERRAL }, expect: { result: { id: REFERRAL, reward_snapshot: { $absent: true } } } }],
+    expect: { requests: [{ method: 'GET', path: `/v1/referrals/${REFERRAL}` }] },
+  },
+  {
+    id: 'referrals.list.paginates',
+    description: 'list follows next_cursor with starting_after; referee_customer_id is sent as referee_customer_user_id and dates as RFC 3339',
+    responses: [
+      ok(listOf([referralWire({ id: 'ref_1' }), referralWire({ id: 'ref_2' })], true, 'ref_2')),
+      ok(listOf([referralWire({ id: 'ref_3' })])),
+    ],
+    steps: [
+      {
+        call: 'referrals.list',
+        args: { params: { program_id: PROGRAM, referee_customer_id: 'user-77', status: 'qualified', from: { $datetime: '2026-10-01T00:00:00Z' }, limit: 2 } },
+        expect: { result: { items: [{ id: 'ref_1', reward_snapshot: { referrer: { amount: '500.00' } } }, { id: 'ref_2' }, { id: 'ref_3' }] } },
+      },
+    ],
+    expect: {
+      requests: [
+        { method: 'GET', path: '/v1/referrals', query: { program_id: PROGRAM, referee_customer_user_id: 'user-77', status: 'qualified', from: '2026-10-01T00:00:00Z', limit: '2' } },
+        { method: 'GET', path: '/v1/referrals', query: { program_id: PROGRAM, referee_customer_user_id: 'user-77', status: 'qualified', from: '2026-10-01T00:00:00Z', limit: '2', starting_after: 'ref_2' } },
+      ],
+    },
+  },
+  {
+    id: 'referrals.list.lazy',
+    description: 'Pages are fetched lazily: taking 1 referral makes 1 request',
+    responses: [ok(listOf([referralWire({ id: 'ref_1' }), referralWire({ id: 'ref_2' })], true, 'ref_2'))],
+    steps: [{ call: 'referrals.list', args: { params: { referrer_id: REFERRER, to: '2026-10-31T00:00:00Z' }, max_items: 1 }, expect: { result: { items: [{ id: 'ref_1' }] } } }],
+    expect: { requests: [{ method: 'GET', path: '/v1/referrals', query: { referrer_id: REFERRER, to: '2026-10-31T00:00:00Z' } }] },
+  },
+  {
+    id: 'referrals.list_page',
+    description: 'list_page returns one page with typed referrals',
+    responses: [ok(listOf([referralWire({ id: 'ref_1' })], true, 'ref_1'))],
+    steps: [{ call: 'referrals.list_page', args: { params: { status: 'qualified', limit: 1 } }, expect: { result: { object: 'list', has_more: true, next_cursor: 'ref_1', data: [{ id: 'ref_1', reward_snapshot: { referrer: { amount: '500.00' } } }] } } }],
+    expect: { requests: [{ method: 'GET', path: '/v1/referrals', query: { status: 'qualified', limit: '1' } }] },
+  },
+  {
+    id: 'referrals.qualify',
+    description: 'qualify posts the override with action qualify and the reason',
+    responses: [ok(referralWire())],
+    steps: [{ call: 'referrals.qualify', args: { id: REFERRAL, reason: 'Checked by support' }, expect: { result: { id: REFERRAL, status: 'qualified' } } }],
+    expect: { requests: [{ method: 'POST', path: `/v1/referrals/${REFERRAL}/override`, json: { action: 'qualify', reason: 'Checked by support' } }] },
+  },
+  {
+    id: 'referrals.disqualify',
+    description: 'disqualify posts the override with action disqualify and the reason',
+    responses: [ok(referralWire({ status: 'disqualified', qualified_at: null, disqualified_at: '2026-10-26T12:00:00Z', reason: 'manual', reward_snapshot: undefined }))],
+    steps: [{ call: 'referrals.disqualify', args: { id: REFERRAL, reason: 'Same household' }, expect: { result: { status: 'disqualified', reason: 'manual' } } }],
+    expect: { requests: [{ method: 'POST', path: `/v1/referrals/${REFERRAL}/override`, json: { action: 'disqualify', reason: 'Same household' } }] },
+  },
+  {
+    id: 'referrals.complete_step',
+    description: 'complete_step sends the goal, occurred_at (RFC 3339 UTC), the value as a decimal string and the currency',
+    responses: [ok(referralWire())],
+    steps: [{ call: 'referrals.complete_step', args: { id: REFERRAL, goal: 'first_order', occurred_at: '2026-10-26T11:00:00Z', value: '1500.50', currency: 'NGN' }, expect: { result: { id: REFERRAL } } }],
+    expect: { requests: [{ method: 'POST', path: `/v1/referrals/${REFERRAL}/steps`, json: { goal: 'first_order', occurred_at: '2026-10-26T11:00:00Z', value: '1500.50', currency: 'NGN' } }] },
+  },
+  {
+    id: 'referrals.complete_step.occurred_at_required',
+    description: 'occurred_at is required (the API requires it): missing, it is refused locally with invalid_argument and nothing is sent',
+    steps: [{ call: 'referrals.complete_step', args: { id: REFERRAL, goal: 'first_order' }, expect: { error: { class: 'InvalidRequestError', code: 'invalid_argument', param: 'occurred_at', http_status: null } } }],
+    expect: { requests: [] },
+  },
+  {
+    id: 'referrals.complete_step.occurred_at',
+    description: 'An explicit occurred_at is formatted as RFC 3339 UTC',
+    responses: [ok(referralWire())],
+    steps: [{ call: 'referrals.complete_step', args: { id: REFERRAL, goal: 'first_order', occurred_at: { $datetime: '2026-10-25T08:15:00Z' } } }],
+    expect: { requests: [{ method: 'POST', path: `/v1/referrals/${REFERRAL}/steps`, json: { goal: 'first_order', occurred_at: '2026-10-25T08:15:00Z' } }] },
+  },
+  {
+    id: 'referrals.complete_step.invalid_value',
+    description: 'A negative value is refused locally (invalid_value, SPEC 8)',
+    steps: [{ call: 'referrals.complete_step', args: { id: REFERRAL, goal: 'first_order', occurred_at: '2026-10-26T11:00:00Z', value: '-5' }, expect: { error: { class: 'InvalidRequestError', code: 'invalid_value', http_status: null } } }],
+    expect: { requests: [] },
+  },
+  {
+    id: 'referrals.import_referrers.batches',
+    description: 'import_referrers splits rows into batches of 1000, one request each with its own idempotency key, and returns the jobs in order',
+    responses: [ok(jobWire({ total: 1000 }), 202), ok(jobWire({ id: 'job_2', total: 1 }), 202)],
+    steps: [
+      {
+        call: 'referrals.import_referrers',
+        args: { program_id: PROGRAM, rows: Array.from({ length: 1001 }, (_, i) => (i === 0 ? { customer_id: 'u-0', external_code: 'OLD-0', display_name: 'Ada' } : { customer_id: `u-${i}` })) },
+        expect: { result: [{ id: JOB, object: 'job', total: 1000 }, { id: 'job_2', total: 1 }] },
+      },
+    ],
+    expect: {
+      requests: [
+        { method: 'POST', path: `${RFP}/referrers/import`, json: { referrers: Array.from({ length: 1000 }, (_, i) => (i === 0 ? { customer_user_id: 'u-0', external_code: 'OLD-0', display_name: 'Ada' } : { customer_user_id: `u-${i}` })) } },
+        { method: 'POST', path: `${RFP}/referrers/import`, json: { referrers: [{ customer_user_id: 'u-1000' }] }, idempotency_key_differs_from: 0 },
+      ],
+    },
+  },
+  {
+    id: 'referrals.import_referrers.empty',
+    description: 'An empty list sends nothing and returns no jobs',
+    steps: [{ call: 'referrals.import_referrers', args: { program_id: PROGRAM, rows: [] }, expect: { result: [] } }],
+    expect: { requests: [] },
+  },
+  {
+    id: 'referrals.block_referrer',
+    description: 'block_referrer posts the reason; without one the body is an empty object',
+    responses: [ok(referrerWire({ status: 'blocked', blocked_reason: 'Fake installs', blocked_at: '2026-10-26T12:00:00Z' })), ok(referrerWire({ status: 'blocked' }))],
+    steps: [
+      { call: 'referrals.block_referrer', args: { id: REFERRER, reason: 'Fake installs' }, expect: { result: { status: 'blocked', blocked_reason: 'Fake installs' } } },
+      { call: 'referrals.block_referrer', args: { id: REFERRER }, expect: { result: { status: 'blocked' } } },
+    ],
+    expect: {
+      requests: [
+        { method: 'POST', path: `/v1/referrers/${REFERRER}/block`, json: { reason: 'Fake installs' } },
+        { method: 'POST', path: `/v1/referrers/${REFERRER}/block`, json: {} },
+      ],
+    },
+  },
+  {
+    id: 'referrals.unblock_referrer',
+    description: 'unblock_referrer posts without a body',
+    responses: [ok(referrerWire())],
+    steps: [{ call: 'referrals.unblock_referrer', args: { id: REFERRER }, expect: { result: { status: 'active' } } }],
+    expect: { requests: [{ method: 'POST', path: `/v1/referrers/${REFERRER}/unblock`, no_body: true }] },
+  },
+  {
+    id: 'referrals.update_referrer',
+    description: 'update_referrer patches display_name and attributes (a free-form map)',
+    responses: [ok(referrerWire({ display_name: 'Ada O.', attributes: { tier: 'platinum', city: 'Lagos' } }))],
+    steps: [{ call: 'referrals.update_referrer', args: { id: REFERRER, display_name: 'Ada O.', attributes: { tier: 'platinum', city: 'Lagos' } }, expect: { result: { display_name: 'Ada O.', attributes: { tier: 'platinum', city: 'Lagos' } } } }],
+    expect: { requests: [{ method: 'PATCH', path: `/v1/referrers/${REFERRER}`, json: { display_name: 'Ada O.', attributes: { tier: 'platinum', city: 'Lagos' } } }] },
+  },
+  {
+    id: 'referrals.retry_reuses_key',
+    description: 'Writes use the shared retry and idempotency rules: a 503 is retried with the same key',
+    responses: [srv(), ok(referrerWire(), 201)],
+    steps: [{ call: 'referrals.get_or_create_referrer', args: { program_id: PROGRAM, customer_id: 'user-42' }, expect: { result: { created: true } } }],
+    expect: {
+      sleeps_ms: [250],
+      requests: [
+        { method: 'POST', path: `${RFP}/referrers`, json: { customer_user_id: 'user-42' } },
+        { method: 'POST', path: `${RFP}/referrers`, idempotency_key_same_as: 0 },
+      ],
+    },
+  },
+  {
+    id: 'referrals.compat.unknown_fields_kept',
+    description: 'Unknown referrer and referral fields are kept (forward compatibility)',
+    responses: [ok(referrerWire({ future_field: { a: 1 } }))],
+    steps: [{ call: 'referrals.get_referrer', args: { id: REFERRER }, expect: { result: { future_field: { a: 1 } } } }],
+    expect: { requests: [{ method: 'GET', path: `/v1/referrers/${REFERRER}` }] },
+  },
+]);
+
+add('privacy', 'Privacy requests: create and fetch (SPEC 30)', [
+  {
+    id: 'privacy.create_request',
+    description: 'create_request posts type, subject_type and subject_id; 202 returns the request',
+    responses: [ok(privacyWire(), 202)],
+    steps: [{ call: 'privacy.create_request', args: { type: 'erasure', subject_type: 'customer_user', subject_id: 'user-42' }, expect: { result: { id: PRIVACY, object: 'privacy_request', status: 'pending', result: null } } }],
+    expect: { requests: [{ method: 'POST', path: '/v1/privacy/requests', query: {}, json: { type: 'erasure', subject_type: 'customer_user', subject_id: 'user-42' } }] },
+  },
+  {
+    id: 'privacy.create_request.app_id',
+    description: 'app_id is sent when given',
+    responses: [ok(privacyWire({ type: 'export', subject_type: 'installation', app_id: APP_ID }), 202)],
+    steps: [{ call: 'privacy.create_request', args: { type: 'export', subject_type: 'installation', subject_id: INSTALLATION_ID, app_id: APP_ID }, expect: { result: { type: 'export', app_id: APP_ID } } }],
+    expect: { requests: [{ method: 'POST', path: '/v1/privacy/requests', json: { type: 'export', subject_type: 'installation', subject_id: INSTALLATION_ID, app_id: APP_ID } }] },
+  },
+  {
+    id: 'privacy.get_request.export',
+    description: 'get_request returns the request; a completed export carries its download link',
+    responses: [ok(privacyWire({ type: 'export', status: 'completed', result: { download_url: 'https://api.clikgate.com/v1/exports/download?key=p', expires_at: 1793520000, installs: 2, goal_name_events: 5 }, completed_at: '2026-10-26T12:05:00Z' }))],
+    steps: [{ call: 'privacy.get_request', args: { id: PRIVACY }, expect: { result: { status: 'completed', result: { download_url: { $any: true }, installs: 2 } } } }],
+    expect: { requests: [{ method: 'GET', path: `/v1/privacy/requests/${PRIVACY}`, query: {}, no_body: true }] },
+  },
+  {
+    id: 'privacy.get_request.not_found',
+    description: 'get_request maps 404 to NotFoundError',
+    client: { max_retries: 0 },
+    responses: [err(404, 'not_found', 'resource_missing', 'No such privacy request.', 'request_id')],
+    steps: [{ call: 'privacy.get_request', args: { id: PRIVACY }, expect: { error: { class: 'NotFoundError', http_status: 404 } } }],
+    expect: { requests: [{ method: 'GET', path: `/v1/privacy/requests/${PRIVACY}` }] },
+  },
+]);
+
+add('people_installs_codes', 'People lookups and labels, installs by customer or installation, code redemption (SPEC 31)', [
+  {
+    id: 'people.get',
+    description: 'people.get fetches a person',
+    responses: [ok(personWire())],
+    steps: [{ call: 'people.get', args: { id: PERSON }, expect: { result: { id: PERSON, label: 'Ada (VIP)', customer_user_id: 'user-42', links: [{ kind: 'installation' }] } } }],
+    expect: { requests: [{ method: 'GET', path: `/v1/people/${PERSON}`, query: {}, no_body: true }] },
+  },
+  {
+    id: 'people.set_label',
+    description: 'people.set_label patches the label',
+    responses: [ok(personWire({ label: 'Ada' }))],
+    steps: [{ call: 'people.set_label', args: { id: PERSON, label: 'Ada' }, expect: { result: { label: 'Ada' } } }],
+    expect: { requests: [{ method: 'PATCH', path: `/v1/people/${PERSON}`, json: { label: 'Ada' } }] },
+  },
+  {
+    id: 'people.search.paginates',
+    description: 'people.search posts the text in the body and follows next_cursor with cursor',
+    responses: [
+      ok({ object: 'list', data: [personSummaryWire('per_1'), personSummaryWire('per_2')], has_more: true, next_cursor: 'cur_2' }),
+      ok({ object: 'list', data: [personSummaryWire('per_3')], has_more: false, next_cursor: null }),
+    ],
+    steps: [{ call: 'people.search', args: { q: 'Ada' }, expect: { result: { items: [{ id: 'per_1', goal_value_minor: { NGN: 750000 } }, { id: 'per_2' }, { id: 'per_3' }] } } }],
+    expect: {
+      requests: [
+        { method: 'POST', path: '/v1/people/search', query: {}, json: { q: 'Ada' } },
+        { method: 'POST', path: '/v1/people/search', json: { q: 'Ada', cursor: 'cur_2' }, idempotency_key_differs_from: 0 },
+      ],
+    },
+  },
+  {
+    id: 'people.search.lazy',
+    description: 'people.search is lazy: taking 1 person makes 1 request',
+    responses: [ok({ object: 'list', data: [personSummaryWire('per_1'), personSummaryWire('per_2')], has_more: true, next_cursor: 'cur_2' })],
+    steps: [{ call: 'people.search', args: { q: 'Ada', max_items: 1 }, expect: { result: { items: [{ id: 'per_1' }] } } }],
+    expect: { requests: [{ method: 'POST', path: '/v1/people/search', json: { q: 'Ada' } }] },
+  },
+  {
+    id: 'people.search_page',
+    description: 'people.search_page returns one page; limit and cursor are sent when given',
+    responses: [ok({ object: 'list', data: [personSummaryWire('per_9')], has_more: false, next_cursor: null })],
+    steps: [{ call: 'people.search_page', args: { q: 'Ada', cursor: 'cur_9', limit: 10 }, expect: { result: { has_more: false, next_cursor: null, data: [{ id: 'per_9' }] } } }],
+    expect: { requests: [{ method: 'POST', path: '/v1/people/search', json: { q: 'Ada', cursor: 'cur_9', limit: 10 } }] },
+  },
+  {
+    id: 'installs.get_by_customer',
+    description: 'installs.get_by_customer uses the by-customer-user route with app_id in the query',
+    responses: [ok(installWire())],
+    steps: [{ call: 'installs.get_by_customer', args: { customer_id: 'user 42', app_id: APP_ID }, expect: { result: { id: INSTALL, object: 'install', customer_user_id: 'user-42', person: { id: PERSON } } } }],
+    expect: { requests: [{ method: 'GET', path: '/v1/installs/by-customer-user/user%2042', query: { app_id: APP_ID } }] },
+  },
+  {
+    id: 'installs.get_by_installation',
+    description: 'installs.get_by_installation uses the by-installation route; without app_id the query is empty and the API decides',
+    responses: [ok(installWire()), err(422, 'invalid_request', 'validation_error', 'app_id is required.', 'app_id')],
+    client: { max_retries: 0 },
+    steps: [
+      { call: 'installs.get_by_installation', args: { installation_id: INSTALLATION_ID, app_id: APP_ID }, expect: { result: { installation_id: INSTALLATION_ID } } },
+      { call: 'installs.get_by_installation', args: { installation_id: INSTALLATION_ID }, expect: { error: { class: 'InvalidRequestError', code: 'validation_error', param: 'app_id', http_status: 422 } } },
+    ],
+    expect: {
+      requests: [
+        { method: 'GET', path: `/v1/installs/by-installation/${INSTALLATION_ID}`, query: { app_id: APP_ID } },
+        { method: 'GET', path: `/v1/installs/by-installation/${INSTALLATION_ID}`, query: {} },
+      ],
+    },
+  },
+  {
+    id: 'installs.not_found',
+    description: 'installs lookups map 404 to NotFoundError',
+    client: { max_retries: 0 },
+    responses: [err(404, 'not_found', 'resource_missing', 'No such install.', 'customer_user_id')],
+    steps: [{ call: 'installs.get_by_customer', args: { customer_id: 'user-404', app_id: APP_ID }, expect: { error: { class: 'NotFoundError', http_status: 404 } } }],
+    expect: { requests: [{ method: 'GET', path: '/v1/installs/by-customer-user/user-404' }] },
+  },
+  {
+    id: 'codes.redeem',
+    description: 'codes.redeem posts the redemption; the answer carries the typed referral',
+    responses: [ok(redemptionWire(), 201)],
+    steps: [
+      {
+        call: 'codes.redeem',
+        args: { external_id: 'POS-991', code: 'ADA42', channel: 'pos', app_id: APP_ID, occurred_at: { $datetime: '2026-10-26T11:30:00Z' }, metadata: { till: 4 } },
+        expect: { result: { object: 'code_redemption', offline_touch_id: 'oft_01JCK8Z9V7Q4M2N6P8R0S2T4OT', code: { code: 'ADA42', kind: 'referral' }, referral: { id: REFERRAL, status: 'installed' }, linked: true, referral_error: null } },
+      },
+    ],
+    expect: { requests: [{ method: 'POST', path: '/v1/codes/redeem', json: { external_id: 'POS-991', code: 'ADA42', channel: 'pos', app_id: APP_ID, occurred_at: '2026-10-26T11:30:00Z', metadata: { till: 4 } } }] },
+  },
+  {
+    id: 'codes.redeem.subject_agent_location',
+    description: 'codes.redeem sends subject, agent_id and location when given (subject and location as given)',
+    responses: [ok(redemptionWire(), 201)],
+    steps: [
+      {
+        call: 'codes.redeem',
+        args: { external_id: 'AGT-17', code: 'ADA42', channel: 'agent', subject: { type: 'customer_user', id: 'user-77' }, agent_id: 'agent-9', location: { country: 'NG', city: 'Lagos', store_id: 'ikeja-2' } },
+        expect: { result: { linked: true } },
+      },
+    ],
+    expect: { requests: [{ method: 'POST', path: '/v1/codes/redeem', json: { external_id: 'AGT-17', code: 'ADA42', channel: 'agent', subject: { type: 'customer_user', id: 'user-77' }, agent_id: 'agent-9', location: { country: 'NG', city: 'Lagos', store_id: 'ikeja-2' } } }] },
+  },
+  {
+    id: 'codes.redeem.referral_error',
+    description: 'A referral code that did not create a referral answers referral null and referral_error',
+    responses: [ok(redemptionWire({ referral: null, linked: false, referral_error: { code: 'already_referred', message: 'Already referred.' } }), 201)],
+    steps: [{ call: 'codes.redeem', args: { external_id: 'POS-992', code: 'ADA42', channel: 'agent' }, expect: { result: { referral: null, linked: false, referral_error: { code: 'already_referred' } } } }],
+    expect: { requests: [{ method: 'POST', path: '/v1/codes/redeem', json: { external_id: 'POS-992', code: 'ADA42', channel: 'agent' } }] },
+  },
+]);
+
+add('links_more', 'Links: archive, pause, resume, fetch by reference, the full link model (SPEC 29)', [
+  {
+    id: 'links.archive',
+    description: 'archive deletes the link and returns it archived',
+    responses: [ok(link({ status: 'archived' }))],
+    steps: [{ call: 'links.archive', args: { id: LINK }, expect: { result: { id: LINK, status: 'archived' } } }],
+    expect: { requests: [{ method: 'DELETE', path: `/v1/links/${LINK}`, query: {}, no_body: true }] },
+  },
+  {
+    id: 'links.pause',
+    description: 'pause posts without a body and returns the paused link',
+    responses: [ok(link({ status: 'paused' }))],
+    steps: [{ call: 'links.pause', args: { id: LINK }, expect: { result: { status: 'paused' } } }],
+    expect: { requests: [{ method: 'POST', path: `/v1/links/${LINK}/pause`, no_body: true }] },
+  },
+  {
+    id: 'links.resume',
+    description: 'resume posts without a body and returns the active link',
+    responses: [ok(link({ status: 'active' }))],
+    steps: [{ call: 'links.resume', args: { id: LINK }, expect: { result: { status: 'active' } } }],
+    expect: { requests: [{ method: 'POST', path: `/v1/links/${LINK}/resume`, no_body: true }] },
+  },
+  {
+    id: 'links.get_by_reference',
+    description: 'get_by_reference fetches a link by your external reference; the path is percent-encoded',
+    responses: [ok(link({ external_reference: 'order 1001/a' }))],
+    steps: [{ call: 'links.get_by_reference', args: { reference: 'order 1001/a' }, expect: { result: { external_reference: 'order 1001/a' } } }],
+    expect: { requests: [{ method: 'GET', path: '/v1/links/by-reference/order%201001%2Fa', no_body: true }] },
+  },
+  {
+    id: 'links.get_by_reference.not_found',
+    description: 'get_by_reference maps 404 to NotFoundError',
+    client: { max_retries: 0 },
+    responses: [err(404, 'not_found', 'resource_missing', 'No such link.', 'external_reference')],
+    steps: [{ call: 'links.get_by_reference', args: { reference: 'missing' }, expect: { error: { class: 'NotFoundError', http_status: 404 } } }],
+    expect: { requests: [{ method: 'GET', path: '/v1/links/by-reference/missing' }] },
+  },
+  {
+    id: 'links.get.full_model',
+    description: 'Every link field is returned, including the ones added to the typed model',
+    responses: [
+      ok(
+        link({
+          urls: [{ domain: 'dev.ciz.to', url: 'https://dev.ciz.to/spring', role: 'primary' }],
+          kind: 'standard',
+          app_ids: [APP_ID],
+          deep_link_path: '/products/42',
+          deep_link_data: { product_id: 42 },
+          external_reference: 'order-1001',
+          campaign_id: null,
+          attribution_window_days: 7,
+          click_id_param: 'cgid',
+          locked: false,
+          locked_by: null,
+          locked_at: null,
+        }),
+      ),
+    ],
+    steps: [{ call: 'links.get', args: { id: LINK }, expect: { result: { urls: [{ role: 'primary' }], kind: 'standard', deep_link_data: { product_id: 42 }, external_reference: 'order-1001', attribution_window_days: 7 } } }],
+    expect: { requests: [{ method: 'GET', path: `/v1/links/${LINK}` }] },
+  },
+]);
+
+// Typed webhook events
+const EVENT_TYPES = [
+  'ab_test.likely_winner', 'alert.resolved', 'alert.triggered', 'app.push_credentials_invalid', 'app.reengaged', 'app_banner.paused', 'app_banner.published',
+  'campaign.paused', 'campaign.resumed', 'challenge.cancelled', 'challenge.ended', 'challenge.finalized', 'challenge.scheduled', 'challenge.started',
+  'click.created', 'code.redeemed', 'conversion.attributed', 'conversion.reversed', 'conversion.unattributed', 'credit_note.issued',
+  'domain.group_changed', 'domain.settings_updated', 'domain.status_changed', 'fraud.install_flagged', 'funnel.stuck', 'goal.completed', 'goal.reversed',
+  'identity.duplicate_detected', 'install.attributed', 'install.attribution_updated', 'install.organic', 'install.uninstall_reverted', 'install.uninstalled',
+  'invoice.issued', 'invoice.paid', 'invoice.voided', 'job.completed', 'leaderboard.period_closed', 'leaderboard.period_finalized', 'leaderboard.rank_changed',
+  'leaderboard.target_reached', 'leaderboard.target_revoked', 'link.archived', 'link.created', 'link.destination_changed', 'link.expired', 'link.flagged',
+  'link.paused', 'link.resumed', 'link.stats.hourly', 'link.updated', 'organization.deleted', 'organization.feature_changed', 'organization.feature_data_purged',
+  'partner.approved', 'partner_earning.approved', 'partner_payout.paid', 'partner_reward.applied', 'partner_reward.approved', 'partner_reward.removed',
+  'partner_reward.reversed', 'payment.not_confirmed', 'payment.refunded', 'payment.rejected', 'payment.verified', 'person.device_changed',
+  'privacy.request_completed', 'receipt.issued', 'referral.created', 'referral.disqualified', 'referral.holding', 'referral.qualified',
+  'referral.referee_uninstalled', 'referral.rejected', 'referral.step_completed', 'referrer.blocked', 'referrer.created', 'referrer.quality_changed',
+  'referrer.unblocked', 'sale.matched', 'sale.refunded', 'skan.postback_received', 'subscription.activated', 'subscription.cancelled', 'subscription.changed',
+  'subscription.expired', 'subscription.grace_started', 'subscription.renewed', 'subscription.trial_converted', 'subscription.trial_ended',
+  'subscription.trial_extended', 'subscription.trial_started', 'subscription.updated', 'usage.threshold_reached', 'webhook.test', 'webhook_endpoint.disabled',
+  'whatsapp.conversation_attributed',
+];
+const typedEvent = (type, object, extra = {}) =>
+  JSON.stringify({ id: 'evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV', object: 'event', type, api_version: '2026-10-01', created_at: '2026-10-26T12:00:00Z', organization_id: 'org_01JCK8Z9V7Q4M2N6P8R0S2T4OR', livemode: false, data: { object, previous_attributes: null, ...extra } });
+const typed = (id, description, body, as, expectation) => ({
+  id: `webhook_events.${id}`,
+  description,
+  steps: [{ call: 'webhooks.typed', args: { raw_body: body, header: hdr(NOW_S, sig(SECRET, NOW_S, body)), secret: SECRET, now: NOW_S, tolerance: 300, as }, expect: expectation }],
+  expect: { requests: [] },
+});
+add('webhook_events', 'Typed webhook events: asReferral, asReferrer, asGoalEvent, asInstall, asPayment, asConversion and EventType (SPEC 29)', [
+  typed('referral', 'asReferral on referral.qualified gives the typed referral, with reward amounts', typedEvent('referral.qualified', referralWire()), 'referral', {
+    result: { id: REFERRAL, object: 'referral', status: 'qualified', referrer: { customer_user_id: 'user-42' }, reward_snapshot: REWARD_TYPED },
+  }),
+  typed('referral.step_completed', 'asReferral works for every referral.* event (data.object is the referral)', typedEvent('referral.step_completed', referralWire({ status: 'in_progress', reward_snapshot: undefined }), { step_index: 1, identify: true }), 'referral', {
+    result: { id: REFERRAL, status: 'in_progress' },
+  }),
+  typed('referral.newer_type', 'A referral.* type this SDK release does not list still gives the referral (forward compatibility)', typedEvent('referral.paused', referralWire()), 'referral', { result: { id: REFERRAL } }),
+  typed('mismatch.null', 'An accessor for another family gives null on a type mismatch (never a wrong object)', typedEvent('referral.qualified', referralWire()), 'referrer', { result: null }),
+  typed('mismatch.goal_on_referral', 'asGoalEvent on a referral event gives null', typedEvent('referral.created', referralWire()), 'goal_event', { result: null }),
+  typed('referrer', 'asReferrer on referrer.blocked gives the typed referrer', typedEvent('referrer.blocked', referrerWire({ status: 'blocked', blocked_reason: 'Fake installs' })), 'referrer', {
+    result: { id: REFERRER, status: 'blocked', blocked_reason: 'Fake installs', stats: { clicks: 9 } },
+  }),
+  typed('goal_event.completed', 'asGoalEvent on goal.completed gives the goal event as webhooks show it', typedEvent('goal.completed', goalWebhookObject), 'goal_event', {
+    result: { object: 'goal_event', goal: 'order_paid', value: '7500.00', value_minor: 750000, reference: 'T123456', person: { id: PERSON } },
+  }),
+  typed('goal_event.reversed', 'asGoalEvent on goal.reversed', typedEvent('goal.reversed', goalWebhookObject, { reversal: { id: 'rev_1', value: '2500.00', value_minor: 250000, reason: 'refund', remaining_value: '5000.00' } }), 'goal_event', {
+    result: { id: goalWebhookObject.id, goal: 'order_paid' },
+  }),
+  typed('install', 'asInstall on install.attributed gives the typed install', typedEvent('install.attributed', installWire()), 'install', { result: { id: INSTALL, installation_id: INSTALLATION_ID, attribution_status: 'attributed' } }),
+  typed('install.mismatch', 'asInstall on app.reengaged gives null (only install.* events)', typedEvent('app.reengaged', installWire(), { click_id: CLICK }), 'install', { result: null }),
+  typed('payment', 'asPayment on payment.verified gives the payment report', typedEvent('payment.verified', paymentReportWire), 'payment', { result: { id: PRP, provider: 'paystack', status: 'verified' } }),
+  typed('conversion', 'asConversion on conversion.attributed gives the typed conversion', typedEvent('conversion.attributed', conversionWire), 'conversion', { result: { object: 'conversion', external_id: 'ORD-1001', amount_minor: 150050 } }),
+  typed('data_object_not_an_object', 'An accessor gives null when data.object is not an object', typedEvent('referral.created', 'ref_1'), 'referral', { result: null }),
+  {
+    id: 'webhook_events.event_types',
+    description: 'EventType lists every webhook event type the API sends, as wire strings',
+    steps: [{ call: 'webhooks.event_types', args: {}, expect: { result: { value: EVENT_TYPES } } }],
+    expect: { requests: [] },
+  },
+]);
+
 const problems = [];
 const keysOk = (obj, def, where) => {
   for (const k of Object.keys(obj ?? {})) if (!(k in schema[def].properties)) problems.push(`${where}: unknown key ${k}`);

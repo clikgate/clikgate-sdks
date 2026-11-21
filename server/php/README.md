@@ -55,6 +55,45 @@ The email is trimmed and lowercased. The phone must include its country code (`+
 
 In private mode, hash on your own server: Clikgate never hashes for you there.
 
+## End to end
+
+One flow with the typed methods only: sign a user in, attribute their goals and payments, give them a referral code, and react to webhooks.
+
+```php
+use Clikgate\Clikgate;
+use Clikgate\Enum\EventType;
+use Clikgate\Enum\Provider;
+use Clikgate\IdentityToken;
+use Clikgate\Webhooks;
+
+$clikgate = new Clikgate();   // reads CLIKGATE_API_KEY
+
+// 1. Sign-in: after YOUR own sign-in check succeeds. The customer ID is your signed-in user's ID, never read from the request.
+$customerId = (string) $user->id;
+// Path A: return an identity token; the app passes it to the mobile SDK's identifyUser()
+$response = ['user' => $user, 'clikgateIdentityToken' => IdentityToken::create($customerId, ['customerSince' => $user->created_at])];
+// Path B: the app's Clikgate-Installation header, no secret (a missing or invalid header is ignored)
+$clikgate->identifyUser(['installation' => $request->getHeaderLine('Clikgate-Installation'), 'customerId' => $customerId]);
+
+// 2. Goals: one call, never throws
+$clikgate->goal('account_opened', ['clickId' => $clickId, 'reference' => 'APP-55231', 'isFirst' => true]);
+
+// 3. Payments: right after your own verification with the gateway
+$clikgate->payments->confirm(['provider' => Provider::Paystack, 'reference' => 'T123456', 'status' => 'success', 'amount' => '7500', 'currency' => 'NGN', 'goal' => 'order_paid']);
+
+// 4. Referrals: the user's referral code and link (created the first time)
+$referrer = $clikgate->referrals->getOrCreateReferrer('rpg_01J…', ['customerId' => $customerId, 'displayName' => $user->first_name]);
+echo $referrer->code, ' ', $referrer->url, $referrer->created ? ' (new)' : '';
+
+// 5. Webhooks: verify the raw body, then read the typed object
+$event = Webhooks::verify((string) file_get_contents('php://input'), $_SERVER['HTTP_CLIKGATE_SIGNATURE'] ?? null, (string) getenv('CLIKGATE_WEBHOOK_SECRET'));
+$referral = $event->asReferral();   // null for other event types
+if (null !== $referral && EventType::ReferralQualified === $event->type) {
+    // Clikgate never pays rewards: grant yours, once per $event->id
+    grantReward($referral->referrer->customerId, $referral->reward?->referrer?->amount);   // amount: '500.00' (normal units)
+}
+```
+
 ## Identify your users
 
 Two ways to tell Clikgate which of your users is using the app. Full guide: https://clikgate.com/docs/identify-users. The customer ID is your own user ID from your database, never an email, phone number or ID number. Anonymous users don't need either path.
@@ -204,12 +243,17 @@ $clikgate->payments->confirm(['provider' => Provider::Paystack, 'reference' => '
 ## Webhooks
 
 ```php
+use Clikgate\Enum\EventType;
 use Clikgate\Webhooks;
 
 $event = Webhooks::verify(file_get_contents('php://input'), $_SERVER['HTTP_CLIKGATE_SIGNATURE'] ?? null, getenv('CLIKGATE_WEBHOOK_SECRET'));
+if (EventType::GoalCompleted === $event->type) {
+    $goal = $event->asGoalEvent();   // Clikgate\Model\GoalEvent
+}
 ```
 
-- Pass the **raw** body. Deliveries are at-least-once: dedupe on `$event['id']`.
+- Pass the **raw** body. Deliveries are at-least-once: dedupe on `$event->id`.
+- `$event` is a `Clikgate\Model\WebhookEvent` (`->id`, `->type`, `->apiVersion`, `->createdAt`, `->organizationId`, `->livemode`, `->data`). The typed accessors `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()` and `asConversion()` return the model for their family of events (`referral.*`, …) and `null` for any other event. `Clikgate\Enum\EventType` holds every event type as a string constant, so compare `$event->type` with it directly. Array access keeps working: `$event['type']`, `$event['data']['object']`.
 - Use `Webhooks::verifyAny($body, $header, [$newSecret, $oldSecret])` while you rotate your own secrets.
 
 ## Private mode
@@ -222,15 +266,43 @@ $event = Webhooks::verify(file_get_contents('php://input'), $_SERVER['HTTP_CLIKG
 
 ```php
 $link = $clikgate->links->create(['destination_url' => 'https://example.com/spring', 'og_title' => 'Spring sale']);
-$result = $clikgate->links->update($link['id'], ['destination_url' => 'https://example.com/summer']);
-if (!$result['applied']) { echo 'waiting for a second person: ', $result['change_request']['id']; }
-foreach ($clikgate->links->list(['limit' => 100]) as $link) { echo $link['short_url'], "\n"; }
-// Filter by your own link metadata (sent as metadata[seller_id]=sel_ada); analytics take it too.
-foreach ($clikgate->links->list(['metadata' => ['seller_id' => 'sel_ada']]) as $link) { echo $link['metadata']['seller_id'], "\n"; }
-$ada = $clikgate->api->analytics->analyticsSummary(from: '2026-10-01T00:00:00Z', to: '2026-11-01T00:00:00Z', metadata: ['seller_id' => 'sel_ada']);
+$result = $clikgate->links->update($link->id, ['destination_url' => 'https://example.com/summer']);
+if (!$result->applied) { echo 'waiting for a second person: ', $result->changeRequest?->id; }
+foreach ($clikgate->links->list(['limit' => 100]) as $link) { echo $link->shortUrl, "\n"; }
+// Filter by your own link metadata (sent as metadata[seller_id]=sel_ada)
+foreach ($clikgate->links->list(['metadata' => ['seller_id' => 'sel_ada']]) as $link) { echo $link->metadata['seller_id'], "\n"; }
+$link = $clikgate->links->getByReference('order-1001');
+$clikgate->links->pause($link->id);
+$clikgate->links->resume($link->id);
+$clikgate->links->archive($link->id);
 ```
 
-A locked link throws `LinkLockedException`. `$clikgate->api-><resource>-><operation>()` exposes every other API-key operation ("advanced"), generated from the OpenAPI document and sent through the same pipeline.
+Link methods return `Clikgate\Model\Link` (and `LinkUpdateResult`, `Page`) with every field of the API's link as a readonly property. They implement `ArrayAccess`, so code written for the array results keeps working (`$link['short_url']`, `$result['change_request']['id']`); `->toArray()` gives the wire JSON. A locked link throws `LinkLockedException`. `$clikgate->api-><resource>-><operation>()` exposes every other API-key operation ("advanced"), generated from the OpenAPI document and sent through the same pipeline.
+
+## Referrals, privacy, people, installs and codes
+
+Typed resources; every result is a model in `Clikgate\Model` with camelCase properties and array access over the wire keys.
+
+```php
+$referrer = $clikgate->referrals->getOrCreateReferrer('rpg_01J…', ['customerId' => (string) $user->id]);
+$found = $clikgate->referrals->findReferrer('rpg_01J…', ['code' => 'ADA42']);       // null when there is none
+foreach ($clikgate->referrals->list(['programId' => 'rpg_01J…', 'status' => 'qualified']) as $referral) {
+    echo $referral->id, ' ', $referral->referee->customerId, ' ', $referral->reward?->referrer?->amount, "\n";
+}
+$clikgate->referrals->completeStep('ref_01J…', ['goal' => 'first_order', 'occurredAt' => $order->paidAt, 'value' => '1500.50', 'currency' => 'NGN']);
+$clikgate->referrals->qualify('ref_01J…', ['reason' => 'Checked by support']);
+$jobs = $clikgate->referrals->importReferrers('rpg_01J…', [['customerId' => 'user-42', 'externalCode' => 'ADA-OLD']]); // batches of 1000
+$clikgate->referrals->blockReferrer($referrer->id, ['reason' => 'Fake installs']);
+
+$request = $clikgate->privacy->createRequest(['type' => 'erasure', 'subjectType' => 'customer_user', 'subjectId' => (string) $user->id]);
+$person = $clikgate->people->setLabel('per_01J…', 'Ada (VIP)');
+foreach ($clikgate->people->search('Ada') as $match) { echo $match->id, "\n"; }
+$install = $clikgate->installs->getByCustomer((string) $user->id, ['appId' => 'app_01J…']);
+$redemption = $clikgate->codes->redeem(['externalId' => 'POS-991', 'code' => 'ADA42', 'channel' => 'pos']);
+```
+
+- Reward amounts: `amountMinor` is the integer the API sends (minor units); `amount` is the same amount in normal units as an exact decimal string with the currency's decimals (`50000` NGN is `'500.00'`, `1500` JPY is `'1500'`).
+- `findReferrer()` returns `null` only for a 404; every other error throws. The installs lookups currently need `appId`.
 
 ## Errors
 

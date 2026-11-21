@@ -5,7 +5,7 @@
 
 Example (Flask)::
 
-    from clikgate import webhooks, SignatureVerificationError
+    from clikgate import EventType, webhooks, SignatureVerificationError
 
     @app.post("/webhooks/clikgate")
     def clikgate_webhook():
@@ -13,8 +13,9 @@ Example (Flask)::
             event = webhooks.verify(request.get_data(), request.headers.get("Clikgate-Signature"), os.environ["CLIKGATE_WEBHOOK_SECRET"])
         except SignatureVerificationError as err:
             return err.code, 400
-        if event["type"] == "goal.completed":
-            ...   # dedupe on event["id"]: delivery is at-least-once
+        referral = event.as_referral()   # None for other event types
+        if referral is not None and event.type == EventType.REFERRAL_QUALIFIED:
+            ...   # dedupe on event.id: delivery is at-least-once
         return "", 200
 """
 
@@ -25,7 +26,7 @@ import hmac
 import json
 import re
 import time
-from typing import Any, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from ._errors import SignatureVerificationError, local_error
 from ._types import WebhookEvent
@@ -101,7 +102,7 @@ def _verify(
         raise _fail("invalid_payload", "The body is not JSON.") from None
     if not isinstance(event, dict):
         raise _fail("invalid_payload", "The body is not an event object.")
-    return cast(WebhookEvent, event)
+    return WebhookEvent(event)
 
 
 def verify(

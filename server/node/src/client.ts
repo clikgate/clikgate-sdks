@@ -13,6 +13,8 @@ import { consoleLogger, type Logger } from './logger.js';
 import { Payments } from './payments.js';
 import { KnownCustomers } from './known-customers.js';
 import { Clicks, Conversions, Links } from './resources.js';
+import { Referrals } from './referrals.js';
+import { Codes, Installs, People, Privacy } from './lookups.js';
 import { registerShutdown, unregisterShutdown } from './shutdown.js';
 import { fetchTransport, nodeTransport, type FetchLike, type Transport } from './transport.js';
 import type { ServerSdkConfig } from './types.js';
@@ -150,6 +152,16 @@ export class Clikgate {
   readonly clicks: Clicks;
   /** Existing customers from before you added Clikgate: `import()` and `remove()`. */
   readonly knownCustomers: KnownCustomers;
+  /** Referrals: referrers (`getOrCreateReferrer`, `findReferrer`), referrals, overrides, steps and imports. */
+  readonly referrals: Referrals;
+  /** Privacy requests: `createRequest`, `getRequest`. */
+  readonly privacy: Privacy;
+  /** People: `get`, `search`, `setLabel`. */
+  readonly people: People;
+  /** Installs: `getByCustomer`, `getByInstallation`. */
+  readonly installs: Installs;
+  /** Offline and referral codes: `redeem`. */
+  readonly codes: Codes;
   /** Click-ID helpers using this client's `clickIdParam` (or the organisation's from config). */
   readonly clickIds: ClickIds;
   /** Every API-key operation, generated from openapi.json ("advanced"). */
@@ -213,6 +225,11 @@ export class Clikgate {
     this.links = new Links(this.core);
     this.clicks = new Clicks(this.core);
     this.knownCustomers = new KnownCustomers(this.core);
+    this.referrals = new Referrals(this.core);
+    this.privacy = new Privacy(this.core);
+    this.people = new People(this.core);
+    this.installs = new Installs(this.core);
+    this.codes = new Codes(this.core);
     const explicitParam = options.clickIdParam;
     this.clickIds = new ClickIds(() => explicitParam ?? configCache.peek()?.click_id_param ?? 'cgid');
     this.api = new ApiClient(requester);
