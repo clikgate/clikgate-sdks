@@ -97,6 +97,12 @@ export function withAccessors(event: Record<string, unknown>): WebhookEvent {
     asInstall: () => objectOf(event, 'install') as ReturnType<WebhookEventAccessors['asInstall']>,
     asPayment: () => objectOf(event, 'payment') as ReturnType<WebhookEventAccessors['asPayment']>,
     asConversion: () => objectOf(event, 'conversion') as ReturnType<WebhookEventAccessors['asConversion']>,
+    asDeviceChange: () => {
+      if (event.type !== 'person.device_changed') return null;
+      const data = event.data as Record<string, unknown> | null | undefined;
+      const object = data && typeof data === 'object' ? data.object : null;
+      return object && typeof object === 'object' && !Array.isArray(object) ? (object as unknown as ReturnType<WebhookEventAccessors['asDeviceChange']>) : null;
+    },
     typed: () => event as unknown as TypedWebhookEvent,
   };
   for (const [name, fn] of Object.entries(accessors)) Object.defineProperty(event, name, { value: fn, enumerable: false, writable: true, configurable: true });

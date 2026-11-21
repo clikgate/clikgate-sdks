@@ -398,6 +398,7 @@ function runCase(string $base, array $c): array
                         'install' => $event->asInstall(),
                         'payment' => $event->asPayment(),
                         'conversion' => $event->asConversion(),
+                        'device_change' => $event->asDeviceChange(),
                     };
                 })(),
                 'webhooks.event_types' => (static function (): array {

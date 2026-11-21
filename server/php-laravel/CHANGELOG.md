@@ -7,7 +7,7 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 ### Typed models
 
 - **Added:** `Clikgate::referrals()`, `Clikgate::privacy()`, `Clikgate::people()`, `Clikgate::installs()` and `Clikgate::codes()`, the new resources of `clikgate/clikgate-php` 2.1.0, which return typed models (`$referrer->customerId`, `$referral->reward?->referrer?->amount`).
-- **Changed:** `Clikgate::verifyWebhook()` returns a `Clikgate\Model\WebhookEvent` with `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()`, `asConversion()`, and `$event->type` (compare it with the `EventType` string constants); array access (`$event['type']`) keeps working. Link methods return models with array access too.
+- **Changed:** `Clikgate::verifyWebhook()` returns a `Clikgate\Model\WebhookEvent` with `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()`, `asConversion()`, `asDeviceChange()`, and `$event->type` (compare it with the `EventType` string constants); array access (`$event['type']`) keeps working. Link methods return models with array access too.
 - Requires `clikgate/clikgate-php` 2.1.0.
 
 ## [2.0.3] - unreleased

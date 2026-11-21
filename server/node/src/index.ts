@@ -87,6 +87,9 @@ export type {
   ConversionObject,
   CodeRedemption,
   WebhookGoalEvent,
+  DeviceChange,
+  DeviceChangeSide,
+  ReferralStateChange,
   LinkCreateParams,
   LinkUpdateParams,
 } from './models.js';

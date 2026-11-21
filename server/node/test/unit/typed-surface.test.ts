@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
-import { EventType, currencyExponent, minorToAmount, webhooks } from '../../src/index.js';
+import { EventType, currencyExponent, minorToAmount, webhooks, type ApiTypes, type CodeRedemption, type DeviceChange, type Job, type PrivacyRequest, type Referral, type Referrer, type RewardInfo, type WebhookGoalEvent } from '../../src/index.js';
 
 const SECRET = 'whsec_unit_typed';
 const sign = (body: string, t: number) => `t=${t},v1=${createHmac('sha256', SECRET).update(`${t}.${body}`).digest('hex')}`;
@@ -52,3 +52,22 @@ test('EventType: 97 unique wire strings', () => {
   assert.equal(new Set(values).size, 97);
   assert.equal(EventType.LinkStatsHourly, 'link.stats.hourly');
 });
+
+test('asDeviceChange: person.device_changed only', () => {
+  const object = { object: 'device_change', id: 'dvc_1:switch', kind: 'switch', from: { platform: 'android', device_model: null }, to: { platform: 'ios', device_model: null } };
+  assert.equal(verify('person.device_changed', object).event.asDeviceChange()?.from.platform, 'android');
+  assert.equal(verify('install.attributed', object).event.asDeviceChange(), null);
+});
+
+// The hand-written models stay assignable to the generated API types (compile-time check)
+type Assignable<A extends B, B> = A;
+export type ModelChecks = [
+  Assignable<Referrer, ApiTypes.ReferrerInfoResponse>,
+  Assignable<Referral, ApiTypes.ReferralInfoResponse>,
+  Assignable<RewardInfo, ApiTypes.RewardInfoResponse>,
+  Assignable<Job, ApiTypes.JobInfoResponse>,
+  Assignable<PrivacyRequest, ApiTypes.PrivacyRequestInfoResponse>,
+  Assignable<CodeRedemption, ApiTypes.CodeRedemptionResponse>,
+  Assignable<WebhookGoalEvent, ApiTypes.GoalEventWebhookObject>,
+  Assignable<DeviceChange, ApiTypes.DeviceChangeWebhookObject>,
+];

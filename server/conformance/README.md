@@ -177,7 +177,7 @@ Result shapes are canonical JSON, the wire objects with `snake_case` keys. Typed
 | `installs.get_by_customer` | `customer_id`, `app_id?` | the install |
 | `installs.get_by_installation` | `installation_id`, `app_id?` | the install |
 | `codes.redeem` | `external_id`, `code`, `channel`, `app_id?`, `occurred_at?`, `metadata?`, `subject?`, `agent_id?`, `location?` | the redemption |
-| `webhooks.typed` | the `webhooks.verify` args + `as` (`referral` \| `referrer` \| `goal_event` \| `install` \| `payment` \| `conversion`) | the typed object as wire JSON, or `null` on a type mismatch (SPEC 29) |
+| `webhooks.typed` | the `webhooks.verify` args + `as` (`referral` \| `referrer` \| `goal_event` \| `install` \| `payment` \| `conversion` \| `device_change`) | the typed object as wire JSON, or `null` on a type mismatch (SPEC 29) |
 | `webhooks.event_types` | — | `{"value": [every EventType wire string, sorted]}` |
 
 ### ErrorOutcome

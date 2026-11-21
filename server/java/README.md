@@ -13,11 +13,11 @@ It supports Java 8+ (bytecode 52, for banks still on Java 8) and has one runtime
 <dependency>
   <groupId>com.clikgate</groupId>
   <artifactId>clikgate-java</artifactId>
-  <version>2.0.3</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
-Gradle: `implementation("com.clikgate:clikgate-java:2.0.3")`.
+Gradle: `implementation("com.clikgate:clikgate-java:2.1.0")`.
 
 ```java
 Clikgate clikgate = Clikgate.fromEnv();   // reads CLIKGATE_API_KEY (cg_live_… or cg_test_…)

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, Literal, Optional, TypedDict, Union, cast
 
 from ._currency import to_referral, to_referrer
-from ._models import ConversionObject, Install, PaymentReport, Referral, Referrer, WebhookGoalEvent
+from ._models import ConversionObject, DeviceChange, Install, PaymentReport, Referral, Referrer, WebhookGoalEvent
 
 __all__ = ["TypedWebhookEvent", "WebhookEvent"]
 
@@ -87,6 +87,13 @@ class WebhookEvent(Dict[str, Any]):
     def as_conversion(self) -> Optional[ConversionObject]:
         """``conversion.*``: the conversion; else ``None``."""
         return cast(Optional[ConversionObject], self._object("conversion"))
+
+    def as_device_change(self) -> Optional[DeviceChange]:
+        """``person.device_changed``: the device change; else ``None``."""
+        if self.get("type") != "person.device_changed":
+            return None
+        obj = self.data.get("object")
+        return cast(DeviceChange, obj) if isinstance(obj, dict) else None
 
     def typed(self) -> TypedWebhookEvent:
         """The same event typed as :data:`TypedWebhookEvent`, narrowed by ``e["type"] == "referral.qualified"``.
@@ -239,6 +246,24 @@ class ConversionWebhookEvent(TypedDict, total=False):
     data: ConversionEventData
 
 
+class DeviceChangeEventData(TypedDict, total=False):
+    object: DeviceChange
+    previous_attributes: Optional[Dict[str, Any]]
+
+
+class DeviceChangeWebhookEvent(TypedDict, total=False):
+    """A ``person.device_changed`` event."""
+
+    id: str
+    object: Literal["event"]
+    type: Literal["person.device_changed"]
+    api_version: str
+    created_at: str
+    organization_id: str
+    livemode: bool
+    data: DeviceChangeEventData
+
+
 class OtherEventData(TypedDict, total=False):
     object: Dict[str, Any]
     previous_attributes: Optional[Dict[str, Any]]
@@ -301,7 +326,6 @@ class OtherWebhookEvent(TypedDict, total=False):
         "partner_reward.approved",
         "partner_reward.removed",
         "partner_reward.reversed",
-        "person.device_changed",
         "privacy.request_completed",
         "receipt.issued",
         "sale.matched",
@@ -338,5 +362,6 @@ TypedWebhookEvent = Union[
     InstallWebhookEvent,
     PaymentWebhookEvent,
     ConversionWebhookEvent,
+    DeviceChangeWebhookEvent,
     OtherWebhookEvent,
 ]

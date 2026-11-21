@@ -286,7 +286,7 @@ app.post('/webhooks/clikgate', express.raw({ type: 'application/json' }), (req, 
 
 - Typed accessors read `event.data.object`: `asReferral()` (`referral.*`), `asReferrer()` (`referrer.*`),
   `asGoalEvent()` (`goal.completed`, `goal.reversed`), `asInstall()` (`install.*`), `asPayment()` (`payment.*`) and
-  `asConversion()` (`conversion.*`). Each returns `null` for an event of another family, so the same handler can take
+  `asConversion()` (`conversion.*`) and `asDeviceChange()` (`person.device_changed`). Each returns `null` for an event of another family, so the same handler can take
   every event. `event.data` stays the raw payload.
 - `EventType` holds every event type as a string (`EventType.ReferralQualified === 'referral.qualified'`); `event.type`
   stays a plain string, so a type added later is never an error. `event.typed()` gives the same event as a union

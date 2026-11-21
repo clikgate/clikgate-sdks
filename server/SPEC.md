@@ -1289,14 +1289,15 @@ refreshed)), `attributes` (map), `leaderboard_opt_out`, `quality_score`, `qualit
 `hold_until`, `qualified_at`, `disqualified_at`, `rejected_at`, `reason`, `reason_detail`, `reason_message`,
 `fraud_flags`, `referee_uninstalled_after_qualification`, `program` `{id, name}`, `referrer` `{id, customer_user_id,
 code}`, `referee` `{install_id, installation_id, customer_user_id}`, `link` (`{id}` or null), `click_id`,
-`reward_snapshot` (**`RewardInfo`**, absent when the program had no reward information), `created_at`, `updated_at`,
-`livemode`.
+`reward_snapshot` (**`RewardInfo`**, absent or null when the program had no reward information), `history?` (`[{from_status,
+to_status, reason, actor, created_at}]`, when the API includes it), `created_at`, `updated_at`, `livemode`.
 
 **`RewardInfo`**: `referrer` and `referee` (each a **`RewardSide`** `{amount_minor?, currency?, description?,
 amount?}`, absent when not set) and `note?`. Clikgate never pays rewards; this is for your records.
 
 **`Job`** (`object: "job"`): `id`, `type`, `status`, `total`, `succeeded`, `failed`, `results` (`[{index?, ok?,
-referrer_id?, created?, error?: {type, code, message?, param?}, …}]`), `created_at`, `finished_at`, `livemode`.
+referrer_id?, link_id?, created?, url?, expires_at?, rows?, files?, run_id?, table?, deleted?, error?: {type, code, message?,
+param?}}]`, only the keys that apply), `created_at`, `finished_at`, `livemode`.
 
 ### 28.3 Conformance
 
@@ -1330,17 +1331,18 @@ working). It gains typed accessors that read `data.object`:
 | `as_goal_event()` | `goal.completed`, `goal.reversed` (`goal.*`) | the goal event as webhooks show it: `object`, `id`, `goal`, `value`, `value_minor`, `currency`, `first_for_click`, `is_first_customer`, `link` `{id}`, `campaign` `{id}`, `clicked_at`, `occurred_at`, `status` (the attribution state), `received_as`, `goal_group` `{id, name}`, `reference` (absent in private mode), `person` `{id, label}` and `backfilled` (`goal.completed`) |
 | `as_install()` | `install.*` | `Install` (section 32) |
 | `as_payment()` | `payment.*` | `PaymentReport`: the payment report (`object: "payment_report"`, `id`, `provider`, `reference`, `source`, `goal`, `status`, `status_reason`, `click_id`, `installation_id`, `link_id`, `channel`, `confirmation`, `counted`, `goal_event_id`, `refunded_amount_minor`, `occurred_at`, `created_at`, `decided_at`, `expires_at`, `livemode`, …) |
+| `as_device_change()` | `person.device_changed` | `DeviceChange` (`object: "device_change"`): `id` (`{device_change_id}:{kind}`), `device_change_id`, `person_id`, `customer_id`, `app_id`, `kind` (`switch` \| `second_device`), `from` and `to` (each `{platform, device_model}`; PHP `->from` / `->to`, Java `getFrom()` / `getTo()`, .NET `From` / `To`), `from_last_seen_at`, `to_first_open_at`, `gap_days` (null for a second device), `livemode` |
 | `as_conversion()` | `conversion.*` | `Conversion` (`id`, `external_id`, `status`, `type`, `amount_minor`, `currency`, `reversed_amount_minor`, `click_id`, `link`, `campaign`, `metadata`, `goal`, `value`, `occurred_at`, `received_at`, `created_at`, `livemode`, …) |
 
 - **Matching** is by the type's family prefix (`referral.`, `referrer.`, `goal.`, `install.`, `payment.`,
   `conversion.`), so a newer type in a family (one this SDK release doesn't list) still gives the object. `app.reengaged`
-  is not `install.*`. `person.device_changed` has no accessor: its `data.object` is a device change (`object:
-  "device_change"`), not a person; read it from `data`.
+  is not `install.*`. `as_device_change()` matches the one type `person.device_changed` (its object is a device change,
+  not a person).
 - **A mismatch** (another family, or `data.object` not an object) gives **null** in Node, Python and PHP (`?Referral`,
   `Referral | null`, `Optional[Referral]`). Java and .NET also return `null` (`@Nullable`, nullable reference types), so
   the same `if` works everywhere and nothing throws for an event you didn't expect.
 - **Names** (section 2 casing): Node `event.asReferral()`; Python `event.as_referral()`; PHP `$event->asReferral()`;
-  Java `event.asReferral()`; .NET `event.AsReferral()`. The same for the other five.
+  Java `event.asReferral()`; .NET `event.AsReferral()`. The same for the other six.
 - **Shape:** Node returns a plain event object with the accessors as non-enumerable methods (so `JSON.stringify(event)` is
   unchanged). Python returns a `WebhookEvent`, a `dict` subclass (so `event["type"]` keeps working) with the accessors
   and read-only attributes `id`, `type`, `api_version`, `created_at`, `organization_id`, `livemode`, `data`. PHP
@@ -1371,7 +1373,7 @@ upper-cased with `.` and `_` as word breaks (`link.stats.hourly` → `LINK_STATS
 itself stays a plain string (PHP `$event->type`, Python `event.type` and `event["type"]`), so an event type added later
 is never an error.
 
-The list (97 types): `ab_test.likely_winner`, `alert.resolved`, `alert.triggered`, `app.push_credentials_invalid`,
+The list (97 types; `build-cases.mjs` fails when it differs from the `webhooks` of the vendored public OpenAPI): `ab_test.likely_winner`, `alert.resolved`, `alert.triggered`, `app.push_credentials_invalid`,
 `app.reengaged`, `app_banner.paused`, `app_banner.published`, `campaign.paused`, `campaign.resumed`,
 `challenge.cancelled`, `challenge.ended`, `challenge.finalized`, `challenge.scheduled`, `challenge.started`,
 `click.created`, `code.redeemed`, `conversion.attributed`, `conversion.reversed`, `conversion.unattributed`,
@@ -1400,7 +1402,7 @@ Suite `webhook_events`:
 
 | `call` | `args` | Canonical result |
 |---|---|---|
-| `webhooks.typed` | the `webhooks.verify` args + `as` (`referral` \| `referrer` \| `goal_event` \| `install` \| `payment` \| `conversion`) | the typed object as wire JSON (with `amount`), or `null` on a mismatch |
+| `webhooks.typed` | the `webhooks.verify` args + `as` (`referral` \| `referrer` \| `goal_event` \| `install` \| `payment` \| `conversion` \| `device_change`) | the typed object as wire JSON (with `amount`), or `null` on a mismatch |
 | `webhooks.event_types` | — | `{"value": [every EventType wire string, sorted]}` |
 
 ## 30. Privacy requests: `clikgate.privacy`

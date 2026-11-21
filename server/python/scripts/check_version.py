@@ -28,6 +28,14 @@ if src != version:
     problems.append(f"_version.py says {src}, pyproject.toml says {version}")
 if tag and tag != version:
     problems.append(f"tag says {tag}, pyproject.toml says {version}")
+# README snippets: the server SDK table and any pinned clikgate version must name this version
+table = (root.parent / "README.md").read_text("utf-8")
+row = re.search(r"\| `clikgate` \|[^\n]*?\| (\d+\.\d+\.\d+)", table)
+if not row or row.group(1) != version:
+    problems.append(f"server/README.md lists clikgate {row.group(1) if row else '(none)'}, pyproject.toml says {version}")
+for pinned in re.findall(r"clikgate(?:\[[a-z,]+\])?[=~>]=(\d+\.\d+\.\d+)", (root / "README.md").read_text("utf-8")):
+    if pinned != version:
+        problems.append(f"README.md pins clikgate {pinned}, pyproject.toml says {version}")
 if [re.split(r"[<>=!~ ;\[]", d)[0] for d in deps] != ["httpx"]:
     problems.append(f"the only runtime dependency must be httpx, got {deps}")
 if problems:

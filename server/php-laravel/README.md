@@ -140,7 +140,7 @@ Set `CLIKGATE_QUEUE=redis` (any queue connection) and, optionally, `CLIKGATE_QUE
 - `Clikgate::goal('order_paid', ['reference' => 'T123456', 'provider' => Provider::Paystack])` reports a payment on a Payment goal; results carry `status` (`GoalStatus`: `counted`, `waiting`, `received`, `refused`). See the PHP SDK's Payment goals section.
 - `Clikgate::goals()->send(…)`, `Clikgate::links()`, `Clikgate::clickIds()` and `Clikgate::api()`. Link methods return typed models (`$link->shortUrl`) that keep array access (`$link['short_url']`).
 - `Clikgate::referrals()`, `Clikgate::privacy()`, `Clikgate::people()`, `Clikgate::installs()` and `Clikgate::codes()`: typed resources (see the PHP SDK's "Referrals, privacy, people, installs and codes" section).
-- `Clikgate::verifyWebhook($request->getContent(), $request->header('Clikgate-Signature'), $secret)` returns a `Clikgate\Model\WebhookEvent`: `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()`, `asConversion()`; compare `$event->type` with the `EventType` string constants; `$event['type']` keeps working.
+- `Clikgate::verifyWebhook($request->getContent(), $request->header('Clikgate-Signature'), $secret)` returns a `Clikgate\Model\WebhookEvent`: `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()`, `asConversion()`, `asDeviceChange()`; compare `$event->type` with the `EventType` string constants; `$event['type']` keeps working.
 - `app(\Clikgate\Clikgate::class)` gives the client itself.
 
 See [`clikgate/clikgate-php`](https://github.com/clikgate/clikgate-php#readme). The full example is in `examples/routes/web.php`.

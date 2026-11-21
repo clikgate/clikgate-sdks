@@ -159,6 +159,17 @@ final class TypedSurfaceTest extends TestCase
         self::assertNull(self::verify(self::event('brand_new.type', []))->eventType());
     }
 
+    public function testAsDeviceChange(): void
+    {
+        $object = ['object' => 'device_change', 'id' => 'dvc_1:switch', 'device_change_id' => 'dvc_1', 'person_id' => 'per_1', 'customer_id' => 'user-42', 'app_id' => 'app_1', 'kind' => 'switch', 'from' => ['platform' => 'android', 'device_model' => 'Pixel 7'], 'to' => ['platform' => 'ios', 'device_model' => null], 'from_last_seen_at' => null, 'to_first_open_at' => '2026-10-26T09:00:00Z', 'gap_days' => 2, 'livemode' => false];
+        $change = self::verify(self::event('person.device_changed', $object))->asDeviceChange();
+        self::assertNotNull($change);
+        self::assertSame('android', $change->from->platform);
+        self::assertSame(['platform' => 'ios', 'device_model' => null], $change['to']);
+        self::assertSame(2, $change->gapDays);
+        self::assertNull(self::verify(self::event('install.attributed', $object))->asDeviceChange());
+    }
+
     public function testEventTypeHas97UniqueValues(): void
     {
         $values = EventType::all();

@@ -253,7 +253,7 @@ if (EventType::GoalCompleted === $event->type) {
 ```
 
 - Pass the **raw** body. Deliveries are at-least-once: dedupe on `$event->id`.
-- `$event` is a `Clikgate\Model\WebhookEvent` (`->id`, `->type`, `->apiVersion`, `->createdAt`, `->organizationId`, `->livemode`, `->data`). The typed accessors `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()` and `asConversion()` return the model for their family of events (`referral.*`, …) and `null` for any other event. `Clikgate\Enum\EventType` holds every event type as a string constant, so compare `$event->type` with it directly. Array access keeps working: `$event['type']`, `$event['data']['object']`.
+- `$event` is a `Clikgate\Model\WebhookEvent` (`->id`, `->type`, `->apiVersion`, `->createdAt`, `->organizationId`, `->livemode`, `->data`). The typed accessors `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()`, `asConversion()` and `asDeviceChange()` (`person.device_changed`) return the model for their family of events (`referral.*`, …) and `null` for any other event. `Clikgate\Enum\EventType` holds every event type as a string constant, so compare `$event->type` with it directly. Array access keeps working: `$event['type']`, `$event['data']['object']`.
 - Use `Webhooks::verifyAny($body, $header, [$newSecret, $oldSecret])` while you rotate your own secrets.
 
 ## Private mode

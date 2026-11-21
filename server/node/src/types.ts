@@ -1,7 +1,7 @@
 import type { GoalKind, GoalStatus, Provider } from './enums.js';
 import type { LinkInfoResponse } from './generated/index.js';
 import type { EventTypeValue } from './event-types.js';
-import type { ConversionObject, Install, PaymentReport, Referral, Referrer, WebhookGoalEvent } from './models.js';
+import type { ConversionObject, DeviceChange, Install, PaymentReport, Referral, Referrer, WebhookGoalEvent } from './models.js';
 
 /** Wire objects returned by the hand-written resources. Keys are as the API sends them (snake_case). */
 
@@ -207,6 +207,8 @@ export interface WebhookEventAccessors {
   asPayment(): PaymentReport | null;
   /** `conversion.*`: the conversion. */
   asConversion(): ConversionObject | null;
+  /** `person.device_changed`: the device change. */
+  asDeviceChange(): DeviceChange | null;
   /** The same event, typed as the union discriminated by `type`. */
   typed(): TypedWebhookEvent;
 }
@@ -246,7 +248,7 @@ export interface WebhookEventOf<Type extends string, T> extends WebhookEventAcce
 }
 
 type Family<P extends string> = Extract<EventTypeValue, `${P}.${string}`>;
-type Typed = Family<'referral'> | Family<'referrer'> | Family<'goal'> | Family<'install'> | Family<'payment'> | Family<'conversion'>;
+type Typed = Family<'referral'> | Family<'referrer'> | Family<'goal'> | Family<'install'> | Family<'payment'> | Family<'conversion'> | 'person.device_changed';
 
 /**
  * Every webhook event this SDK release knows, discriminated by `type` (`event.typed()`):
@@ -262,6 +264,7 @@ export type TypedWebhookEvent =
   | WebhookEventOf<Family<'install'>, Install>
   | WebhookEventOf<Family<'payment'>, PaymentReport>
   | WebhookEventOf<Family<'conversion'>, ConversionObject>
+  | WebhookEventOf<'person.device_changed', DeviceChange>
   | WebhookEventOf<Exclude<EventTypeValue, Typed>, Record<string, unknown>>;
 
 /** QR code bytes. */

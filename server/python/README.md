@@ -101,7 +101,7 @@ def clikgate_webhook(request):
         return HttpResponse(err.code, status=400)
     referral = event.as_referral()                     # None for any other event type
     if referral is not None and event.type == EventType.REFERRAL_QUALIFIED:
-        reward = referral.get("reward_snapshot", {}).get("referrer", {})
+        reward = (referral.get("reward_snapshot") or {}).get("referrer") or {}
         credit_wallet(referral["referrer"]["customer_id"], reward.get("amount"), reward.get("currency"))   # "500.00", "NGN"
     goal = event.as_goal_event()
     if goal is not None and event.type == EventType.GOAL_COMPLETED:
@@ -282,7 +282,7 @@ if referral is not None and event.type == EventType.REFERRAL_QUALIFIED:
 - Pass the **raw** body (`request.body` in Django, `request.get_data()` in Flask, `await request.body()` in Starlette).
 - Deliveries are at-least-once: dedupe on `event.id`.
 - `event` is a `WebhookEvent`: a `dict` (`event["data"]["object"]` keeps working) with the attributes `id`, `type`, `api_version`, `created_at`, `organization_id`, `livemode` and `data`.
-- Typed accessors give `data.object` for their family of events, or `None` for any other: `as_referral()` (`referral.*`, with reward `amount`s), `as_referrer()` (`referrer.*`), `as_goal_event()` (`goal.completed`, `goal.reversed`), `as_install()` (`install.*`), `as_payment()` (`payment.*`) and `as_conversion()` (`conversion.*`).
+- Typed accessors give `data.object` for their family of events, or `None` for any other: `as_referral()` (`referral.*`, with reward `amount`s), `as_referrer()` (`referrer.*`), `as_goal_event()` (`goal.completed`, `goal.reversed`), `as_install()` (`install.*`), `as_payment()` (`payment.*`), `as_conversion()` (`conversion.*`) and `as_device_change()` (`person.device_changed`).
 - `EventType` lists every event type (`EventType.REFERRAL_QUALIFIED == "referral.qualified"`). `event.typed()` returns the event typed as the `TypedWebhookEvent` union, which mypy narrows on `e["type"] == "referral.qualified"`.
 - Use `webhooks.verify_any(body, header, [new_secret, old_secret])` while you rotate your own secrets.
 

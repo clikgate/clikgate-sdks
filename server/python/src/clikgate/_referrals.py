@@ -192,7 +192,7 @@ class Referrals:
         Example::
 
             referral = clikgate.referrals.get("ref_01J…")
-            print(referral["status"], referral.get("reward_snapshot", {}).get("referrer", {}).get("amount"))
+            print(referral["status"], ((referral.get("reward_snapshot") or {}).get("referrer") or {}).get("amount"))
         """
         return to_referral(self._send(ApiRequest("GET", f"/v1/referrals/{_seg(referral_id, 'referral_id')}"), request_options))
 

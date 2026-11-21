@@ -52,7 +52,9 @@ def test_webhook_accessors_and_raw_dict() -> None:
     body, event = _verify(EventType.REFERRAL_QUALIFIED.value, referral)
     typed = event.as_referral()
     assert typed is not None
-    assert typed["reward_snapshot"]["referrer"]["amount"] == "500.00"
+    snapshot = typed.get("reward_snapshot")
+    assert snapshot is not None
+    assert snapshot["referrer"]["amount"] == "500.00"
     assert event.as_referrer() is None
     assert event.as_goal_event() is None
     assert isinstance(event, dict)
@@ -122,3 +124,11 @@ def test_referrals_async() -> None:
         await c.close(1.0)
 
     asyncio.run(run())
+
+
+def test_as_device_change() -> None:
+    obj = {"object": "device_change", "id": "dvc_1:switch", "kind": "switch", "from": {"platform": "android"}, "to": {"platform": "ios"}}
+    change = _verify("person.device_changed", obj)[1].as_device_change()
+    assert change is not None
+    assert change["from"]["platform"] == "android"
+    assert _verify("install.attributed", obj)[1].as_device_change() is None

@@ -22,6 +22,8 @@ from .api import (
 __all__ = [
     "CodeRedemption",
     "ConversionObject",
+    "DeviceChange",
+    "DeviceChangeSide",
     "Install",
     "Job",
     "JobResult",
@@ -170,6 +172,16 @@ class IdRef(TypedDict, total=False):
     id: str
 
 
+class ReferralStateChange(TypedDict, total=False):
+    """One status change of a referral."""
+
+    from_status: Optional[str]
+    to_status: str
+    reason: Optional[str]
+    actor: str
+    created_at: str
+
+
 class Referral(TypedDict, total=False):
     """A referral: an install matched to a referrer, and its progress through the program's steps."""
 
@@ -199,7 +211,9 @@ class Referral(TypedDict, total=False):
     link: Optional[IdRef]
     click_id: Optional[str]
     #: The program's reward when the referral qualified; absent when there was none.
-    reward_snapshot: RewardInfo
+    reward_snapshot: Optional[RewardInfo]
+    #: The referral's status changes, when the API includes them.
+    history: Optional[List[ReferralStateChange]]
     created_at: str
     updated_at: str
     livemode: bool
@@ -229,6 +243,15 @@ class JobResult(TypedDict, total=False):
     referrer_id: str
     link_id: str
     created: bool
+    #: Exports and downloads: a signed link to the file, when it stops working (Unix seconds), rows or files.
+    url: str
+    expires_at: int
+    rows: int
+    files: int
+    run_id: str
+    #: Test data resets: the kind of data deleted and how many rows.
+    table: str
+    deleted: int
     error: JobError
 
 
@@ -346,3 +369,34 @@ class WebhookGoalEvent(TypedDict, total=False):
     reference: Optional[str]
     person: Optional[PersonRef]
     backfilled: Optional[bool]
+    livemode: bool
+
+
+class DeviceChangeSide(TypedDict, total=False):
+    """One phone of a device change (a coarse model only)."""
+
+    platform: str
+    device_model: Optional[str]
+
+
+#: A customer moving to another phone (``kind`` ``switch``) or adding one (``second_device``): the
+#: ``person.device_changed`` webhook's object. ``from`` is a Python keyword, so this is the functional form.
+DeviceChange = TypedDict(
+    "DeviceChange",
+    {
+        "object": Literal["device_change"],
+        "id": str,
+        "device_change_id": str,
+        "person_id": str,
+        "customer_id": Optional[str],
+        "app_id": str,
+        "kind": str,
+        "from": DeviceChangeSide,
+        "to": DeviceChangeSide,
+        "from_last_seen_at": Optional[str],
+        "to_first_open_at": str,
+        "gap_days": Optional[int],
+        "livemode": bool,
+    },
+    total=False,
+)

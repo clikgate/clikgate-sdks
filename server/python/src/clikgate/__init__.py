@@ -65,6 +65,8 @@ from ._lookups import AsyncCodes, AsyncInstalls, AsyncPeople, AsyncPrivacy, Code
 from ._models import (
     CodeRedemption,
     ConversionObject,
+    DeviceChange,
+    DeviceChangeSide,
     Install,
     Job,
     JobResult,
@@ -143,6 +145,8 @@ __all__ = [
     "REFERRER_IMPORT_BATCH",
     "CodeRedemption",
     "ConversionObject",
+    "DeviceChange",
+    "DeviceChangeSide",
     "Install",
     "Job",
     "JobResult",

@@ -2924,6 +2924,21 @@ const goalWebhookObject = {
   person: { id: PERSON, label: null },
 };
 
+const deviceChangeWire = {
+  object: 'device_change',
+  id: 'dvc_01JCK8Z9V7Q4M2N6P8R0S2T4DV:switch',
+  device_change_id: 'dvc_01JCK8Z9V7Q4M2N6P8R0S2T4DV',
+  person_id: PERSON,
+  customer_id: 'user-42',
+  app_id: APP_ID,
+  kind: 'switch',
+  from: { platform: 'android', device_model: 'Pixel 7' },
+  to: { platform: 'ios', device_model: 'iPhone 16' },
+  from_last_seen_at: '2026-10-24T08:00:00Z',
+  to_first_open_at: '2026-10-26T09:00:00Z',
+  gap_days: 2,
+  livemode: false,
+};
 const RFP = `/v1/referral-programs/${PROGRAM}`;
 const listOf = (data, has_more = false, next_cursor = null) => ({ object: 'list', data, has_more, next_cursor });
 
@@ -3409,6 +3424,14 @@ const EVENT_TYPES = [
   'subscription.trial_extended', 'subscription.trial_started', 'subscription.updated', 'usage.threshold_reached', 'webhook.test', 'webhook_endpoint.disabled',
   'whatsapp.conversation_attributed',
 ];
+{
+  // EVENT_TYPES must equal the webhooks the vendored public OpenAPI publishes (fails on drift)
+  const published = Object.keys(JSON.parse(readFileSync(join(here, '..', '..', 'openapi', 'openapi-public.json'), 'utf8')).webhooks ?? {}).sort();
+  if (published.length && JSON.stringify(published) !== JSON.stringify([...EVENT_TYPES].sort())) {
+    console.error('EVENT_TYPES differs from the webhooks in server/openapi/openapi-public.json; update it, SPEC 29.1 and every SDK\'s EventType.');
+    process.exit(1);
+  }
+}
 const typedEvent = (type, object, extra = {}) =>
   JSON.stringify({ id: 'evt_01JCK8Z9V7Q4M2N6P8R0S2T4EV', object: 'event', type, api_version: '2026-10-01', created_at: '2026-10-26T12:00:00Z', organization_id: 'org_01JCK8Z9V7Q4M2N6P8R0S2T4OR', livemode: false, data: { object, previous_attributes: null, ...extra } });
 const typed = (id, description, body, as, expectation) => ({
@@ -3417,7 +3440,7 @@ const typed = (id, description, body, as, expectation) => ({
   steps: [{ call: 'webhooks.typed', args: { raw_body: body, header: hdr(NOW_S, sig(SECRET, NOW_S, body)), secret: SECRET, now: NOW_S, tolerance: 300, as }, expect: expectation }],
   expect: { requests: [] },
 });
-add('webhook_events', 'Typed webhook events: asReferral, asReferrer, asGoalEvent, asInstall, asPayment, asConversion and EventType (SPEC 29)', [
+add('webhook_events', 'Typed webhook events: asReferral, asReferrer, asGoalEvent, asInstall, asPayment, asConversion, asDeviceChange and EventType (SPEC 29)', [
   typed('referral', 'asReferral on referral.qualified gives the typed referral, with reward amounts', typedEvent('referral.qualified', referralWire()), 'referral', {
     result: { id: REFERRAL, object: 'referral', status: 'qualified', referrer: { customer_user_id: 'user-42' }, reward_snapshot: REWARD_TYPED },
   }),
@@ -3440,6 +3463,10 @@ add('webhook_events', 'Typed webhook events: asReferral, asReferrer, asGoalEvent
   typed('install.mismatch', 'asInstall on app.reengaged gives null (only install.* events)', typedEvent('app.reengaged', installWire(), { click_id: CLICK }), 'install', { result: null }),
   typed('payment', 'asPayment on payment.verified gives the payment report', typedEvent('payment.verified', paymentReportWire), 'payment', { result: { id: PRP, provider: 'paystack', status: 'verified' } }),
   typed('conversion', 'asConversion on conversion.attributed gives the typed conversion', typedEvent('conversion.attributed', conversionWire), 'conversion', { result: { object: 'conversion', external_id: 'ORD-1001', amount_minor: 150050 } }),
+  typed('device_change', 'asDeviceChange on person.device_changed gives the device change (from and to keep their wire names)', typedEvent('person.device_changed', deviceChangeWire), 'device_change', {
+    result: { object: 'device_change', person_id: PERSON, customer_id: 'user-42', kind: 'switch', from: { platform: 'android', device_model: 'Pixel 7' }, to: { platform: 'ios' }, gap_days: 2 },
+  }),
+  typed('device_change.mismatch', 'asDeviceChange on another event gives null', typedEvent('install.attributed', installWire()), 'device_change', { result: null }),
   typed('data_object_not_an_object', 'An accessor gives null when data.object is not an object', typedEvent('referral.created', 'ref_1'), 'referral', { result: null }),
   {
     id: 'webhook_events.event_types',

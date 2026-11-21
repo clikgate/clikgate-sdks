@@ -357,6 +357,7 @@ async function runCase(c: RunnerCase): Promise<Record<string, unknown>> {
             install: () => event.asInstall(),
             payment: () => event.asPayment(),
             conversion: () => event.asConversion(),
+            device_change: () => event.asDeviceChange(),
           };
           result = (as[a.as as string] ?? (() => { throw new Error(`unknown accessor ${String(a.as)}`); }))();
           break;

@@ -98,6 +98,17 @@ final class WebhookEvent extends Model
         return null === $o ? null : new Conversion($o);
     }
 
+    /** `person.device_changed`: the device change; else null. */
+    public function asDeviceChange(): ?DeviceChange
+    {
+        if ('person.device_changed' !== $this->type) {
+            return null;
+        }
+        $o = self::map($this->data, 'object');
+
+        return null === $o ? null : new DeviceChange($o);
+    }
+
     /** @return array<string, mixed>|null */
     private function objectOf(string $family): ?array
     {

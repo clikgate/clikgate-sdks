@@ -51,9 +51,9 @@ export interface Referrer {
   /** Your own free-form data about the referrer. */
   attributes: Record<string, unknown>;
   leaderboard_opt_out: boolean;
-  quality_score?: number | null;
+  quality_score: number | null;
   /** `good`, `watch` or `poor`; `null` until scored. */
-  quality_band?: string | null;
+  quality_band: string | null;
   last_activity_at: string | null;
   created_at: string;
   updated_at: string;
@@ -133,10 +133,22 @@ export interface Referral {
   link: { id: string; [key: string]: unknown } | null;
   click_id: string | null;
   /** The program's reward when the referral qualified; absent when there was none. */
-  reward_snapshot?: RewardInfo;
+  reward_snapshot?: RewardInfo | null;
+  /** The referral's status changes, when the API includes them. */
+  history?: ReferralStateChange[] | null;
   created_at: string;
   updated_at: string;
   livemode: boolean;
+  [key: string]: unknown;
+}
+
+/** One status change of a referral. */
+export interface ReferralStateChange {
+  from_status: string | null;
+  to_status: string;
+  reason: string | null;
+  actor: string;
+  created_at: string;
   [key: string]: unknown;
 }
 
@@ -147,6 +159,15 @@ export interface JobResult {
   referrer_id?: string;
   link_id?: string;
   created?: boolean;
+  /** Exports and downloads: a signed link to the file and when it stops working (Unix seconds). */
+  url?: string;
+  expires_at?: number;
+  rows?: number;
+  files?: number;
+  run_id?: string;
+  /** Test data resets: the kind of data deleted and how many rows. */
+  table?: string;
+  deleted?: number;
   error?: { type: string; code: string; message?: string; param?: string | null; [key: string]: unknown };
   [key: string]: unknown;
 }
@@ -177,7 +198,7 @@ export interface PrivacyRequest {
   /** `pending`, `running`, `completed` or `failed`. */
   status: string;
   /** Set once completed: an export's `{download_url, expires_at, installs, goal_name_events}`, or an erasure's counts. */
-  result: Record<string, unknown> | null;
+  result: Gen.PrivacyExportResult | Record<string, number> | null;
   error: string | null;
   created_at: string;
   completed_at: string | null;
@@ -224,7 +245,7 @@ export interface CodeRedemption {
   /** True once the touch is tied to an install. */
   linked: boolean;
   /** Why a referral code didn't create a referral (e.g. `already_referred`); `null` otherwise. */
-  referral_error: { code: string; message: string; [key: string]: unknown } | null;
+  referral_error?: { code: string; message: string; [key: string]: unknown } | null;
   livemode: boolean;
   [key: string]: unknown;
 }
@@ -250,8 +271,37 @@ export interface WebhookGoalEvent {
   goal_group: { id: string; name: string; [key: string]: unknown } | null;
   /** Your reference; absent in private mode. */
   reference?: string | null;
+  /** `goal.completed` only: the event's person. */
   person?: { id: string; label?: string | null; [key: string]: unknown } | null;
   backfilled?: boolean | null;
+  livemode: boolean;
+  [key: string]: unknown;
+}
+
+/** One phone of a device change (a coarse model only). */
+export interface DeviceChangeSide {
+  platform: string;
+  device_model: string | null;
+  [key: string]: unknown;
+}
+
+/** A customer moving to another phone (`kind: 'switch'`) or adding one (`second_device`): the `person.device_changed` object. */
+export interface DeviceChange {
+  object: 'device_change';
+  /** `{device_change_id}:{kind}` */
+  id: string;
+  device_change_id: string;
+  person_id: string;
+  customer_id: string | null;
+  app_id: string;
+  kind: 'switch' | 'second_device' | (string & {});
+  from: DeviceChangeSide;
+  to: DeviceChangeSide;
+  from_last_seen_at: string | null;
+  to_first_open_at: string;
+  /** Days between the two phones, for a switch; `null` for a second device. */
+  gap_days: number | null;
+  livemode: boolean;
   [key: string]: unknown;
 }
 

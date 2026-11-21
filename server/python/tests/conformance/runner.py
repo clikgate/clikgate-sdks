@@ -336,6 +336,7 @@ _ACCESSORS = {
     "install": "as_install",
     "payment": "as_payment",
     "conversion": "as_conversion",
+    "device_change": "as_device_change",
 }
 
 
