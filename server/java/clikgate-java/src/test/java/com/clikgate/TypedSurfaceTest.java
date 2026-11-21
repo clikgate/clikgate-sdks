@@ -238,10 +238,12 @@ class TypedSurfaceTest {
     assertEquals("2026-10-01", ev.getApiVersion());
     assertEquals("org_1", ev.getOrganizationId());
     assertEquals("ref_1", ev.asReferral().getId());
-    IllegalStateException e = assertThrows(IllegalStateException.class, ev::asReferrer);
-    assertTrue(e.getMessage().contains("referrer."));
-    assertThrows(IllegalStateException.class, ev::asPayment);
-    assertThrows(IllegalStateException.class, ev::asDeviceChange);
+    assertNull(ev.asReferrer());
+    assertNull(ev.asPayment());
+    assertNull(ev.asDeviceChange());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> notAnObject = (Map<String, Object>) Json.parse("{\"id\":\"evt_3\",\"type\":\"referral.created\",\"data\":{\"object\":\"referral\"}}");
+    assertNull(new WebhookEvent(notAnObject).asReferral());
     @SuppressWarnings("unchecked")
     Map<String, Object> dc = (Map<String, Object>) Json.parse("{\"id\":\"evt_2\",\"type\":\"person.device_changed\",\"data\":{\"object\":{\"object\":\"device_change\","
         + "\"device_change_id\":\"dvc_1\",\"person_id\":\"per_1\",\"kind\":\"switch\",\"from\":{\"platform\":\"android\",\"device_model\":null},"

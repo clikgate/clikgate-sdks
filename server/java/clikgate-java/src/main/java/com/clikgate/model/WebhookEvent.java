@@ -8,14 +8,13 @@ import org.jspecify.annotations.Nullable;
 /**
  * A webhook event: {@code id}, {@code type} (an {@link EventType} constant), {@code data}, ... Read {@code data.object}
  * typed with {@link #asReferral()}, {@link #asReferrer()}, {@link #asGoalEvent()}, {@link #asInstall()},
- * {@link #asPayment()}, {@link #asConversion()} or {@link #asDeviceChange()}. Each one throws {@link IllegalStateException} when the event's
- * type belongs to another family (or {@code data.object} isn't an object), so check {@link #getType()} first.
+ * {@link #asPayment()}, {@link #asConversion()} or {@link #asDeviceChange()}. Each one returns null when the event's
+ * type belongs to another family (or {@code data.object} isn't an object), never a wrong object.
  *
  * <pre>{@code
  * WebhookEvent event = Webhooks.verify(body, signature, secret);
- * if (EventType.REFERRAL_QUALIFIED.equals(event.getType())) {
- *   Referral referral = event.asReferral();
- * }
+ * Referral referral = event.asReferral();   // null unless this is a referral.* event
+ * if (EventType.REFERRAL_QUALIFIED.equals(event.getType()) && referral != null) { ... }
  * }</pre>
  */
 public final class WebhookEvent extends WireObject {
@@ -56,80 +55,66 @@ public final class WebhookEvent extends WireObject {
   }
 
   /**
-   * The referral of a {@code referral.*} event.
-   *
-   * @throws IllegalStateException when this isn't a {@code referral.*} event
+   * The referral of a {@code referral.*} event. Null for any other event type.
    */
-  public Referral asReferral() {
-    return typed("referral.", "asReferral", Referral::new);
+  public @Nullable Referral asReferral() {
+    return typed("referral.", Referral::new);
   }
 
   /**
-   * The referrer of a {@code referrer.*} event.
-   *
-   * @throws IllegalStateException when this isn't a {@code referrer.*} event
+   * The referrer of a {@code referrer.*} event. Null for any other event type.
    */
-  public Referrer asReferrer() {
-    return typed("referrer.", "asReferrer", Referrer::new);
+  public @Nullable Referrer asReferrer() {
+    return typed("referrer.", Referrer::new);
   }
 
   /**
-   * The goal event of {@code goal.completed} or {@code goal.reversed} ({@code data.reversal} has the reversal).
-   *
-   * @throws IllegalStateException when this isn't a {@code goal.*} event
+   * The goal event of {@code goal.completed} or {@code goal.reversed} ({@code data.reversal} has the reversal). Null for any other event type.
    */
-  public GoalEvent asGoalEvent() {
-    return typed("goal.", "asGoalEvent", GoalEvent::new);
+  public @Nullable GoalEvent asGoalEvent() {
+    return typed("goal.", GoalEvent::new);
   }
 
   /**
-   * The install of an {@code install.*} event.
-   *
-   * @throws IllegalStateException when this isn't an {@code install.*} event
+   * The install of an {@code install.*} event. Null for any other event type.
    */
-  public Install asInstall() {
-    return typed("install.", "asInstall", Install::new);
+  public @Nullable Install asInstall() {
+    return typed("install.", Install::new);
   }
 
   /**
-   * The payment report of a {@code payment.*} event.
-   *
-   * @throws IllegalStateException when this isn't a {@code payment.*} event
+   * The payment report of a {@code payment.*} event. Null for any other event type.
    */
-  public PaymentReport asPayment() {
-    return typed("payment.", "asPayment", PaymentReport::new);
+  public @Nullable PaymentReport asPayment() {
+    return typed("payment.", PaymentReport::new);
   }
 
   /**
-   * The conversion of a {@code conversion.*} event.
-   *
-   * @throws IllegalStateException when this isn't a {@code conversion.*} event
+   * The conversion of a {@code conversion.*} event. Null for any other event type.
    */
-  public Conversion asConversion() {
-    return typed("conversion.", "asConversion", Conversion::new);
+  public @Nullable Conversion asConversion() {
+    return typed("conversion.", Conversion::new);
   }
 
   /**
-   * The device change of a {@code person.device_changed} event.
-   *
-   * @throws IllegalStateException when this isn't a {@code person.device_changed} event
+   * The device change of a {@code person.device_changed} event. Null for any other event type.
    */
-  public DeviceChange asDeviceChange() {
+  public @Nullable DeviceChange asDeviceChange() {
     if (!EventType.PERSON_DEVICE_CHANGED.equals(getType())) {
-      throw new IllegalStateException("asDeviceChange() needs a person.device_changed event, not " + getType());
+      return null;
     }
-    return typed("person.device_changed", "asDeviceChange", DeviceChange::new);
+    return typed("person.device_changed", DeviceChange::new);
   }
 
-  private <T> T typed(String prefix, String method, Function<Map<String, ?>, T> make) {
+  private <T> @Nullable T typed(String prefix, Function<Map<String, ?>, T> make) {
     String type = getType();
     if (type == null || !type.startsWith(prefix)) {
-      throw new IllegalStateException(method + "() needs a " + prefix + "* event, not " + type);
+      return null;
     }
     Map<String, @Nullable Object> data = getData();
     Map<String, ?> object = data == null ? null : asMap(data.get("object"));
     if (object == null) {
-      throw new IllegalStateException(method + "(): data.object of this " + type + " event isn't an object");
+      return null;
     }
     return make.apply(object);
   }

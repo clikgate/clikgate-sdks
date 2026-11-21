@@ -118,7 +118,7 @@ class AppController {
   void webhook(@RequestBody byte[] body, @RequestHeader("Clikgate-Signature") String signature) {
     WebhookEvent event = Webhooks.verify(body, signature, System.getenv("CLIKGATE_WEBHOOK_SECRET"));
     if (EventType.REFERRAL_QUALIFIED.equals(event.getType())) {
-      Referral referral = event.asReferral();
+      Referral referral = event.asReferral();   // non-null: the type is referral.qualified
       rewards.credit(referral.getReferrer().getCustomerId(), referral.getReferee().getCustomerId(), referral.getId());
     }
   }
@@ -126,7 +126,7 @@ class AppController {
 ```
 
 - `getOrCreateReferrer(programId, customerId)` is the short form of `getOrCreateReferrer(programId, GetOrCreateReferrerParams.builder().customerId(…).displayName(…).externalCode(…).build())`. `referrer.isCreated()` is true when this call created it.
-- `event.asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()` and `asConversion()` read `data.object` typed. Each throws `IllegalStateException` when the event belongs to another family, so check `event.getType()` against an `EventType` constant first. `EventType` constants are strings, so they also work in a `switch`.
+- `event.asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()`, `asConversion()` and `asDeviceChange()` read `data.object` typed. Each returns `null` (`@Nullable`) when the event belongs to another family, never a wrong object. `EventType` constants are strings, so they also work with `equals` and in a `switch`.
 - Money in responses: `amountMinor` stays the wire's minor units, and `getAmount()` is the same amount as an exact `BigDecimal` in normal units (`50000` NGN is `500.00`, `1500` JPY is `1500`).
 
 ## Customers from before Clikgate

@@ -725,11 +725,7 @@ class ConformanceTest {
       case "webhooks.typed":
         {
           com.clikgate.model.WebhookEvent ev = Webhooks.verify(bytes(a.get("raw_body")), (String) a.get("header"), (String) a.get("secret"), ((Number) a.get("tolerance")).longValue(), ((Number) a.get("now")).longValue());
-          try {
-            return webhookAs(ev, str(a, p, "as"));
-          } catch (IllegalStateException e) {
-            return null; // Java throws on a type mismatch; the suite's canonical outcome is null
-          }
+          return webhookAs(ev, str(a, p, "as"));
         }
       case "webhooks.event_types":
         {
