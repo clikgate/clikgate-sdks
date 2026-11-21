@@ -116,7 +116,7 @@ def _resolve(
     if m is None:
         raise ConfigurationError(
             f"The API key is {_key_type(key if isinstance(key, str) else '')}. "
-            "Server SDKs need a cg_live_… or cg_test_… API key from Developers › API keys & clients.",
+            "Server SDKs need a cg_live_… or cg_test_… API key from Developers \u203a API keys & clients.",
             code="invalid_api_key",
             param="api_key",
         )
