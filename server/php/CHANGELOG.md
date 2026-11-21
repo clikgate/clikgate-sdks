@@ -7,14 +7,15 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ### Typed models for referrals, webhooks, privacy, people, installs and codes
 
-Additive: nothing was removed or renamed.
+Nothing was removed or renamed and nothing changes on the wire, but link methods now return objects instead of arrays (see **Changed**).
 
 - **Fixed:** `identifyUser(['installation' => ...])` also takes an `Installation` (from `Installation::fromRequest()`, the PSR-15 attribute or Laravel's `$request->clikgateInstallation()`). Before, passing it was silently ignored. The same strict check applies; `Installation::from()` accepts either form.
 - **Added:** `$clikgate->referrals`: `getOrCreateReferrer()` (`->created` is true when the referrer is new), `getReferrer()`, `findReferrer()` (null when there is none), `get()`, `list()` (lazy) and `listPage()`, `qualify()`, `disqualify()`, `completeStep()` (`occurredAt` required), `importReferrers()` (batches of 1000, one job per batch), `blockReferrer()`, `unblockReferrer()` and `updateReferrer()`.
 - **Added:** typed models in `Clikgate\Model` (`Referrer`, `Referral`, `RewardInfo`, `Job`, `PrivacyRequest`, `Person`, `PersonSummary`, `Install`, `CodeRedemption`, `Link`, …) with readonly camelCase properties (`$referrer->customerId`, `$referral->reward`, `$referral->linkId`). Reward sides add `amount`, the amount in normal units as an exact decimal string (`'500.00'`), next to `amountMinor`.
 - **Added:** `Webhooks::verify()` returns a `Clikgate\Model\WebhookEvent` with `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()`, `asConversion()` and `asDeviceChange()` (`person.device_changed`) (null for an event of another family). `Clikgate\Enum\EventType` holds every webhook event type as a string constant (`EventType::ReferralQualified === $event->type`). `$event['type']` and `$event['data']` keep working.
 - **Added:** `$clikgate->privacy` (`createRequest()`, `getRequest()`), `$clikgate->people` (`get()`, `search()`, `searchPage()`, `setLabel()`), `$clikgate->installs` (`getByCustomer()`, `getByInstallation()`) and `$clikgate->codes` (`redeem()`, with `subject`, `agentId` and `location`).
-- **Added:** `links->archive()`, `getByReference()`, `pause()` and `resume()`. Link methods return `Link`, `LinkUpdateResult` and `Page` models with every field of the API's link; they implement `ArrayAccess`, `JsonSerializable` and `toArray()`, so `$link['short_url']` and `$result['change_request']['id']` keep working. Code that checks `is_array()` on a result can call `->toArray()`.
+- **Added:** `links->archive()`, `getByReference()`, `pause()` and `resume()`.
+- **Changed:** link methods return `Link`, `LinkUpdateResult` and `Page` objects with every field of the API's link, not arrays. They implement `ArrayAccess`, `JsonSerializable` and `toArray()`, so `$link['short_url']` and `$result['change_request']['id']` keep working. `is_array()` on a link result is now `false`, so code that checks it breaks: call `->toArray()` to get the array.
 - **Added:** `Clikgate\Currency::minorToAmount()` and `::exponent()`.
 
 ## [2.0.3] - unreleased
