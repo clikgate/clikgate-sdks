@@ -1,4 +1,4 @@
-# The Clikgate SDK 2.1.0 from this repository (see README.md); at release: clikgate[fastapi]>=2.1.0
+# The Clikgate SDK 2.1.1 from this repository (see README.md); at release: clikgate[fastapi]>=2.1.1
 -e ../../../server/python[fastapi]
 fastapi>=0.115
 uvicorn>=0.30

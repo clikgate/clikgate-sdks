@@ -41,7 +41,7 @@ your app.
 ## SDK version
 
 `src/Sample/Sample.csproj` references `server/dotnet/src/Clikgate.AspNetCore` in this repository with a
-`ProjectReference`, so the sample builds against SDK 2.1.0 before it is on NuGet. At release, replace it with
-`<PackageReference Include="Clikgate.AspNetCore" Version="2.1.0" />`. The referral code uses
+`ProjectReference`, so the sample builds against SDK 2.1.1 before it is on NuGet. At release, replace it with
+`<PackageReference Include="Clikgate.AspNetCore" Version="2.1.1" />`. The referral code uses
 `clikgate.Referrals.GetOrCreateReferrerAsync(programId, userId)` and the webhook handler reads the referral with
 `webhookEvent.AsReferral()` and compares types with `EventType`.

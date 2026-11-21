@@ -2,6 +2,13 @@
 
 All notable changes to this package. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package uses [semantic versioning](https://semver.org/).
 
+## [2.1.1] - unreleased
+
+### Your own referral code
+
+- **Added:** `Clikgate::referrals()->getOrCreateReferrer($programId, ['customerId' => …, 'code' => …])` passes `code` through: your own exact Clikgate code for a new referrer (see `clikgate/clikgate-php` 2.1.1).
+- Requires `clikgate/clikgate-php` 2.1.1.
+
 ## [2.1.0] - unreleased
 
 ### Typed models

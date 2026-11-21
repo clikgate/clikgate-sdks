@@ -156,7 +156,7 @@ Result shapes are canonical JSON, the wire objects with `snake_case` keys. Typed
 | `payments.confirm` | the SPEC 22.2 fields in `snake_case` (`provider`, `reference`, `status`, `amount`, `amount_minor`, `currency`, `occurred_at`, `aliases`, `click_id`, `goal`, `test`, `extra`) + `idempotency_key?` | the `payment_confirmation` |
 | `payments.from` | `gateway` (`paystack` \| `flutterwave` \| `monnify` \| `stripe`), `response` (any JSON), `goal?`, `click_id?`. Call the matching `from_*` helper | the confirmation, or `null` |
 | `payments.build` | as `payments.from`. Call the matching pure `build_from_*` | `{"value": body \| null}` (exact) |
-| `referrals.get_or_create_referrer` | `program_id`, `customer_id`, `display_name?`, `external_code?` | the referrer + `created` (SPEC 28) |
+| `referrals.get_or_create_referrer` | `program_id`, `customer_id`, `display_name?`, `code?`, `external_code?` | the referrer + `created` (SPEC 28) |
 | `referrals.get_referrer` | `id` | the referrer |
 | `referrals.find_referrer` | `program_id`, `customer_id?`, `code?` | the referrer, or `null` on 404 |
 | `referrals.get` | `id` | the referral (reward sides gain `amount`) |
@@ -165,7 +165,7 @@ Result shapes are canonical JSON, the wire objects with `snake_case` keys. Typed
 | `referrals.qualify`, `referrals.disqualify` | `id`, `reason` | the referral |
 | `referrals.complete_step` | `id`, `goal`, `occurred_at` (missing: `invalid_argument`), `value?`, `currency?` | the referral |
 | `referrals.import_referrers` | `program_id`, `rows: [{customer_id, external_code?, display_name?}]` | the list of jobs |
-| `referrals.block_referrer` / `unblock_referrer` / `update_referrer` | `id` (+ `reason?` / `display_name?`, `attributes?`) | the referrer |
+| `referrals.block_referrer` / `unblock_referrer` / `update_referrer` | `id` (+ `reason?` / `display_name?`, `external_code?`, `attributes?`) | the referrer |
 | `privacy.create_request` | `type`, `subject_type`, `subject_id`, `app_id?` | the privacy request (SPEC 30) |
 | `privacy.get_request` | `id` | the privacy request |
 | `links.archive`, `links.pause`, `links.resume` | `id` | the link (SPEC 31) |

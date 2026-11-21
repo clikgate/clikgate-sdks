@@ -241,6 +241,27 @@ final class ServiceProviderTest extends TestCase
         self::assertSame('user-42', $event->asReferrer()?->customerId);
     }
 
+    public function testReferrerCodePassesThroughTheFacade(): void
+    {
+        $bodies = [];
+        $http = new class ($bodies) implements \Psr\Http\Client\ClientInterface {
+            /** @param list<mixed> $bodies */
+            public function __construct(private array &$bodies) {}
+
+            public function sendRequest(\Psr\Http\Message\RequestInterface $request): \Psr\Http\Message\ResponseInterface
+            {
+                $this->bodies[] = json_decode((string) $request->getBody(), true);
+
+                return new \GuzzleHttp\Psr7\Response(201, ['Content-Type' => 'application/json'], '{"object":"referrer","id":"rfr_1","customer_user_id":"user-42","code":"ADA2026"}');
+            }
+        };
+        $this->app->instance(Client::class, new Client(['apiKey' => 'cg_test_laravel000', 'httpClient' => $http, 'shutdownHooks' => false, 'privateMode' => false]));
+        $referrer = Clikgate::referrals()->getOrCreateReferrer('rpg_1', ['customerId' => 'user-42', 'code' => 'ADA2026', 'externalCode' => 'ada-old']);
+        self::assertSame('ADA2026', $referrer->code);
+        self::assertTrue($referrer->created);
+        self::assertSame([['customer_user_id' => 'user-42', 'code' => 'ADA2026', 'external_code' => 'ada-old']], $bodies);
+    }
+
     public function testMalformedIdentitySecretsFailOnlyWhenTokensAreCreated(): void
     {
         $this->app['config']->set('clikgate.identity_secrets', '{not json');

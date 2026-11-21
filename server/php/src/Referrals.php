@@ -32,13 +32,18 @@ final class Referrals
      * Get the referrer for one of your customers in a program, creating it (with its code and link) the first
      * time. `$referrer->created` is true when it was just created.
      *
+     * - `code`: your own exact Clikgate code for a new referrer instead of a generated one (3-32 letters, digits, `-` or `_`,
+     *   unique in your organisation; a `ConflictException` with code `code_taken` otherwise). Applied only when the
+     *   referrer is created; an existing referrer keeps theirs.
+     * - `externalCode`: an extra code from an older referral system that keeps working alongside the Clikgate code.
+     *
      * ```php
      * $referrer = $clikgate->referrals->getOrCreateReferrer('rpg_01J…', ['customerId' => (string) $user->id, 'displayName' => $user->first_name]);
      * echo $referrer->code, ' ', $referrer->url;
      * ```
      *
-     * @param array{customerId: string, displayName?: ?string, externalCode?: ?string} $params
-     * @param array<string, mixed>                                                      $requestOptions
+     * @param array{customerId: string, displayName?: ?string, code?: ?string, externalCode?: ?string} $params
+     * @param array<string, mixed>                                                                      $requestOptions
      */
     public function getOrCreateReferrer(string $programId, array $params, array $requestOptions = []): Referrer
     {
@@ -46,6 +51,7 @@ final class Referrals
         $body = self::defined([
             'customer_user_id' => Requester::requireId($params['customerId'], 'customer_id'),
             'display_name' => $params['displayName'] ?? null,
+            'code' => $params['code'] ?? null,
             'external_code' => $params['externalCode'] ?? null,
         ]);
         [$status, $data] = $this->core->requester->request((new ApiRequest('POST', $path))->withBody($body)->withOptions($requestOptions));
@@ -296,19 +302,20 @@ final class Referrals
     }
 
     /**
-     * Update a referrer's display name or your own attributes (`null` clears).
+     * Update a referrer's display name, `externalCode` or your own attributes (`null` clears).
+     * `externalCode` replaces the extra code from an older referral system; the Clikgate `code` can't be changed.
      *
      * ```php
      * $clikgate->referrals->updateReferrer('rfr_01J…', ['displayName' => 'Ada O.', 'attributes' => ['tier' => 'gold']]);
      * ```
      *
-     * @param array{displayName?: ?string, attributes?: ?array<string, mixed>} $params
-     * @param array<string, mixed>                                             $requestOptions
+     * @param array{displayName?: ?string, externalCode?: ?string, attributes?: ?array<string, mixed>} $params
+     * @param array<string, mixed>                                                                    $requestOptions
      */
     public function updateReferrer(string $referrerId, array $params, array $requestOptions = []): Referrer
     {
         $body = [];
-        foreach (['displayName' => 'display_name', 'attributes' => 'attributes'] as $option => $wire) {
+        foreach (['displayName' => 'display_name', 'externalCode' => 'external_code', 'attributes' => 'attributes'] as $option => $wire) {
             if (\array_key_exists($option, $params)) {
                 $body[$wire] = $params[$option];
             }

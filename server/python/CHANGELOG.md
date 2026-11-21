@@ -3,6 +3,13 @@
 All notable changes to this package. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package uses [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Python versions are dropped only after their end of life.
 
 
+## [2.1.1] - unreleased
+
+### Your own referral code
+
+- **Added:** `referrals.get_or_create_referrer(program_id, customer_id=..., display_name=None, code=None, external_code=None)` (sync and async) takes `code`, sent as `code`: your own exact Clikgate code for a new referrer instead of a generated one. The API needs 3-32 letters, digits, `-` or `_` (else `invalid_code`), unique in your organisation whatever the case; a code in use raises `ConflictError` with code `code_taken`. It applies only when the referrer is created: an existing referrer is returned unchanged. `external_code` stays an extra code from an older referral system that keeps working alongside the Clikgate code.
+- **Added:** `referrals.update_referrer(referrer_id, external_code=...)` (sync and async) replaces that extra code, as the Java and .NET SDKs already did. The Clikgate `code` can't be changed after creation.
+
 ## [2.1.0] - unreleased
 
 ### Typed referrals, webhook events, privacy, people, installs and codes

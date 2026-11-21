@@ -44,6 +44,6 @@ your app.
 ## SDK version
 
 `package.json` points `@clikgate/node` at `server/node` in this repository (`file:../../../server/node`), so the
-sample builds against SDK 2.1.0 before it is published. At release, change it to the published version
-(`"@clikgate/node": "^2.1.0"`) and skip step 1. The referral code uses `clikgate.referrals.getOrCreateReferrer(...)`
+sample builds against SDK 2.1.1 before it is published. At release, change it to the published version
+(`"@clikgate/node": "^2.1.1"`) and skip step 1. The referral code uses `clikgate.referrals.getOrCreateReferrer(...)`
 and the webhook handler reads the referral with `event.asReferral()` and compares types with `EventType`.

@@ -344,6 +344,11 @@ const jobs = await clikgate.referrals.importReferrers(programId, [{ customerId: 
 await clikgate.referrals.blockReferrer(referrer.id, { reason: 'Fake installs' });       // unblockReferrer, updateReferrer
 ```
 
+- `getOrCreateReferrer` options: `code` is your own exact Clikgate code for a new referrer instead of a generated
+  one (3-32 letters, digits, `-` or `_`, unique in your organisation, else a `ConflictError` with code `code_taken`);
+  `externalCode` is an extra code from an older referral system that keeps working alongside the Clikgate code. Both
+  apply only when the referrer is created: an existing referrer is returned unchanged. `updateReferrer(id, { externalCode })`
+  replaces the extra code later; the Clikgate `code` can't be changed.
 - Results are typed (`Referrer`, `Referral`, `RewardInfo`, `Job`) with the API's keys. The SDK adds `customerId` next
   to `customer_user_id` on referrers and on a referral's `referrer` and `referee`.
 - Reward sides keep `amount_minor` (minor units) and gain `amount`, the same value in normal units as a decimal string

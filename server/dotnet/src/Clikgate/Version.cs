@@ -4,5 +4,5 @@ namespace Clikgate;
 public static class SdkVersion
 {
     /// <summary>The SDK version.</summary>
-    public const string Value = "2.1.0";
+    public const string Value = "2.1.1";
 }

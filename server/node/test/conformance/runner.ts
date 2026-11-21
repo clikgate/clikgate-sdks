@@ -273,7 +273,7 @@ async function runCase(c: RunnerCase): Promise<Record<string, unknown>> {
           result = client.webhooks.verifyAny(a.raw_body as string, a.header as string, a.secrets as string[], { tolerance: a.tolerance as number, now: a.now as number });
           break;
         case 'referrals.get_or_create_referrer':
-          result = await client.referrals.getOrCreateReferrer(a.program_id as string, { customerId: a.customer_id as string, displayName: a.display_name as string | undefined, externalCode: a.external_code as string | undefined }, reqOpts);
+          result = await client.referrals.getOrCreateReferrer(a.program_id as string, { customerId: a.customer_id as string, displayName: a.display_name as string | undefined, code: a.code as string | undefined, externalCode: a.external_code as string | undefined }, reqOpts);
           break;
         case 'referrals.get_referrer':
           result = await client.referrals.getReferrer(a.id as string);
@@ -313,7 +313,7 @@ async function runCase(c: RunnerCase): Promise<Record<string, unknown>> {
           result = await client.referrals.unblockReferrer(a.id as string, reqOpts);
           break;
         case 'referrals.update_referrer':
-          result = await client.referrals.updateReferrer(a.id as string, { displayName: a.display_name as string | undefined, attributes: a.attributes as Record<string, unknown> | undefined }, reqOpts);
+          result = await client.referrals.updateReferrer(a.id as string, { displayName: a.display_name as string | undefined, externalCode: a.external_code as string | null | undefined, attributes: a.attributes as Record<string, unknown> | undefined }, reqOpts);
           break;
         case 'privacy.create_request':
           result = await client.privacy.createRequest({ type: a.type as string, subjectType: a.subject_type as string, subjectId: a.subject_id as string, appId: a.app_id as string | undefined }, reqOpts);

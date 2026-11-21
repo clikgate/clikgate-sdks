@@ -53,7 +53,7 @@ which table replaces it in your app.
 ## SDK version
 
 `composer.json` installs `clikgate/clikgate-php` from `server/php` in this repository (a Composer `path` repository,
-as version 2.1.0), so the sample works before that version is published. At release, delete the `repositories` block
+as version 2.1.1), so the sample works before that version is published. At release, delete the `repositories` block
 and run `composer update clikgate/clikgate-php`. The referral code uses
 `$clikgate->referrals->getOrCreateReferrer(...)` and the webhook handler reads the referral with
 `$event->asReferral()` and compares types with `EventType`.

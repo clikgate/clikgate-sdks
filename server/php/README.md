@@ -302,6 +302,7 @@ $redemption = $clikgate->codes->redeem(['externalId' => 'POS-991', 'code' => 'AD
 ```
 
 - Reward amounts: `amountMinor` is the integer the API sends (minor units); `amount` is the same amount in normal units as an exact decimal string with the currency's decimals (`50000` NGN is `'500.00'`, `1500` JPY is `'1500'`).
+- `getOrCreateReferrer()` params: `code` is your own exact Clikgate code for a new referrer instead of a generated one (3-32 letters, digits, `-` or `_`, unique in your organisation, else a `ConflictException` with code `code_taken`); `externalCode` is an extra code from an older referral system that keeps working alongside the Clikgate code. Both apply only when the referrer is created: an existing referrer is returned unchanged. `updateReferrer($id, ['externalCode' => …])` replaces the extra code later; the Clikgate `code` can't be changed. Laravel: `Clikgate::referrals()->getOrCreateReferrer(...)` takes the same params.
 - `findReferrer()` returns `null` only for a 404; every other error throws. The installs lookups currently need `appId`.
 
 ## Errors

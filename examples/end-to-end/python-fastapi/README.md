@@ -44,7 +44,7 @@ in your app.
 
 ## SDK version
 
-`requirements.txt` installs SDK 2.1.0 from `server/python` in this repository (`-e ../../../server/python[fastapi]`),
-so the sample works before it is published. At release, replace that line with `clikgate[fastapi]>=2.1.0`. The
+`requirements.txt` installs SDK 2.1.1 from `server/python` in this repository (`-e ../../../server/python[fastapi]`),
+so the sample works before it is published. At release, replace that line with `clikgate[fastapi]>=2.1.1`. The
 referral code uses `clikgate.referrals.get_or_create_referrer(...)` and the webhook handler reads the referral with
 `event.as_referral()` and compares types with `EventType`.

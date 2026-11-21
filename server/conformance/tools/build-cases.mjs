@@ -2980,6 +2980,27 @@ add('referrals', 'Referrals: referrers, referrals, overrides, steps, imports; ty
     expect: { requests: [{ method: 'POST', path: `${RFP}/referrers`, json: { customer_user_id: 'user-42', external_code: 'ADA-OLD' } }] },
   },
   {
+    id: 'referrals.get_or_create_referrer.custom_code',
+    description: 'code (your own Clikgate code for a new referrer) is sent as code, next to external_code',
+    responses: [ok(referrerWire({ code: 'ADA2026', external_code: 'ada-old' }), 201)],
+    steps: [
+      {
+        call: 'referrals.get_or_create_referrer',
+        args: { program_id: PROGRAM, customer_id: 'user-42', display_name: 'Ada', code: 'ADA2026', external_code: 'ada-old' },
+        expect: { result: { id: REFERRER, code: 'ADA2026', external_code: 'ada-old', created: true } },
+      },
+    ],
+    expect: { requests: [{ method: 'POST', path: `${RFP}/referrers`, query: {}, json: { customer_user_id: 'user-42', display_name: 'Ada', code: 'ADA2026', external_code: 'ada-old' } }] },
+  },
+  {
+    id: 'referrals.get_or_create_referrer.code_taken',
+    description: 'A code already used in the organisation answers 409 code_taken: a ConflictError with param code, never retried',
+    client: { max_retries: 3 },
+    responses: [err(409, 'conflict', 'code_taken', 'Another referrer or link in this organisation has this code.', 'code')],
+    steps: [{ call: 'referrals.get_or_create_referrer', args: { program_id: PROGRAM, customer_id: 'user-42', code: 'ADA2026' }, expect: { error: { class: 'ConflictError', code: 'code_taken', param: 'code', http_status: 409 } } }],
+    expect: { requests: [{ method: 'POST', path: `${RFP}/referrers`, json: { customer_user_id: 'user-42', code: 'ADA2026' } }] },
+  },
+  {
     id: 'referrals.get_or_create_referrer.empty_customer_id',
     description: 'An empty customer ID is refused locally with invalid_argument',
     steps: [{ call: 'referrals.get_or_create_referrer', args: { program_id: PROGRAM, customer_id: '' }, expect: { error: { class: 'InvalidRequestError', code: 'invalid_argument', param: 'customer_id', http_status: null } } }],
@@ -3193,6 +3214,13 @@ add('referrals', 'Referrals: referrers, referrals, overrides, steps, imports; ty
     responses: [ok(referrerWire({ display_name: 'Ada O.', attributes: { tier: 'platinum', city: 'Lagos' } }))],
     steps: [{ call: 'referrals.update_referrer', args: { id: REFERRER, display_name: 'Ada O.', attributes: { tier: 'platinum', city: 'Lagos' } }, expect: { result: { display_name: 'Ada O.', attributes: { tier: 'platinum', city: 'Lagos' } } } }],
     expect: { requests: [{ method: 'PATCH', path: `/v1/referrers/${REFERRER}`, json: { display_name: 'Ada O.', attributes: { tier: 'platinum', city: 'Lagos' } } }] },
+  },
+  {
+    id: 'referrals.update_referrer.external_code',
+    description: 'update_referrer sends external_code (the extra code from an older system); the Clikgate code stays',
+    responses: [ok(referrerWire({ external_code: 'ADA-NEW' }))],
+    steps: [{ call: 'referrals.update_referrer', args: { id: REFERRER, external_code: 'ADA-NEW' }, expect: { result: { code: 'ADA42', external_code: 'ADA-NEW' } } }],
+    expect: { requests: [{ method: 'PATCH', path: `/v1/referrers/${REFERRER}`, json: { external_code: 'ADA-NEW' } }] },
   },
   {
     id: 'referrals.retry_reuses_key',

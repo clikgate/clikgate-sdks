@@ -341,6 +341,7 @@ jobs = clikgate.referrals.import_referrers(PROGRAM_ID, [{"customer_id": "user-42
 clikgate.referrals.block_referrer(referrer["id"], reason="Fake installs")   # unblock_referrer, update_referrer(display_name=, attributes=)
 ```
 
+- `get_or_create_referrer` keywords: `code=` is your own exact Clikgate code for a new referrer instead of a generated one (3-32 letters, digits, `-` or `_`, unique in your organisation, else `ConflictError` with code `code_taken`); `external_code=` is an extra code from an older referral system that keeps working alongside the Clikgate code. Both apply only when the referrer is created: an existing referrer is returned unchanged. `update_referrer(referrer_id, external_code=...)` replaces the extra code later; the Clikgate `code` can't be changed.
 - Results are typed dicts with the API's keys; your customer ID is `customer_user_id`, and the SDK adds the same value as `customer_id` on referrers and on a referral's `referrer` and `referee`. `list_page(...)` returns one page; `list(...)` iterates lazily (filters `program_id`, `referrer_id`, `referee_customer_id`, `status`, `from_`, `to`, `limit`).
 - A reward side's `amount_minor` (minor units, as the API sends it) comes with `amount`, the same amount in normal units as a decimal string with the currency's decimals (`50000` NGN is `"500.00"`, `1500` JPY is `"1500"`). Clikgate never pays rewards.
 

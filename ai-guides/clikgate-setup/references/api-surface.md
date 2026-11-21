@@ -264,7 +264,7 @@ Constants: `Clikgate.GoalStatus` (`COUNTED`, `WAITING`, `REFUSED`); `Clikgate.Pr
 
 ## Server
 
-### Node.js: `@clikgate/node` 2.1.0
+### Node.js: `@clikgate/node` 2.1.1
 
 `import { Clikgate, webhooks } from '@clikgate/node';` Add-ons: `@clikgate/node/express` (`clikgateMiddleware`), `@clikgate/node/fastify` (`clikgatePlugin`), `@clikgate/node/next` (`applyClikgate`, `createClikgateProxy`, `clikgateProxy`, `clikgateMiddleware`, `getClickId`, `keepRoute`, `getInstallation`).
 

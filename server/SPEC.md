@@ -1239,7 +1239,7 @@ Every method in sections 28-32 returns a **typed model**. Customer-owned free-fo
 
 | Canonical | HTTP | Returns |
 |---|---|---|
-| `referrals.get_or_create_referrer(program_id, {customer_id, display_name?, external_code?})` | `POST /v1/referral-programs/{program_id}/referrers` `{customer_user_id, display_name?, external_code?}` | `Referrer` with **`created`**: `true` when the API answered `201`, `false` for `200` |
+| `referrals.get_or_create_referrer(program_id, {customer_id, display_name?, code?, external_code?})` | `POST /v1/referral-programs/{program_id}/referrers` `{customer_user_id, display_name?, code?, external_code?}` | `Referrer` with **`created`**: `true` when the API answered `201`, `false` for `200` |
 | `referrals.get_referrer(referrer_id)` | `GET /v1/referrers/{id}` | `Referrer` |
 | `referrals.find_referrer(program_id, {customer_id} \| {code})` | `GET …/referrers/by-user/{customer_id}` or `GET …/referrers/by-code/{code}` | `Referrer`, or **null on 404**; every other error throws |
 | `referrals.get(referral_id)` | `GET /v1/referrals/{id}` | `Referral` |
@@ -1250,7 +1250,7 @@ Every method in sections 28-32 returns a **typed model**. Customer-owned free-fo
 | `referrals.import_referrers(program_id, rows[{customer_id, external_code?, display_name?}])` | `POST …/referrers/import` `{referrers: [{customer_user_id, …}]}` | `Job[]`, one per batch |
 | `referrals.block_referrer(referrer_id, {reason?})` | `POST /v1/referrers/{id}/block` (`{reason}` or `{}`) | `Referrer` |
 | `referrals.unblock_referrer(referrer_id)` | `POST /v1/referrers/{id}/unblock` (no body) | `Referrer` |
-| `referrals.update_referrer(referrer_id, {display_name?, attributes?})` | `PATCH /v1/referrers/{id}` | `Referrer` |
+| `referrals.update_referrer(referrer_id, {display_name?, external_code?, attributes?})` | `PATCH /v1/referrers/{id}` | `Referrer` |
 
 | Language | Example |
 |---|---|
@@ -1265,6 +1265,19 @@ Every method in sections 28-32 returns a **typed model**. Customer-owned free-fo
   `CreatePrivacyRequestParams` (section 30) and `RedeemCodeParams` (section 32). The other methods take plain
   arguments.
 
+- **`get_or_create_referrer` codes:**
+  - `code` is your own exact Clikgate code for a **new** referrer instead of a generated one, kept as sent. The API
+    needs 3-32 letters, digits, `-` or `_` (otherwise `422 invalid_code`, an `InvalidRequestError`). It must be unique
+    in the organisation whatever the case (other referrers' codes and external codes, and link codes): otherwise
+    `409 code_taken` (param `code`), a `ConflictError` by section 5 (rule 11). A code that is 3-20 letters and digits
+    once case, spaces, `-` and `_` are ignored can also be redeemed with `codes.redeem` (section 32).
+  - `code` applies **only when the referrer is created**. An existing referrer is returned unchanged (`created`
+    false), whatever `code` says.
+  - `external_code` is an extra code from an older referral system. It keeps working alongside the Clikgate code
+    (generated or `code`), and must differ from it. `update_referrer` can replace it later; the Clikgate `code` can't
+    be changed after creation (the API's `PATCH` doesn't take it).
+  - SDKs check neither locally: the API answers, and section 5 maps the error. Java `.code(...)`, .NET `Code`, Node
+    `code`, Python `code=`, PHP `'code' => …`.
 - **Arguments:** `customer_id` is sent as `customer_user_id` everywhere (the referrer rows of `import_referrers`, the
   `referee_customer_id` filter as `referee_customer_user_id`). Unset optional fields are omitted (section 4).
 - **Local checks** (`InvalidRequestError`, `http_status` null, nothing sent): an empty `program_id`, `referrer_id`,
@@ -1312,7 +1325,7 @@ Suite `referrals`. Results are the wire objects plus `created` and `amount`:
 
 | `call` | `args` | Canonical result |
 |---|---|---|
-| `referrals.get_or_create_referrer` | `program_id`, `customer_id`, `display_name?`, `external_code?` | the referrer + `created` |
+| `referrals.get_or_create_referrer` | `program_id`, `customer_id`, `display_name?`, `code?`, `external_code?` | the referrer + `created` |
 | `referrals.get_referrer` | `id` | the referrer |
 | `referrals.find_referrer` | `program_id`, `customer_id?`, `code?` | the referrer or `null` |
 | `referrals.get` | `id` | the referral |
@@ -1323,7 +1336,7 @@ Suite `referrals`. Results are the wire objects plus `created` and `amount`:
 | `referrals.import_referrers` | `program_id`, `rows` (`[{customer_id, external_code?, display_name?}]`) | the list of jobs |
 | `referrals.block_referrer` | `id`, `reason?` | the referrer |
 | `referrals.unblock_referrer` | `id` | the referrer |
-| `referrals.update_referrer` | `id`, `display_name?`, `attributes?` | the referrer |
+| `referrals.update_referrer` | `id`, `display_name?`, `external_code?`, `attributes?` | the referrer |
 
 ## 29. Typed webhook events
 

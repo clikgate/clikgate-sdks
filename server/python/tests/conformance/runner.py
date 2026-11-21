@@ -369,7 +369,7 @@ def typed_call(client: Any, call: str, a: Dict[str, Any]) -> Optional[Tuple[Any,
         "referrals.get_or_create_referrer": (
             r.get_or_create_referrer,
             (a.get("program_id"),),
-            {"customer_id": a.get("customer_id"), **opt},
+            {"customer_id": a.get("customer_id"), **opt, **({"code": a["code"]} if a.get("code") is not None else {})},
             False,
         ),
         "referrals.get_referrer": (r.get_referrer, (a.get("id"),), {}, False),
@@ -396,7 +396,7 @@ def typed_call(client: Any, call: str, a: Dict[str, Any]) -> Optional[Tuple[Any,
         "referrals.update_referrer": (
             r.update_referrer,
             (a.get("id"),),
-            {"display_name": a.get("display_name"), "attributes": a.get("attributes")},
+            {"display_name": a.get("display_name"), "external_code": a.get("external_code"), "attributes": a.get("attributes")},
             False,
         ),
         "privacy.create_request": (

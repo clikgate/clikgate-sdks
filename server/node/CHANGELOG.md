@@ -3,6 +3,13 @@
 All notable changes to this package. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package uses [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Node versions are dropped only after their end of life.
 
 
+## [2.1.1] - unreleased
+
+### Your own referral code
+
+- **Added:** `referrals.getOrCreateReferrer(programId, { customerId, displayName?, code?, externalCode? })` takes `code`, sent as `code`: your own exact Clikgate code for a new referrer instead of a generated one. The API needs 3-32 letters, digits, `-` or `_` (else `invalid_code`), unique in your organisation whatever the case; a code in use is a `ConflictError` with code `code_taken`. It applies only when the referrer is created: an existing referrer is returned unchanged. `externalCode` stays an extra code from an older referral system that keeps working alongside the Clikgate code.
+- **Added:** `referrals.updateReferrer(referrerId, { externalCode })` replaces that extra code (`null` removes it), as the Java and .NET SDKs already did. The Clikgate `code` can't be changed after creation.
+
 ## [2.1.0] - unreleased
 
 ### Typed referrals, webhook events, privacy, people, installs and codes

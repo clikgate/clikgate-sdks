@@ -8,6 +8,7 @@ use Clikgate\Clikgate;
 use Clikgate\Currency;
 use Clikgate\Enum\EventType;
 use Clikgate\Exception\AuthenticationException;
+use Clikgate\Exception\ConflictException;
 use Clikgate\Model\Link;
 use Clikgate\Model\Referral;
 use Clikgate\Webhooks;
@@ -107,6 +108,38 @@ final class TypedSurfaceTest extends TestCase
         self::assertTrue($referrer['created']);
         self::assertSame('user-42', $referrer->customerId);
         self::assertSame([['customer_user_id' => 'user-42']], $http->bodies());
+    }
+
+    public function testGetOrCreateReferrerSendsCodeAndExternalCode(): void
+    {
+        $http = new RecordingClient(self::json(201, ['object' => 'referrer', 'id' => 'rfr_1', 'customer_user_id' => 'user-42', 'code' => 'ADA2026', 'external_code' => 'ada-old']));
+        $referrer = $this->client($http)->referrals->getOrCreateReferrer('rpg_1', ['customerId' => 'user-42', 'displayName' => 'Ada', 'code' => 'ADA2026', 'externalCode' => 'ada-old']);
+        self::assertSame('ADA2026', $referrer->code);
+        self::assertSame('ada-old', $referrer->externalCode);
+        self::assertSame([['customer_user_id' => 'user-42', 'display_name' => 'Ada', 'code' => 'ADA2026', 'external_code' => 'ada-old']], $http->bodies());
+    }
+
+    public function testCodeTakenIsAConflictException(): void
+    {
+        $http = new RecordingClient(self::json(409, ['error' => ['type' => 'conflict', 'code' => 'code_taken', 'message' => 'Another referrer or link in this organisation has this code.', 'param' => 'code']]));
+        try {
+            $this->client($http)->referrals->getOrCreateReferrer('rpg_1', ['customerId' => 'user-42', 'code' => 'ADA2026']);
+            self::fail('expected a ConflictException');
+        } catch (ConflictException $e) {
+            self::assertSame('code_taken', $e->getErrorCode());
+            self::assertSame('code', $e->getParam());
+            self::assertSame(409, $e->getHttpStatus());
+        }
+        self::assertCount(1, $http->requests);
+    }
+
+    public function testUpdateReferrerSendsExternalCodeAndNullRemovesIt(): void
+    {
+        $http = new RecordingClient(self::json(200, ['object' => 'referrer', 'id' => 'rfr_1', 'code' => 'ADA42']));
+        $this->client($http)->referrals->updateReferrer('rfr_1', ['externalCode' => 'ADA-NEW']);
+        $this->client($http)->referrals->updateReferrer('rfr_1', ['externalCode' => null]);
+        self::assertSame('{"external_code":"ADA-NEW"}', (string) $http->requests[0]->getBody());
+        self::assertSame('{"external_code":null}', (string) $http->requests[1]->getBody());
     }
 
     public function testFindReferrerIsNullOnlyOn404(): void
