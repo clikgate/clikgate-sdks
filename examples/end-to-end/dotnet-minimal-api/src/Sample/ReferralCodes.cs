@@ -17,7 +17,7 @@ public sealed class ReferralCodes(HttpClient http, SampleConfig config)
     // #region referral-code
     public async Task<ReferralCode> GetOrCreateReferralCodeAsync(string userId)
     {
-        // Clikgate SDK 2.1.0: replace with clikgate.Referrals.GetOrCreateReferrerAsync(...)
+        // Clikgate SDK 2.1.0: replace with await clikgate.Referrals.GetOrCreateReferrerAsync(programId, userId) (a Referrer: Code, ShortUrl)
         // Until then: the same API call the SDK will make (201 when created, 200 when it already existed).
         var url = $"{config.BaseUrl}/v1/referral-programs/{Uri.EscapeDataString(config.ReferralProgramId)}/referrers";
         using var request = new HttpRequestMessage(HttpMethod.Post, url)

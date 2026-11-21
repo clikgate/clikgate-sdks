@@ -54,7 +54,7 @@ final class WebhookRoutes
      */
     public function handleReferralEvent(array $event): void
     {
-        // Clikgate SDK 2.1.0: replace with the typed referral event from the SDK instead of reading the array
+        // Clikgate SDK 2.1.0: replace with $referral = $event->asReferral(), and compare types with EventType::ReferralQualified
         $referral = $event['data']['object'] ?? [];
         $referralId = self::text($referral, 'id');
         $referrerUserId = self::text($referral['referrer'] ?? null, 'customer_user_id');

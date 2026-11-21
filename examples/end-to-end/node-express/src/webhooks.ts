@@ -33,7 +33,7 @@ export function webhookRoutes(secret: string, processedEvents: ProcessedEvents, 
  * their `customer_user_id` (your own user IDs).
  */
 export function handleReferralEvent(event: WebhookEvent, rewards: RewardStore): void {
-  // Clikgate SDK 2.1.0: replace with the typed referral event from the SDK instead of reading the object
+  // Clikgate SDK 2.1.0: replace with const referral = event.asReferral(), and compare types with EventType.ReferralQualified
   const referral = event.data.object;
   const referralId = text(referral, 'id');
   const referrerUserId = text(referral.referrer, 'customer_user_id');

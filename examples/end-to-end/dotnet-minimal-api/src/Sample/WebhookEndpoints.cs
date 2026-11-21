@@ -36,7 +36,7 @@ public static class WebhookEndpoints
     /// </summary>
     public static void HandleReferralEvent(WebhookEvent webhookEvent, RewardStore rewards)
     {
-        // Clikgate SDK 2.1.0: replace with the typed referral event from the SDK instead of reading the JSON
+        // Clikgate SDK 2.1.0: replace with var referral = webhookEvent.AsReferral(), and compare types with EventType.REFERRAL_QUALIFIED
         var referral = webhookEvent.Data?["object"];
         var referralId = Text(referral?["id"]);
         var referrerUserId = Text(referral?["referrer"]?["customer_user_id"]);

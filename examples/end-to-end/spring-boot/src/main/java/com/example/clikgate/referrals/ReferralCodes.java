@@ -27,7 +27,7 @@ public class ReferralCodes {
 
   // #region referral-code
   public ReferralCode getOrCreateReferralCode(String userId) {
-    // Clikgate SDK 2.1.0: replace with clikgate.referrals().getOrCreateReferrer(...)
+    // Clikgate SDK 2.1.0: replace with clikgate.referrals().getOrCreateReferrer(programId, userId) (a Referrer: getCode(), getShortUrl())
     // Until then: the same API call the SDK will make (201 when created, 200 when it already existed).
     return http.post()
         .uri("/v1/referral-programs/{programId}/referrers", programId)

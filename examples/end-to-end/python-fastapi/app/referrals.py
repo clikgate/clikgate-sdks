@@ -18,7 +18,7 @@ router = APIRouter()
 async def get_or_create_referral_code(settings: Settings, user_id: str) -> Dict[str, str]:
     """Gets or creates a user's referrer code in your referral program. The same user always gets the same code,
     whether your backend or the app's Engage add-on asks first, so there is nothing to check before calling."""
-    # Clikgate SDK 2.1.0: replace with clikgate.referrals.get_or_create_referrer(...)
+    # Clikgate SDK 2.1.0: replace with await clikgate.referrals.get_or_create_referrer(program_id, customer_id=user_id) (a Referrer: code, short_url)
     # Until then: the same API call the SDK will make (201 when created, 200 when it already existed).
     async with httpx.AsyncClient(base_url=settings.base_url, timeout=10) as http:
         response = await http.post(

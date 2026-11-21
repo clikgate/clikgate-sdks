@@ -19,7 +19,7 @@ public class ReferralEvents {
 
   // #region referral-event
   public void handleReferralEvent(WebhookEvent event) {
-    // Clikgate SDK 2.1.0: replace with the typed referral event from the SDK instead of reading the map
+    // Clikgate SDK 2.1.0: replace with Referral referral = event.asReferral(), and compare types with EventType.REFERRAL_QUALIFIED
     Object referral = path(event.getData(), "object");
     String referralId = text(referral, "id");
     String referrerUserId = text(path(referral, "referrer"), "customer_user_id");

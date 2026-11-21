@@ -14,7 +14,7 @@ export interface ReferralCode {
  * your backend or the app's Engage add-on asks first, so there is nothing to check before calling.
  */
 export async function getOrCreateReferralCode(config: Config, userId: string): Promise<ReferralCode> {
-  // Clikgate SDK 2.1.0: replace with clikgate.referrals.getOrCreateReferrer(...)
+  // Clikgate SDK 2.1.0: replace with clikgate.referrals.getOrCreateReferrer(programId, { customerId: userId }) (a Referrer: code, shortUrl)
   // Until then: the same API call the SDK will make (201 when created, 200 when it already existed).
   const url = `${config.baseUrl}/v1/referral-programs/${encodeURIComponent(config.referralProgramId)}/referrers`;
   const res = await fetch(url, {

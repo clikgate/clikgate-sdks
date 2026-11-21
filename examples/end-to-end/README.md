@@ -77,5 +77,10 @@ next version is published. Each sample's README says what to change at release. 
 webhook events arrive in version 2.1.0. Until then, two small functions per sample do that part without them, each
 marked with a `Clikgate SDK 2.1.0: replace with …` comment:
 
-- `getOrCreateReferralCode` (`get_or_create_referral_code` in Python), which calls the referrers endpoint directly;
-- `handleReferralEvent` (`handle_referral_event` in Python), which reads the referral from the event's `data.object`.
+- `getOrCreateReferralCode` (`get_or_create_referral_code` in Python) calls the referrers endpoint directly. In 2.1.0
+  its body becomes one call to `referrals.getOrCreateReferrer(programId, customerId)` (Java
+  `clikgate.referrals().getOrCreateReferrer(...)`, .NET `clikgate.Referrals.GetOrCreateReferrerAsync(...)`, Python
+  `clikgate.referrals.get_or_create_referrer(...)`).
+- `handleReferralEvent` (`handle_referral_event` in Python) reads the referral from the event's `data.object`. In 2.1.0
+  it reads `event.asReferral()` (`as_referral()` in Python, `AsReferral()` in .NET) and compares the type with
+  `EventType.REFERRAL_QUALIFIED` (the casing of each SDK's enums).

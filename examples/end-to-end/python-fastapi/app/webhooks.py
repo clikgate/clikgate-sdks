@@ -32,7 +32,7 @@ async def receive_webhook(request: Request, s: Services = Depends(services)) -> 
 def handle_referral_event(event: Mapping[str, Any], rewards: RewardStore) -> None:
     """Pays referral rewards. The event's ``data.object`` is the referral: its ``id``, and the ``referrer`` and
     ``referee`` with their ``customer_user_id`` (your own user IDs)."""
-    # Clikgate SDK 2.1.0: replace with the typed referral event from the SDK instead of reading the dict
+    # Clikgate SDK 2.1.0: replace with referral = event.as_referral(), and compare types with EventType.REFERRAL_QUALIFIED
     referral = (event.get("data") or {}).get("object") or {}
     referral_id = _text(referral, "id")
     referrer_user_id = _text(referral.get("referrer"), "customer_user_id")

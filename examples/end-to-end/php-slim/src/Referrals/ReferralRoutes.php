@@ -33,7 +33,7 @@ final class ReferralRoutes
      */
     public function getOrCreateReferralCode(string $userId): array
     {
-        // Clikgate SDK 2.1.0: replace with $clikgate->referrals->getOrCreateReferrer(...)
+        // Clikgate SDK 2.1.0: replace with $clikgate->referrals->getOrCreateReferrer($programId, ['customerId' => $userId]) (a Referrer: ->code, ->shortUrl)
         // Until then: the same API call the SDK will make (201 when created, 200 when it already existed).
         $url = $this->config->baseUrl . '/v1/referral-programs/' . rawurlencode($this->config->referralProgramId) . '/referrers';
         $context = stream_context_create(['http' => [
