@@ -29,9 +29,9 @@ dotnet test --project tests/Sample.Tests
 | `src/Sample/AuthEndpoints.cs` | Sign-up, sign-in and `/me` return `clikgateIdentityToken`; sign-up sends a server goal |
 | `src/Sample/ClikgateIdentity.cs` | Path A (identity token with the account date) and Path B (`GetClikgateInstallation()` and `IdentifyUserAsync`) |
 | `src/Sample/PaymentEndpoints.cs` | `Payments.FromPaystackAsync(...)` after the backend's own check (`VerifyWithPaystack` is a stub) |
-| `src/Sample/WebhookEndpoints.cs` | Raw-body verification, the event-ID store, and `HandleReferralEvent` |
+| `src/Sample/WebhookEndpoints.cs` | Raw-body verification, the event-ID store, and `HandleReferralEvent` (`AsReferral()`, `EventType`) |
 | `src/Sample/Rewards.cs` | The processed-event store and the reward store (pay once per referral) |
-| `src/Sample/ReferralCodes.cs` | `GET /me/referral`: get or create the user's referrer code |
+| `src/Sample/ReferralCodes.cs` | `GET /me/referral`: `Referrals.GetOrCreateReferrerAsync(...)` gets or creates the user's referrer code |
 | `src/Sample/SampleApp.cs` | `AddClikgate(...)` from the environment, and the endpoint wiring |
 | `tests/Sample.Tests/EndToEndFlowTest.cs` | The whole flow against `FakeClikgate.cs` |
 
@@ -41,7 +41,7 @@ your app.
 ## SDK version
 
 `src/Sample/Sample.csproj` references `server/dotnet/src/Clikgate.AspNetCore` in this repository with a
-`ProjectReference`, so the sample builds before version 2.0.3 is on NuGet. At release, replace it with
-`<PackageReference Include="Clikgate.AspNetCore" Version="2.0.3" />`. The referral code and the referral webhook
-payload are read without SDK helpers for now: look for `Clikgate SDK 2.1.0` in the code, and switch to the typed
-methods when you move to version 2.1.0.
+`ProjectReference`, so the sample builds against SDK 2.1.0 before it is on NuGet. At release, replace it with
+`<PackageReference Include="Clikgate.AspNetCore" Version="2.1.0" />`. The referral code uses
+`clikgate.Referrals.GetOrCreateReferrerAsync(programId, userId)` and the webhook handler reads the referral with
+`webhookEvent.AsReferral()` and compares types with `EventType`.

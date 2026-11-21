@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using Clikgate;
 using Microsoft.AspNetCore.Builder;
@@ -82,6 +81,7 @@ public sealed class EndToEndFlowTest
         Assert.False(string.IsNullOrEmpty(first["code"]!.GetValue<string>()));
         Assert.Equal(first["code"]!.GetValue<string>(), second["code"]!.GetValue<string>());
         Assert.StartsWith("https://", first["link"]!.GetValue<string>());
+        Assert.Equal(2, clikgateApi.BodiesSentTo("/v1/referral-programs/rpg_test_sample/referrers").Count());
         Assert.Equal(userId, clikgateApi.BodiesSentTo("/v1/referral-programs/rpg_test_sample/referrers").First()["customer_user_id"]!.GetValue<string>());
 
         // Every call to the API used the server key.
@@ -94,6 +94,7 @@ public sealed class EndToEndFlowTest
         Assert.Equal(HttpStatusCode.OK, await Webhook(http, "evt_2", "referral.qualified", "ref_1", userId)); // same referral
         Assert.Equal(1, rewards.PaidCount());
         Assert.Equal(userId, rewards.Find("ref_1")!.ReferrerUserId);
+        Assert.Equal("user_friend", rewards.Find("ref_1")!.RefereeUserId);
 
         Assert.Equal(HttpStatusCode.OK, await Webhook(http, "evt_3", "referral.disqualified", "ref_2", userId));
         Assert.Equal("disqualified", rewards.Find("ref_2")!.Status);
@@ -114,12 +115,7 @@ public sealed class EndToEndFlowTest
 
     private static async Task<HttpStatusCode> Webhook(HttpClient http, string eventId, string type, string referralId, string referrerUserId, string secret = WebhookSecret)
     {
-        var body = JsonSerializer.Serialize(new
-        {
-            id = eventId,
-            type,
-            data = new { @object = new { id = referralId, referrer = new { customer_user_id = referrerUserId }, referee = new { customer_user_id = "user_friend" } } },
-        });
+        var body = FakeClikgate.ReferralEvent(eventId, type, referralId, "rpg_test_sample", referrerUserId).ToJsonString();
         var t = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var signature = Convert.ToHexStringLower(HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes($"{t}.{body}")));
         using var request = new HttpRequestMessage(HttpMethod.Post, "/webhooks/clikgate") { Content = new StringContent(body, Encoding.UTF8, "application/json") };

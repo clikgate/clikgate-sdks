@@ -24,7 +24,7 @@ public static class SampleApp
         builder.Services.AddSingleton<ClikgateIdentity>();
         builder.Services.AddSingleton<ProcessedEvents>();
         builder.Services.AddSingleton<RewardStore>();
-        builder.Services.AddHttpClient<ReferralCodes>();
+        builder.Services.AddSingleton<ReferralCodes>();
 
         var app = builder.Build();
         app.MapAuthEndpoints();

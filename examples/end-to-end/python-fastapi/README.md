@@ -33,9 +33,9 @@ Run the test (it starts a fake Clikgate API, so it never calls the real one):
 | `app/auth.py` | Sign-up, sign-in and `/me` return `clikgateIdentityToken`; sign-up sends a server goal |
 | `app/identity.py` | Path A (identity token with the account date) and Path B (`Depends(installation)` and `identify_user`) |
 | `app/payments.py` | `payments.from_paystack(...)` after the backend's own check (`verify_with_paystack` is a stub) |
-| `app/webhooks.py` | Raw-body verification, the event-ID store, and `handle_referral_event` |
+| `app/webhooks.py` | Raw-body verification, the event-ID store, and `handle_referral_event` (`event.as_referral()`, `EventType`) |
 | `app/rewards.py` | The processed-event store and the reward store (pay once per referral) |
-| `app/referrals.py` | `GET /me/referral`: get or create the user's referrer code |
+| `app/referrals.py` | `GET /me/referral`: `referrals.get_or_create_referrer(...)` gets or creates the user's referrer code |
 | `app/main.py` | One `AsyncClikgate` per process, closed at shutdown so queued goals are sent |
 | `tests/test_flow.py` | The whole flow against `tests/fake_clikgate.py` |
 
@@ -44,7 +44,7 @@ in your app.
 
 ## SDK version
 
-`requirements.txt` installs the SDK from `server/python` in this repository (`-e ../../../server/python[fastapi]`), so
-the sample works before version 2.0.3 is published. At release, replace that line with `clikgate[fastapi]>=2.0.3`.
-The referral code and the referral webhook payload are read without SDK helpers for now: look for
-`Clikgate SDK 2.1.0` in the code, and switch to the typed methods when you move to version 2.1.0.
+`requirements.txt` installs SDK 2.1.0 from `server/python` in this repository (`-e ../../../server/python[fastapi]`),
+so the sample works before it is published. At release, replace that line with `clikgate[fastapi]>=2.1.0`. The
+referral code uses `clikgate.referrals.get_or_create_referrer(...)` and the webhook handler reads the referral with
+`event.as_referral()` and compares types with `EventType`.

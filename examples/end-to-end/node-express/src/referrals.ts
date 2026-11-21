@@ -1,11 +1,12 @@
 import { Router, type Request, type Response } from 'express';
+import type { Clikgate } from '@clikgate/node';
 import { signedInUser } from './auth.ts';
-import type { Config } from './config.ts';
 import type { UserStore } from './users.ts';
 
 export interface ReferralCode {
   code: string;
-  link: string;
+  /** The referrer's short link to share (null when the referrer has no link). */
+  link: string | null;
 }
 
 // #region referral-code
@@ -13,17 +14,9 @@ export interface ReferralCode {
  * Gets or creates a user's referrer code in your referral program. The same user always gets the same code, whether
  * your backend or the app's Engage add-on asks first, so there is nothing to check before calling.
  */
-export async function getOrCreateReferralCode(config: Config, userId: string): Promise<ReferralCode> {
-  // Clikgate SDK 2.1.0: replace with clikgate.referrals.getOrCreateReferrer(programId, { customerId: userId }) (a Referrer: code, shortUrl)
-  // Until then: the same API call the SDK will make (201 when created, 200 when it already existed).
-  const url = `${config.baseUrl}/v1/referral-programs/${encodeURIComponent(config.referralProgramId)}/referrers`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ customer_user_id: userId }), // your own user ID, exactly as the app's identifyUser sends it
-  });
-  if (!res.ok) throw new Error(`Clikgate referrers call failed with HTTP ${res.status}`);
-  const referrer: { code: string; short_url: string } = await res.json();
+export async function getOrCreateReferralCode(clikgate: Clikgate, programId: string, userId: string): Promise<ReferralCode> {
+  // Your own user ID, exactly as the app's identifyUser sends it. `referrer.created` is true the first time.
+  const referrer = await clikgate.referrals.getOrCreateReferrer(programId, { customerId: userId });
   return { code: referrer.code, link: referrer.short_url };
 }
 // #endregion
@@ -32,13 +25,13 @@ export async function getOrCreateReferralCode(config: Config, userId: string): P
  * The app calls this when the user opens "Invite friends". The user comes from your own session, so nobody can ask
  * for someone else's code.
  */
-export function referralRoutes(users: UserStore, config: Config): Router {
+export function referralRoutes(users: UserStore, clikgate: Clikgate, programId: string): Router {
   const router = Router();
 
   router.get('/me/referral', async (req: Request, res: Response) => {
     const user = signedInUser(req, users);
     if (!user) return res.status(401).json({ error: 'not_signed_in' });
-    res.json(await getOrCreateReferralCode(config, user.id)); // {"code": "...", "link": "https://..."}
+    res.json(await getOrCreateReferralCode(clikgate, programId, user.id)); // {"code": "...", "link": "https://..."}
   });
 
   return router;

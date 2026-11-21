@@ -1,13 +1,14 @@
 package com.example.clikgate.webhooks;
 
+import com.clikgate.model.EventType;
+import com.clikgate.model.Referral;
 import com.clikgate.model.WebhookEvent;
-import java.util.Map;
 import org.springframework.stereotype.Component;
 
 /**
- * Pays referral rewards from {@code referral.qualified} and {@code referral.disqualified}. The event's
- * {@code data.object} is the referral: its {@code id}, and the {@code referrer} and {@code referee} with their
- * {@code customer_user_id} (your own user IDs).
+ * Pays referral rewards from {@code referral.qualified} and {@code referral.disqualified}. {@code event.asReferral()}
+ * gives the referral: its {@code id}, and the {@code referrer} and {@code referee} with {@code getCustomerId()} (your
+ * own user IDs; the referee's is null until the app identified them).
  */
 @Component
 public class ReferralEvents {
@@ -19,28 +20,23 @@ public class ReferralEvents {
 
   // #region referral-event
   public void handleReferralEvent(WebhookEvent event) {
-    // Clikgate SDK 2.1.0: replace with Referral referral = event.asReferral(), and compare types with EventType.REFERRAL_QUALIFIED
-    Object referral = path(event.getData(), "object");
-    String referralId = text(referral, "id");
-    String referrerUserId = text(path(referral, "referrer"), "customer_user_id");
-    String refereeUserId = text(path(referral, "referee"), "customer_user_id");
-    if (referralId == null || referrerUserId == null) {
+    boolean qualified = EventType.REFERRAL_QUALIFIED.equals(event.getType());
+    boolean disqualified = EventType.REFERRAL_DISQUALIFIED.equals(event.getType());
+    if (!qualified && !disqualified) {
+      return; // check the type first: asReferral() throws for an event that isn't referral.*
+    }
+    Referral referral = event.asReferral();
+    String referrerUserId = referral.getReferrer() == null ? null : referral.getReferrer().getCustomerId();
+    String refereeUserId = referral.getReferee() == null ? null : referral.getReferee().getCustomerId();
+    if (referral.getId() == null || referrerUserId == null) {
       return; // not a referral we can pay
     }
-    if ("referral.qualified".equals(event.getType())) {
+    if (qualified) {
       // Final: pay once. In production, enqueue a job here and answer the webhook straight away.
-      rewards.payOnce(referralId, referrerUserId, refereeUserId);
-    } else if ("referral.disqualified".equals(event.getType())) {
-      rewards.markDisqualified(referralId, referrerUserId, refereeUserId); // pay nothing
+      rewards.payOnce(referral.getId(), referrerUserId, refereeUserId);
+    } else {
+      rewards.markDisqualified(referral.getId(), referrerUserId, refereeUserId); // pay nothing
     }
   }
   // #endregion
-
-  private static Object path(Object node, String key) {
-    return node instanceof Map<?, ?> map ? map.get(key) : null;
-  }
-
-  private static String text(Object node, String key) {
-    return path(node, key) instanceof String value ? value : null;
-  }
 }

@@ -94,6 +94,7 @@ class EndToEndFlowTest {
     Map<String, Object> second = json(call("GET", "/me/referral", null, accessToken));
     assertThat(first.get("code")).isNotNull().isEqualTo(second.get("code"));
     assertThat((String) first.get("link")).startsWith("https://");
+    assertThat(clikgateApi.requestsTo("/v1/referral-programs/rpg_test_sample/referrers")).hasSize(2);
     assertThat(clikgateApi.requestsTo("/v1/referral-programs/rpg_test_sample/referrers").get(0).body())
         .containsEntry("customer_user_id", userId);
 
@@ -106,6 +107,7 @@ class EndToEndFlowTest {
     assertThat(webhook("evt_2", "referral.qualified", "ref_1", userId, WEBHOOK_SECRET)).isEqualTo(200); // same referral
     assertThat(rewards.paidCount()).isEqualTo(1);
     assertThat(rewards.find("ref_1").orElseThrow().referrerUserId()).isEqualTo(userId);
+    assertThat(rewards.find("ref_1").orElseThrow().refereeUserId()).isEqualTo("user_friend");
 
     assertThat(webhook("evt_3", "referral.disqualified", "ref_2", userId, WEBHOOK_SECRET)).isEqualTo(200);
     assertThat(rewards.find("ref_2").orElseThrow().status()).isEqualTo(RewardStore.Status.DISQUALIFIED);
@@ -123,9 +125,8 @@ class EndToEndFlowTest {
 
   private int webhook(String eventId, String type, String referralId, String referrerUserId, String secret)
       throws Exception {
-    String body = FakeClikgate.JSON.writeValueAsString(Map.of("id", eventId, "type", type, "data", Map.of("object",
-        Map.of("id", referralId, "status", type.substring("referral.".length()),
-            "referrer", Map.of("customer_user_id", referrerUserId), "referee", Map.of("customer_user_id", "user_friend")))));
+    String body = FakeClikgate.JSON.writeValueAsString(
+        FakeClikgate.referralEvent(eventId, type, referralId, "rpg_test_sample", referrerUserId));
     long t = Instant.now().getEpochSecond();
     Mac mac = Mac.getInstance("HmacSHA256");
     mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));

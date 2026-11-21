@@ -5,7 +5,7 @@
     "license": "MIT",
     "require": {
         "php": ">=8.1",
-        "clikgate/clikgate-php": "^2.0.3",
+        "clikgate/clikgate-php": "^2.1.0",
         "psr/http-server-middleware": "^1.0",
         "slim/psr7": "^1.7",
         "slim/slim": "^4.14"
@@ -20,7 +20,7 @@
             "options": {
                 "symlink": true,
                 "versions": {
-                    "clikgate/clikgate-php": "2.0.3"
+                    "clikgate/clikgate-php": "2.1.0"
                 }
             }
         }

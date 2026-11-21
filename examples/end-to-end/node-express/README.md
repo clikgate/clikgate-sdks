@@ -33,9 +33,9 @@ npm test
 | `src/auth.ts` | Sign-up, sign-in and `/me` return `clikgateIdentityToken`; sign-up sends a server goal |
 | `src/identity.ts` | Path A (identity token with the account date) and Path B (`req.clikgate.installation` and `identifyUser`) |
 | `src/payments.ts` | `payments.fromPaystack(...)` after the backend's own check (`verifyWithPaystack` is a stub) |
-| `src/webhooks.ts` | Raw-body verification, the event-ID store, and `handleReferralEvent` |
+| `src/webhooks.ts` | Raw-body verification, the event-ID store, and `handleReferralEvent` (`event.asReferral()`, `EventType`) |
 | `src/rewards.ts` | The processed-event store and the reward store (pay once per referral) |
-| `src/referrals.ts` | `GET /me/referral`: get or create the user's referrer code |
+| `src/referrals.ts` | `GET /me/referral`: `referrals.getOrCreateReferrer(...)` gets or creates the user's referrer code |
 | `test/flow.test.ts` | The whole flow against `test/fake-clikgate.ts` |
 
 Users, sessions, processed events and rewards are kept in memory. Each store's comment says which table replaces it in
@@ -44,7 +44,6 @@ your app.
 ## SDK version
 
 `package.json` points `@clikgate/node` at `server/node` in this repository (`file:../../../server/node`), so the
-sample works before version 2.0.3 is published. At release, change it to the published version
-(`"@clikgate/node": "^2.0.3"`) and skip step 1. The referral code and the referral webhook payload are read without
-SDK helpers for now: look for `Clikgate SDK 2.1.0` in the code, and switch to the typed methods when you move to
-version 2.1.0.
+sample builds against SDK 2.1.0 before it is published. At release, change it to the published version
+(`"@clikgate/node": "^2.1.0"`) and skip step 1. The referral code uses `clikgate.referrals.getOrCreateReferrer(...)`
+and the webhook handler reads the referral with `event.asReferral()` and compares types with `EventType`.

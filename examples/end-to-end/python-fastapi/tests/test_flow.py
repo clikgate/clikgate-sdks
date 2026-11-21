@@ -5,14 +5,14 @@ import hmac
 import json
 import time
 from datetime import datetime
-from typing import Any, Dict, Iterator, Optional
+from typing import Dict, Iterator, Optional
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.config import Settings
 from app.main import create_app
-from tests.fake_clikgate import FakeClikgate
+from tests.fake_clikgate import FakeClikgate, referral_event
 
 WEBHOOK_SECRET = "whsec_test_sample_only"
 INSTALLATION = "app_01JAB3C4D5E6F7G8H9JKMNPQRS:6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11"
@@ -69,6 +69,7 @@ def test_full_flow(clikgate_api: FakeClikgate) -> None:
         second = client.get("/me/referral", headers=auth).json()
         assert first["code"] and first["code"] == second["code"]
         assert first["link"].startswith("https://")
+        assert len(clikgate_api.requests_to("/v1/referral-programs/rpg_test_sample/referrers")) == 2
         assert clikgate_api.requests_to("/v1/referral-programs/rpg_test_sample/referrers")[0].body["customer_user_id"] == user_id
 
         # 6. Webhooks: verified, deduplicated, and the reward is paid once.
@@ -78,6 +79,7 @@ def test_full_flow(clikgate_api: FakeClikgate) -> None:
         assert send_webhook(client, "evt_2", "referral.qualified", "ref_1", user_id) == 200  # same referral
         assert rewards.paid_count() == 1
         assert rewards.find("ref_1").referrer_user_id == user_id
+        assert rewards.find("ref_1").referee_user_id == "user_friend"
 
         assert send_webhook(client, "evt_3", "referral.disqualified", "ref_2", user_id) == 200
         assert rewards.find("ref_2").status == "disqualified"
@@ -101,12 +103,7 @@ def assert_token_has_account_date(token: str, created_at_seconds: int) -> None:
 
 def send_webhook(client: TestClient, event_id: str, event_type: str, referral_id: str, referrer_user_id: str,
                  secret: str = WEBHOOK_SECRET) -> int:
-    referral: Dict[str, Any] = {
-        "id": referral_id,
-        "referrer": {"customer_user_id": referrer_user_id},
-        "referee": {"customer_user_id": "user_friend"},
-    }
-    body = json.dumps({"id": event_id, "type": event_type, "data": {"object": referral}}).encode()
+    body = json.dumps(referral_event(event_id, event_type, referral_id, "rpg_test_sample", referrer_user_id)).encode()
     t = int(time.time())
     signature = hmac.new(secret.encode(), f"{t}.".encode() + body, hashlib.sha256).hexdigest()
     headers: Dict[str, Optional[str]] = {"Content-Type": "application/json", "Clikgate-Signature": f"t={t},v1={signature}"}

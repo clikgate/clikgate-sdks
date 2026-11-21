@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using Clikgate;
 
 namespace Sample;
@@ -31,25 +30,20 @@ public static class WebhookEndpoints
 
     // #region referral-event
     /// <summary>
-    /// Pays referral rewards. The event's <c>data.object</c> is the referral: its <c>id</c>, and the <c>referrer</c>
-    /// and <c>referee</c> with their <c>customer_user_id</c> (your own user IDs).
+    /// Pays referral rewards. <c>AsReferral()</c> gives the referral: its <c>Id</c>, and the <c>Referrer</c> and
+    /// <c>Referee</c> with <c>CustomerId</c> (your own user IDs; the referee's is null until the app identified them).
     /// </summary>
     public static void HandleReferralEvent(WebhookEvent webhookEvent, RewardStore rewards)
     {
-        // Clikgate SDK 2.1.0: replace with var referral = webhookEvent.AsReferral(), and compare types with EventType.REFERRAL_QUALIFIED
-        var referral = webhookEvent.Data?["object"];
-        var referralId = Text(referral?["id"]);
-        var referrerUserId = Text(referral?["referrer"]?["customer_user_id"]);
-        var refereeUserId = Text(referral?["referee"]?["customer_user_id"]);
-        if (referralId is null || referrerUserId is null) return; // not a referral we can pay
+        var referral = webhookEvent.AsReferral(); // null for an event that isn't referral.*
+        var referrerUserId = referral?.Referrer?.CustomerId;
+        if (referral?.Id is not { } referralId || referrerUserId is null) return; // not a referral we can pay
+        var refereeUserId = referral.Referee?.CustomerId;
 
-        if (webhookEvent.Type == "referral.qualified")
+        if (webhookEvent.Type == EventType.REFERRAL_QUALIFIED)
             rewards.PayOnce(referralId, referrerUserId, refereeUserId); // final: pay once (in production, queue a job)
-        else if (webhookEvent.Type == "referral.disqualified")
+        else if (webhookEvent.Type == EventType.REFERRAL_DISQUALIFIED)
             rewards.MarkDisqualified(referralId, referrerUserId, refereeUserId); // pay nothing
     }
     // #endregion
-
-    private static string? Text(JsonNode? node) =>
-        node is JsonValue value && value.TryGetValue(out string? text) ? text : null;
 }

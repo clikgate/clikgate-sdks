@@ -5,7 +5,7 @@ import type { AddressInfo } from 'node:net';
 import { after, before, test } from 'node:test';
 import { createApp } from '../src/app.ts';
 import type { RewardStore } from '../src/rewards.ts';
-import { FakeClikgate } from './fake-clikgate.ts';
+import { FakeClikgate, referralEvent } from './fake-clikgate.ts';
 
 const WEBHOOK_SECRET = 'whsec_test_sample_only';
 const INSTALLATION = 'app_01JAB3C4D5E6F7G8H9JKMNPQRS:6a1f0c2e-4b7d-4c1a-9e2f-0d3b5a7c9e11';
@@ -76,6 +76,7 @@ test('sign-up, sign-in, /me, payment, referral code and rewards against a fake C
   assert.ok(first.code);
   assert.equal(first.code, second.code);
   assert.match(first.link, /^https:\/\//);
+  assert.equal(clikgateApi.requestsTo('/v1/referral-programs/rpg_test_sample/referrers').length, 2);
   assert.equal(clikgateApi.requestsTo('/v1/referral-programs/rpg_test_sample/referrers')[0]!.body.customer_user_id, userId);
 
   // Every call to the API used the server key.
@@ -87,6 +88,7 @@ test('sign-up, sign-in, /me, payment, referral code and rewards against a fake C
   assert.equal(await webhook('evt_2', 'referral.qualified', 'ref_1', userId, WEBHOOK_SECRET), 200); // same referral
   assert.equal(rewards.paidCount(), 1);
   assert.equal(rewards.find('ref_1')?.referrerUserId, userId);
+  assert.equal(rewards.find('ref_1')?.refereeUserId, 'user_friend');
 
   assert.equal(await webhook('evt_3', 'referral.disqualified', 'ref_2', userId, WEBHOOK_SECRET), 200);
   assert.equal(rewards.find('ref_2')?.status, 'disqualified');
@@ -109,8 +111,7 @@ function call(method: string, path: string, body?: object, accessToken?: string)
 }
 
 async function webhook(eventId: string, type: string, referralId: string, referrerUserId: string, secret: string): Promise<number> {
-  const referral = { id: referralId, referrer: { customer_user_id: referrerUserId }, referee: { customer_user_id: 'user_friend' } };
-  const body = JSON.stringify({ id: eventId, type, data: { object: referral } });
+  const body = JSON.stringify(referralEvent(eventId, type, referralId, 'rpg_test_sample', referrerUserId));
   const t = Math.floor(Date.now() / 1000);
   const signature = createHmac('sha256', secret).update(`${t}.${body}`).digest('hex');
   const res = await fetch(`${baseUrl}/webhooks/clikgate`, {

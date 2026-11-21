@@ -40,9 +40,9 @@ composer test
 | `src/Identity/AuthRoutes.php` | Sign-up, sign-in and `/me` return `clikgateIdentityToken`; sign-up sends a server goal |
 | `src/Identity/ClikgateIdentity.php` | Path A (identity token with the account date) and Path B (the middleware's installation and `identifyUser`) |
 | `src/Payments/PaymentRoutes.php` | `payments->fromPaystack(...)` after the backend's own check (`verifyWithPaystack` is a stub) |
-| `src/Webhooks/WebhookRoutes.php` | Raw-body verification, the event-ID store, and `handleReferralEvent` |
+| `src/Webhooks/WebhookRoutes.php` | Raw-body verification, the event-ID store, and `handleReferralEvent` (`$event->asReferral()`, `EventType`) |
 | `src/Webhooks/RewardStore.php` | Pay once per referral |
-| `src/Referrals/ReferralRoutes.php` | `GET /me/referral`: get or create the user's referrer code |
+| `src/Referrals/ReferralRoutes.php` | `GET /me/referral`: `referrals->getOrCreateReferrer(...)` gets or creates the user's referrer code |
 | `src/AppFactory.php` | One client with `sendMode` `after_response`, and the middleware order |
 | `tests/EndToEndFlowTest.php` | The whole flow against the fake API in `tests/fake-clikgate-router.php` |
 
@@ -53,7 +53,7 @@ which table replaces it in your app.
 ## SDK version
 
 `composer.json` installs `clikgate/clikgate-php` from `server/php` in this repository (a Composer `path` repository,
-as version 2.0.3), so the sample works before that version is published. At release, delete the `repositories` block
-and run `composer update clikgate/clikgate-php`. The referral code and the referral webhook payload are read without
-SDK helpers for now: look for `Clikgate SDK 2.1.0` in the code, and switch to the typed methods when you move to
-version 2.1.0.
+as version 2.1.0), so the sample works before that version is published. At release, delete the `repositories` block
+and run `composer update clikgate/clikgate-php`. The referral code uses
+`$clikgate->referrals->getOrCreateReferrer(...)` and the webhook handler reads the referral with
+`$event->asReferral()` and compares types with `EventType`.

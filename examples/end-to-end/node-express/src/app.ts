@@ -25,7 +25,7 @@ export function createApp(config: Config) {
   app.use(clikgateMiddleware(clikgate)); // reads the Clikgate-Installation header into req.clikgate.installation
   app.use(authRoutes(users, identity, clikgate));
   app.use(paymentRoutes(users, clikgate));
-  app.use(referralRoutes(users, config));
+  app.use(referralRoutes(users, clikgate, config.referralProgramId));
 
   return { app, clikgate, rewards };
 }

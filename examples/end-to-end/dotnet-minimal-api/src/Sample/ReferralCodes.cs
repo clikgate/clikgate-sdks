@@ -1,35 +1,21 @@
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text.Json.Serialization;
+using Clikgate;
 
 namespace Sample;
 
-public sealed record ReferralCode(string Code, string Link);
+/// <summary>What the app gets: the code and the referrer's short link to share.</summary>
+public sealed record ReferralCode(string? Code, string? Link);
 
 /// <summary>
 /// Gets or creates a user's referrer code in your referral program. The same user always gets the same code,
 /// whether your backend or the app's Engage add-on asks first, so there is nothing to check before calling.
 /// </summary>
-public sealed class ReferralCodes(HttpClient http, SampleConfig config)
+public sealed class ReferralCodes(IClikgateClient clikgate, SampleConfig config)
 {
-    private sealed record Referrer(string Code, [property: JsonPropertyName("short_url")] string ShortUrl);
-
     // #region referral-code
     public async Task<ReferralCode> GetOrCreateReferralCodeAsync(string userId)
     {
-        // Clikgate SDK 2.1.0: replace with await clikgate.Referrals.GetOrCreateReferrerAsync(programId, userId) (a Referrer: Code, ShortUrl)
-        // Until then: the same API call the SDK will make (201 when created, 200 when it already existed).
-        var url = $"{config.BaseUrl}/v1/referral-programs/{Uri.EscapeDataString(config.ReferralProgramId)}/referrers";
-        using var request = new HttpRequestMessage(HttpMethod.Post, url)
-        {
-            // Your own user ID, exactly as the app's identifyUser sends it.
-            Content = JsonContent.Create(new Dictionary<string, string> { ["customer_user_id"] = userId }),
-        };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", config.ApiKey);
-        using var response = await http.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-        var referrer = await response.Content.ReadFromJsonAsync<Referrer>()
-            ?? throw new InvalidOperationException("Empty answer from Clikgate");
+        // Your own user ID, exactly as the app's identifyUser sends it. referrer.Created is true the first time.
+        var referrer = await clikgate.Referrals.GetOrCreateReferrerAsync(config.ReferralProgramId, userId);
         return new ReferralCode(referrer.Code, referrer.ShortUrl);
     }
     // #endregion

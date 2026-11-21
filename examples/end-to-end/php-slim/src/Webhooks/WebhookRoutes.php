@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Webhooks;
 
 use App\Http;
+use Clikgate\Enum\EventType;
 use Clikgate\Exception\SignatureVerificationException;
+use Clikgate\Model\WebhookEvent;
 use Clikgate\Webhooks;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -34,10 +36,10 @@ final class WebhookRoutes
         } catch (SignatureVerificationException $e) {
             return Http::json($response, ['error' => $e->getErrorCode()], 400);
         }
-        if (!$this->processedEvents->markNew((string) $event['id'])) {
+        if (!$this->processedEvents->markNew($event->id)) {
             return $response; // a repeat delivery: answer 200 and do nothing
         }
-        if (str_starts_with((string) $event['type'], 'referral.')) {
+        if (str_starts_with($event->type, 'referral.')) {
             $this->handleReferralEvent($event);
         }
 
@@ -47,32 +49,24 @@ final class WebhookRoutes
 
     // #region referral-event
     /**
-     * Pays referral rewards. The event's `data.object` is the referral: its `id`, and the `referrer` and `referee`
-     * with their `customer_user_id` (your own user IDs).
-     *
-     * @param array<string, mixed> $event
+     * Pays referral rewards. `$event->asReferral()` gives the referral: its `id`, and the `referrer` and `referee`
+     * with `customerId` (your own user IDs; the referee's is null until the app identified them).
      */
-    public function handleReferralEvent(array $event): void
+    public function handleReferralEvent(WebhookEvent $event): void
     {
-        // Clikgate SDK 2.1.0: replace with $referral = $event->asReferral(), and compare types with EventType::ReferralQualified
-        $referral = $event['data']['object'] ?? [];
-        $referralId = self::text($referral, 'id');
-        $referrerUserId = self::text($referral['referrer'] ?? null, 'customer_user_id');
-        $refereeUserId = self::text($referral['referee'] ?? null, 'customer_user_id');
-        if (null === $referralId || null === $referrerUserId) {
+        $referral = $event->asReferral(); // null for an event that isn't referral.*
+        $referrerUserId = $referral?->referrer->customerId;
+        if (null === $referral || null === $referrerUserId) {
             return; // not a referral we can pay
         }
-        if ('referral.qualified' === $event['type']) {
+        $refereeUserId = $referral->referee->customerId;
+
+        if (EventType::ReferralQualified === $event->type) {
             // Final: pay once. In production, queue a job here and answer the webhook straight away.
-            $this->rewards->payOnce($referralId, $referrerUserId, $refereeUserId);
-        } elseif ('referral.disqualified' === $event['type']) {
-            $this->rewards->markDisqualified($referralId, $referrerUserId, $refereeUserId); // pay nothing
+            $this->rewards->payOnce($referral->id, $referrerUserId, $refereeUserId);
+        } elseif (EventType::ReferralDisqualified === $event->type) {
+            $this->rewards->markDisqualified($referral->id, $referrerUserId, $refereeUserId); // pay nothing
         }
     }
     // #endregion
-
-    private static function text(mixed $node, string $key): ?string
-    {
-        return \is_array($node) && \is_string($node[$key] ?? null) ? $node[$key] : null;
-    }
 }

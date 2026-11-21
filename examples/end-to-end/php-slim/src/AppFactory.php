@@ -38,7 +38,7 @@ final class AppFactory
         $app = \Slim\Factory\AppFactory::create();
         (new AuthRoutes($users, $identity, $clikgate))->register($app);
         (new PaymentRoutes($users, $clikgate))->register($app);
-        (new ReferralRoutes($users, $config))->register($app);
+        (new ReferralRoutes($users, $clikgate, $config->referralProgramId))->register($app);
         (new WebhookRoutes($config->webhookSecret, new ProcessedEvents($state), $rewards))->register($app);
 
         // Middleware runs last-added first: load the tables, then read the installation header, then parse JSON.

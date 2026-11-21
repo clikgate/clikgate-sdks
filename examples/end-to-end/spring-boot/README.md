@@ -33,8 +33,8 @@ mvn verify
 | `identity/ClikgateIdentity.java` | Path A (identity token with the account date) and Path B (`@ClikgateInstallation` and `identifyUser`) |
 | `payments/PaymentController.java` | `payments().fromPaystack(...)` after the backend's own check (the gateway call is stubbed in `PaystackGateway.java`) |
 | `webhooks/WebhookController.java` | Raw-body verification and the event-ID store |
-| `webhooks/ReferralEvents.java` | `referral.qualified` pays once, `referral.disqualified` pays nothing (`RewardStore.java`) |
-| `referrals/ReferralCodes.java` | `GET /me/referral`: get or create the user's referrer code |
+| `webhooks/ReferralEvents.java` | `EventType` and `event.asReferral()`: `referral.qualified` pays once, `referral.disqualified` pays nothing (`RewardStore.java`) |
+| `referrals/ReferralCodes.java` | `GET /me/referral`: `referrals().getOrCreateReferrer(...)` gets or creates the user's referrer code |
 | `src/test/.../EndToEndFlowTest.java` | The whole flow against `FakeClikgate.java` |
 
 Users, sessions, processed events and rewards are kept in memory. Each store's comment says which table replaces it in
@@ -52,7 +52,7 @@ http.csrf(csrf -> csrf.ignoringRequestMatchers("/webhooks/clikgate"))
 
 ## SDK version
 
-The sample uses version `2.0.3` of the starter, built from `server/java` in this repository by step 1, so it works
-before that version is published. Once it is on Maven Central, skip step 1. The referral code and the referral webhook
-payload are read without SDK helpers for now: look for `Clikgate SDK 2.1.0` in the code, and switch to the typed
-methods when you move to version 2.1.0.
+The sample uses version `2.1.0` of the starter, built from `server/java` in this repository by step 1, so it works
+before that version is published. Once it is on Maven Central, skip step 1. The referral code uses
+`clikgate.referrals().getOrCreateReferrer(programId, userId)`, and the webhook handler checks the type against
+`EventType` first and then reads the referral with `event.asReferral()` (it throws for an event of another family).

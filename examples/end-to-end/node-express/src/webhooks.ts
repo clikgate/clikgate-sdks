@@ -1,5 +1,5 @@
 import express, { Router, type Request, type Response } from 'express';
-import { SignatureVerificationError, webhooks, type WebhookEvent } from '@clikgate/node';
+import { EventType, SignatureVerificationError, webhooks, type WebhookEvent } from '@clikgate/node';
 import type { ProcessedEvents, RewardStore } from './rewards.ts';
 
 /**
@@ -29,28 +29,20 @@ export function webhookRoutes(secret: string, processedEvents: ProcessedEvents, 
 
 // #region referral-event
 /**
- * Pays referral rewards. The event's `data.object` is the referral: its `id`, and the `referrer` and `referee` with
- * their `customer_user_id` (your own user IDs).
+ * Pays referral rewards. `event.asReferral()` gives the referral: its `id`, and the `referrer` and `referee` with
+ * `customerId` (your own user IDs; the referee's is null until the app identified them).
  */
 export function handleReferralEvent(event: WebhookEvent, rewards: RewardStore): void {
-  // Clikgate SDK 2.1.0: replace with const referral = event.asReferral(), and compare types with EventType.ReferralQualified
-  const referral = event.data.object;
-  const referralId = text(referral, 'id');
-  const referrerUserId = text(referral.referrer, 'customer_user_id');
-  const refereeUserId = text(referral.referee, 'customer_user_id');
-  if (!referralId || !referrerUserId) return; // not a referral we can pay
+  const referral = event.asReferral(); // null for an event that isn't referral.*
+  if (!referral) return;
+  const referrerUserId = referral.referrer.customerId;
+  const refereeUserId = referral.referee.customerId;
 
-  if (event.type === 'referral.qualified') {
+  if (event.type === EventType.ReferralQualified) {
     // Final: pay once. In production, enqueue a job here and answer the webhook straight away.
-    rewards.payOnce(referralId, referrerUserId, refereeUserId);
-  } else if (event.type === 'referral.disqualified') {
-    rewards.markDisqualified(referralId, referrerUserId, refereeUserId); // pay nothing
+    rewards.payOnce(referral.id, referrerUserId, refereeUserId);
+  } else if (event.type === EventType.ReferralDisqualified) {
+    rewards.markDisqualified(referral.id, referrerUserId, refereeUserId); // pay nothing
   }
 }
 // #endregion
-
-function text(node: unknown, key: string): string | null {
-  if (typeof node !== 'object' || node === null) return null;
-  const value: unknown = Reflect.get(node, key);
-  return typeof value === 'string' ? value : null;
-}

@@ -83,6 +83,7 @@ final class EndToEndFlowTest extends TestCase
         self::assertNotEmpty($first['code']);
         self::assertSame($first['code'], $second['code']);
         self::assertStringStartsWith('https://', $first['link']);
+        self::assertCount(2, $this->clikgateApi->bodiesSentTo('/v1/referral-programs/rpg_test_sample/referrers'));
         self::assertSame($userId, $this->clikgateApi->bodiesSentTo('/v1/referral-programs/rpg_test_sample/referrers')[0]['customer_user_id']);
 
         // Every call to the API used the server key.
@@ -96,6 +97,7 @@ final class EndToEndFlowTest extends TestCase
         self::assertSame(200, $this->webhook('evt_2', 'referral.qualified', 'ref_1', $userId)); // same referral
         self::assertSame(1, $this->rewards->paidCount());
         self::assertSame($userId, $this->rewards->find('ref_1')['referrer_user_id']);
+        self::assertSame('user_friend', $this->rewards->find('ref_1')['referee_user_id']);
 
         self::assertSame(200, $this->webhook('evt_3', 'referral.disqualified', 'ref_2', $userId));
         self::assertSame('disqualified', $this->rewards->find('ref_2')['status']);
@@ -130,8 +132,8 @@ final class EndToEndFlowTest extends TestCase
 
     private function webhook(string $eventId, string $type, string $referralId, string $referrerUserId, string $secret = self::WEBHOOK_SECRET): int
     {
-        $referral = ['id' => $referralId, 'referrer' => ['customer_user_id' => $referrerUserId], 'referee' => ['customer_user_id' => 'user_friend']];
-        $body = json_encode(['id' => $eventId, 'type' => $type, 'data' => ['object' => $referral]], \JSON_THROW_ON_ERROR);
+        $event = FakeClikgate::referralEvent($eventId, $type, $referralId, 'rpg_test_sample', $referrerUserId);
+        $body = json_encode($event, \JSON_THROW_ON_ERROR);
         $t = time();
         $signature = hash_hmac('sha256', "{$t}.{$body}", $secret);
         $request = (new ServerRequestFactory())->createServerRequest('POST', '/webhooks/clikgate')

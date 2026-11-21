@@ -72,15 +72,17 @@ The documentation shows parts of these files. The parts are marked with `#region
 
 ## SDK versions
 
-The samples build against the SDKs in this repository (a path, file or project reference), so they work before the
-next version is published. Each sample's README says what to change at release. Typed referral methods and typed
-webhook events arrive in version 2.1.0. Until then, two small functions per sample do that part without them, each
-marked with a `Clikgate SDK 2.1.0: replace with …` comment:
+The samples build against SDK 2.1.0 in this repository (a path, file or project reference), so they work before that
+version is published. Each sample's README says what to change at release. Two functions per sample use the typed
+referral methods and typed webhook events of 2.1.0:
 
-- `getOrCreateReferralCode` (`get_or_create_referral_code` in Python) calls the referrers endpoint directly. In 2.1.0
-  its body becomes one call to `referrals.getOrCreateReferrer(programId, customerId)` (Java
-  `clikgate.referrals().getOrCreateReferrer(...)`, .NET `clikgate.Referrals.GetOrCreateReferrerAsync(...)`, Python
-  `clikgate.referrals.get_or_create_referrer(...)`).
-- `handleReferralEvent` (`handle_referral_event` in Python) reads the referral from the event's `data.object`. In 2.1.0
-  it reads `event.asReferral()` (`as_referral()` in Python, `AsReferral()` in .NET) and compares the type with
-  `EventType.REFERRAL_QUALIFIED` (the casing of each SDK's enums).
+- `getOrCreateReferralCode` (`get_or_create_referral_code` in Python) is one call that gets or creates
+  the user's referrer: Node `clikgate.referrals.getOrCreateReferrer(programId, { customerId })`,
+  Python `clikgate.referrals.get_or_create_referrer(program_id, customer_id=...)`, PHP
+  `$clikgate->referrals->getOrCreateReferrer($programId, ['customerId' => ...])`, Java
+  `clikgate.referrals().getOrCreateReferrer(programId, customerId)` and .NET
+  `clikgate.Referrals.GetOrCreateReferrerAsync(programId, customerId)`. The same user always gets the same code.
+- `handleReferralEvent` (`handle_referral_event` in Python) reads the referral with `event.asReferral()`
+  (`as_referral()` in Python, `$event->asReferral()` in PHP, `AsReferral()` in .NET) and compares the event type with `EventType` constants
+  (`EventType.ReferralQualified` in Node and PHP, `EventType.REFERRAL_QUALIFIED` in Python, Java and .NET). Java's
+  `asReferral()` throws for an event of another family, so the Java sample checks the type first.

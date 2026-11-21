@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,7 +24,7 @@ final class FakeClikgate implements AutoCloseable {
   static final JsonMapper JSON = JsonMapper.builder().build();
 
   final List<Request> requests = new CopyOnWriteArrayList<>();
-  private final Map<String, String> codesByCustomer = new ConcurrentHashMap<>();
+  private final Map<String, Map<String, Object>> referrersByCustomer = new ConcurrentHashMap<>();
   private final HttpServer server;
 
   FakeClikgate() throws IOException {
@@ -63,18 +64,117 @@ final class FakeClikgate implements AutoCloseable {
     } else if (path.equals("/v1/payments/confirmations")) {
       reply(exchange, 201, paymentConfirmation(body));
     } else if (path.matches("/v1/referral-programs/[^/]+/referrers")) {
-      referrer(exchange, String.valueOf(body.get("customer_user_id")));
+      referrer(exchange, path.split("/")[3], String.valueOf(body.get("customer_user_id")));
     } else {
       reply(exchange, 404, Map.of("error", Map.of("code", "not_found", "message", "Not in the fake.")));
     }
   }
 
-  /** Same customer, same code: 201 the first time, 200 after that, like the API. */
-  private void referrer(HttpExchange exchange, String customerUserId) throws IOException {
-    boolean created = !codesByCustomer.containsKey(customerUserId);
-    String code = codesByCustomer.computeIfAbsent(customerUserId, id -> "TANGO-" + (codesByCustomer.size() + 1));
-    reply(exchange, created ? 201 : 200, Map.of("object", "referrer", "id", "rfr_" + code, "code", code,
-        "customer_user_id", customerUserId, "short_url", "https://go.example.com/r/" + code));
+  /** Same customer, same referrer and code: 201 the first time, 200 after that, like the API. */
+  private synchronized void referrer(HttpExchange exchange, String programId, String customerUserId) throws IOException {
+    boolean created = !referrersByCustomer.containsKey(customerUserId);
+    if (created) {
+      referrersByCustomer.put(customerUserId, referrerObject(referrersByCustomer.size() + 1, programId, customerUserId));
+    }
+    reply(exchange, created ? 201 : 200, referrersByCustomer.get(customerUserId));
+  }
+
+  /** A referrer as the API returns it ({@code POST /v1/referral-programs/{id}/referrers}). */
+  static Map<String, Object> referrerObject(int n, String programId, String customerUserId) {
+    String code = "TANGO" + n;
+    Map<String, Object> stats = new LinkedHashMap<>();
+    for (String key : List.of("clicks", "installs", "signups", "in_progress", "qualified", "disqualified", "rejected")) {
+      stats.put(key, 0);
+    }
+    stats.put("referee_uninstall_rate_7d", null);
+    Map<String, Object> referrer = new LinkedHashMap<>();
+    referrer.put("id", "rfr_01JCK8Z9V7Q4M2N6P8R0S2T4R" + n);
+    referrer.put("object", "referrer");
+    referrer.put("program_id", programId);
+    referrer.put("customer_user_id", customerUserId);
+    referrer.put("display_name", null);
+    referrer.put("code", code);
+    referrer.put("external_code", null);
+    referrer.put("link_id", "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA");
+    referrer.put("url", "https://go.example.com/r/" + code);
+    referrer.put("short_url", "https://go.example.com/" + code.toLowerCase());
+    referrer.put("status", "active");
+    referrer.put("blocked_reason", null);
+    referrer.put("blocked_at", null);
+    referrer.put("stats", stats);
+    referrer.put("attributes", Map.of());
+    referrer.put("leaderboard_opt_out", false);
+    referrer.put("quality_score", null);
+    referrer.put("quality_band", null);
+    referrer.put("last_activity_at", null);
+    referrer.put("created_at", "2026-11-02T09:30:00Z");
+    referrer.put("updated_at", "2026-11-02T09:30:00Z");
+    referrer.put("livemode", false);
+    return referrer;
+  }
+
+  /**
+   * A {@code referral.qualified} or {@code referral.disqualified} webhook event as Clikgate sends it: the envelope, and
+   * the referral in {@code data.object}.
+   */
+  static Map<String, Object> referralEvent(String eventId, String type, String referralId, String programId,
+      String referrerUserId) {
+    boolean qualified = type.equals("referral.qualified");
+    List<Map<String, Object>> steps = new ArrayList<>();
+    steps.add(Map.of("index", 0, "identify", true, "completed_at", "2026-11-02T10:00:00Z",
+        "source_id", "identify:user_friend"));
+    if (qualified) {
+      steps.add(Map.of("index", 1, "goal", "order_paid", "completed_at", "2026-11-03T09:59:00Z",
+          "source_id", "goal:cnv_01JCK8Z9V7Q4M2N6P8R0S2T4GE"));
+    }
+    Map<String, Object> referral = new LinkedHashMap<>();
+    referral.put("id", referralId);
+    referral.put("object", "referral");
+    referral.put("program_id", programId);
+    referral.put("referrer_id", "rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR");
+    referral.put("status", qualified ? "qualified" : "disqualified");
+    referral.put("source", "link");
+    referral.put("match_type", "deterministic");
+    referral.put("current_step", steps.size());
+    referral.put("steps_completed", steps);
+    referral.put("step_deadline_at", null);
+    referral.put("hold_until", null);
+    referral.put("qualified_at", qualified ? "2026-11-03T10:00:00Z" : null);
+    referral.put("disqualified_at", qualified ? null : "2026-11-03T10:00:00Z");
+    referral.put("rejected_at", null);
+    referral.put("reason", qualified ? null : "step_timeout");
+    referral.put("reason_detail", null);
+    referral.put("reason_message", null);
+    referral.put("fraud_flags", List.of());
+    referral.put("referee_uninstalled_after_qualification", false);
+    referral.put("program", Map.of("id", programId, "name", "Invite friends"));
+    referral.put("referrer", Map.of("id", "rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR", "customer_user_id", referrerUserId,
+        "code", "TANGO1"));
+    referral.put("referee", Map.of("install_id", "ins_01JCK8Z9V7Q4M2N6P8R0S2T4IN",
+        "installation_id", "6a1f0c2e-0000-4000-8000-000000000002", "customer_user_id", "user_friend"));
+    referral.put("link", Map.of("id", "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA"));
+    referral.put("click_id", "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6");
+    if (qualified) {
+      referral.put("reward_snapshot", Map.of("referrer", Map.of("amount_minor", 100000, "currency", "NGN"),
+          "note", "Paid by the app"));
+    }
+    referral.put("created_at", "2026-11-02T09:45:00Z");
+    referral.put("updated_at", "2026-11-03T10:00:00Z");
+    referral.put("livemode", false);
+
+    Map<String, Object> data = new LinkedHashMap<>();
+    data.put("previous_attributes", null);
+    data.put("object", referral);
+    Map<String, Object> event = new LinkedHashMap<>();
+    event.put("id", eventId);
+    event.put("object", "event");
+    event.put("type", type);
+    event.put("api_version", "2026-10-01");
+    event.put("created_at", "2026-11-03T10:00:00Z");
+    event.put("organization_id", "org_01JCK8Z9V7Q4M2N6P8R0S2T4OR");
+    event.put("livemode", false);
+    event.put("data", data);
+    return event;
   }
 
   private static Map<String, Object> goalBatch(Map<String, Object> body) {
