@@ -55,4 +55,4 @@ http.csrf(csrf -> csrf.ignoringRequestMatchers("/webhooks/clikgate"))
 The sample uses version `2.1.0` of the starter, built from `server/java` in this repository by step 1, so it works
 before that version is published. Once it is on Maven Central, skip step 1. The referral code uses
 `clikgate.referrals().getOrCreateReferrer(programId, userId)`, and the webhook handler checks the type against
-`EventType` first and then reads the referral with `event.asReferral()` (it throws for an event of another family).
+`EventType` first and then reads the referral with `event.asReferral()` (null for an event of another family).

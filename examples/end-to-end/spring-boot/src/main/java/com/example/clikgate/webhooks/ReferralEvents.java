@@ -23,9 +23,12 @@ public class ReferralEvents {
     boolean qualified = EventType.REFERRAL_QUALIFIED.equals(event.getType());
     boolean disqualified = EventType.REFERRAL_DISQUALIFIED.equals(event.getType());
     if (!qualified && !disqualified) {
-      return; // check the type first: asReferral() throws for an event that isn't referral.*
+      return; // only these two events pay or cancel a reward
     }
-    Referral referral = event.asReferral();
+    Referral referral = event.asReferral(); // null for an event that isn't referral.*
+    if (referral == null) {
+      return;
+    }
     String referrerUserId = referral.getReferrer() == null ? null : referral.getReferrer().getCustomerId();
     String refereeUserId = referral.getReferee() == null ? null : referral.getReferee().getCustomerId();
     if (referral.getId() == null || referrerUserId == null) {

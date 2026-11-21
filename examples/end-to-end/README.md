@@ -85,4 +85,4 @@ referral methods and typed webhook events of 2.1.0:
 - `handleReferralEvent` (`handle_referral_event` in Python) reads the referral with `event.asReferral()`
   (`as_referral()` in Python, `$event->asReferral()` in PHP, `AsReferral()` in .NET) and compares the event type with `EventType` constants
   (`EventType.ReferralQualified` in Node and PHP, `EventType.REFERRAL_QUALIFIED` in Python, Java and .NET). Java's
-  `asReferral()` throws for an event of another family, so the Java sample checks the type first.
+  `asReferral()` returns null for an event of another family; the Java sample checks the type first anyway, which reads clearly.
