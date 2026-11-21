@@ -64,6 +64,11 @@ public final class ListReferralsParams {
       return put("status", status);
     }
 
+    /** Why referrals were disqualified or rejected, e.g. {@code existing_user}. */
+    public Builder reason(@Nullable String reason) {
+      return put("reason", reason);
+    }
+
     /** Created at or after. */
     public Builder from(@Nullable Instant from) {
       return put("from", from == null ? null : Dates.format(from));

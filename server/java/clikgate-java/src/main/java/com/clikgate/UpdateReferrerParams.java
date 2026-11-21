@@ -38,6 +38,18 @@ public final class UpdateReferrerParams {
       return this;
     }
 
+    /** Your own code for this referrer; null clears it. */
+    public Builder externalCode(@Nullable String externalCode) {
+      body.put("external_code", externalCode);
+      return this;
+    }
+
+    /** True hides the referrer from leaderboards. */
+    public Builder leaderboardOptOut(boolean leaderboardOptOut) {
+      body.put("leaderboard_opt_out", leaderboardOptOut);
+      return this;
+    }
+
     /** Your own keys on this referrer (replaces them); null clears them. */
     public Builder attributes(@Nullable Map<String, ?> attributes) {
       body.put("attributes", attributes == null ? null : new LinkedHashMap<String, Object>(attributes));

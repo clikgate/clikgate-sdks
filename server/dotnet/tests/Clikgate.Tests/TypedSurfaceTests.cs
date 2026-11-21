@@ -23,7 +23,7 @@ public class TypedSurfaceTests
         + "\"quality_band\":null,\"last_activity_at\":\"2026-11-01T10:00:00Z\",\"created_at\":\"2026-10-01T10:00:00Z\",\"updated_at\":\"2026-10-02T10:00:00Z\",\"livemode\":false}";
 
     private const string ReferralJson =
-        "{\"object\":\"referral\",\"id\":\"rfl_1\",\"program_id\":\"rpg_1\",\"referrer_id\":\"rfr_1\",\"status\":\"qualified\",\"source\":\"link\","
+        "{\"object\":\"referral\",\"id\":\"ref_1\",\"program_id\":\"rpg_1\",\"referrer_id\":\"rfr_1\",\"status\":\"qualified\",\"source\":\"link\","
         + "\"match_type\":\"deterministic\",\"current_step\":1,\"steps_completed\":[{\"index\":0,\"goal\":\"first_deposit\",\"completed_at\":\"2026-11-01T10:00:00Z\"}],"
         + "\"step_deadline_at\":null,\"hold_until\":null,\"qualified_at\":\"2026-11-02T10:00:00Z\",\"disqualified_at\":null,\"rejected_at\":null,"
         + "\"reason\":null,\"fraud_flags\":[],\"referee_uninstalled_after_qualification\":false,\"program\":{\"id\":\"rpg_1\",\"name\":\"Invite friends\"},"
@@ -87,7 +87,7 @@ public class TypedSurfaceTests
     {
         var s = new Scripted().Then(201, ReferrerJson).Then(200, ReferrerJson);
         await using var c = Client(s);
-        var r = await c.Referrals.GetOrCreateReferrerAsync("rpg_1", new GetOrCreateReferrerParams { CustomerId = "user_42", DisplayName = "Ada" });
+        var r = await c.Referrals.GetOrCreateReferrerAsync("rpg_1", new GetOrCreateReferrerParams { CustomerId = "user_42", DisplayName = "Ada", Code = "ADA42" });
         Assert.True(r.Created);
         Assert.Equal("user_42", r.CustomerId);
         Assert.Equal(3, r.Stats.Clicks);
@@ -95,7 +95,8 @@ public class TypedSurfaceTests
         Assert.Equal("gold", (string?)r.Attributes["tier"]);
         Assert.Equal(DateTimeOffset.Parse("2026-10-01T10:00:00Z", System.Globalization.CultureInfo.InvariantCulture), r.CreatedAt);
         Assert.Equal("/v1/referral-programs/rpg_1/referrers", s.Path(0));
-        Assert.Equal("{\"customer_user_id\":\"user_42\",\"display_name\":\"Ada\"}", s.Body(0));
+        Assert.Equal("{\"customer_user_id\":\"user_42\",\"code\":\"ADA42\",\"display_name\":\"Ada\"}", s.Body(0));
+        Assert.Null(r.Stats.RefereeUninstallRate7d);
         var again = await c.Referrals.GetOrCreateReferrerAsync("rpg_1", "user_42");
         Assert.False(again.Created);
         Assert.Equal(new Referrer(JsonNode.Parse(ReferrerJson) as JsonObject), again);
@@ -119,7 +120,7 @@ public class TypedSurfaceTests
     public async Task Referral_reads_nested_objects_and_money()
     {
         await using var c = Client(new Scripted().Then(200, ReferralJson));
-        var r = await c.Referrals.GetAsync("rfl_1");
+        var r = await c.Referrals.GetAsync("ref_1");
         Assert.Equal("Invite friends", r.Program!.Name);
         Assert.Equal("user_42", r.Referrer!.CustomerId);
         Assert.Equal("user_77", r.Referee!.CustomerId);
@@ -134,7 +135,7 @@ public class TypedSurfaceTests
     [Fact]
     public async Task List_pages_lazily_with_the_cursor()
     {
-        var s = new Scripted().Then(200, Page(ReferralJson, true, "rfl_1")).Then(200, Page(ReferralJson, false, null));
+        var s = new Scripted().Then(200, Page(ReferralJson, true, "ref_1")).Then(200, Page(ReferralJson, false, null));
         await using var c = Client(s);
         var all = new List<Referral>();
         await foreach (var r in c.Referrals.ListAsync(new ListReferralsParams { ProgramId = "rpg_1", RefereeCustomerId = "user_77", Limit = 1 }))
@@ -143,7 +144,7 @@ public class TypedSurfaceTests
         }
         Assert.Equal(2, all.Count);
         Assert.Equal("/v1/referrals?program_id=rpg_1&referee_customer_user_id=user_77&limit=1", s.Path(0));
-        Assert.Equal("/v1/referrals?program_id=rpg_1&referee_customer_user_id=user_77&limit=1&starting_after=rfl_1", s.Path(1));
+        Assert.Equal("/v1/referrals?program_id=rpg_1&referee_customer_user_id=user_77&limit=1&starting_after=ref_1", s.Path(1));
     }
 
     [Fact]
@@ -151,20 +152,26 @@ public class TypedSurfaceTests
     {
         var s = new Scripted().Then(200, ReferralJson).Then(200, ReferralJson).Then(200, ReferrerJson).Then(200, ReferrerJson).Then(200, ReferrerJson).Then(200, ReferrerJson);
         await using var c = Client(s);
-        await c.Referrals.QualifyAsync("rfl_1", "ticket 812");
-        await c.Referrals.CompleteStepAsync("rfl_1", new CompleteStepParams { Goal = "first_deposit", OccurredAt = DateTimeOffset.Parse("2026-11-21T12:00:00Z", System.Globalization.CultureInfo.InvariantCulture), Value = 15000.50m, Currency = "NGN" });
+        await c.Referrals.QualifyAsync("ref_1", "ticket 812");
+        await c.Referrals.CompleteStepAsync("ref_1", new CompleteStepParams { Goal = "first_deposit", OccurredAt = DateTimeOffset.Parse("2026-11-21T12:00:00Z", System.Globalization.CultureInfo.InvariantCulture), Value = 15000.50m, Currency = "NGN" });
         await c.Referrals.BlockReferrerAsync("rfr_1", "self-referrals");
         await c.Referrals.BlockReferrerAsync("rfr_1");
         await c.Referrals.UnblockReferrerAsync("rfr_1");
-        await c.Referrals.UpdateReferrerAsync("rfr_1", new UpdateReferrerParams { ClearDisplayName = true, Attributes = new Dictionary<string, object?> { ["tier"] = "gold" } });
+        await c.Referrals.UpdateReferrerAsync("rfr_1", new UpdateReferrerParams { ClearDisplayName = true, ExternalCode = "ADA-OLD", LeaderboardOptOut = true, Attributes = new Dictionary<string, object?> { ["tier"] = "gold" } });
         Assert.Equal("{\"action\":\"qualify\",\"reason\":\"ticket 812\"}", s.Body(0));
         Assert.Equal("{\"goal\":\"first_deposit\",\"occurred_at\":\"2026-11-21T12:00:00Z\",\"value\":\"15000.50\",\"currency\":\"NGN\"}", s.Body(1));
         Assert.Equal("{\"reason\":\"self-referrals\"}", s.Body(2));
-        var missing = await Assert.ThrowsAsync<InvalidRequestException>(() => c.Referrals.CompleteStepAsync("rfl_1", new CompleteStepParams { Goal = "first_deposit" }));
+        var missing = await Assert.ThrowsAsync<InvalidRequestException>(() => c.Referrals.CompleteStepAsync("ref_1", new CompleteStepParams { Goal = "first_deposit" }));
         Assert.Equal("occurred_at", missing.Param);
         Assert.Equal("{}", s.Body(3));
         Assert.Equal("/v1/referrers/rfr_1/unblock", s.Path(4));
-        Assert.Equal("{\"display_name\":null,\"attributes\":{\"tier\":\"gold\"}}", s.Body(5));
+        Assert.Equal("{\"display_name\":null,\"external_code\":\"ADA-OLD\",\"leaderboard_opt_out\":true,\"attributes\":{\"tier\":\"gold\"}}", s.Body(5));
+        var goal = new GoalEvent(JsonNode.Parse("{\"object\":\"goal_event\",\"link\":{\"id\":\"lnk_1\"},\"campaign\":{\"id\":\"cmp_1\"}}") as JsonObject);
+        Assert.Equal("lnk_1", goal.LinkId);
+        Assert.Equal("cmp_1", goal.CampaignId);
+        var answer = new GoalEvent(JsonNode.Parse("{\"object\":\"goal_event\",\"attributed_to\":{\"link_id\":\"lnk_2\",\"campaign_id\":null}}") as JsonObject);
+        Assert.Equal("lnk_2", answer.LinkId);
+        Assert.Null(answer.CampaignId);
     }
 
     [Fact]
@@ -193,7 +200,7 @@ public class TypedSurfaceTests
         var ev = new WebhookEvent(raw);
         Assert.Equal(EventType.REFERRAL_QUALIFIED, ev.Type);
         Assert.Equal("org_1", ev.OrganizationId);
-        Assert.Equal("rfl_1", ev.AsReferral()!.Id);
+        Assert.Equal("ref_1", ev.AsReferral()!.Id);
         Assert.Null(ev.AsReferrer());
         Assert.Null(ev.AsPayment());
         Assert.Contains("payment.verified", EventType.All);

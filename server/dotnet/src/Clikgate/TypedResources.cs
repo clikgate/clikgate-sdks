@@ -86,7 +86,7 @@ public sealed class Referrals
     }
 
     /// <summary>A referral by ID.</summary>
-    /// <example><code>var referral = await clikgate.Referrals.GetAsync("rfl_01J…");</code></example>
+    /// <example><code>var referral = await clikgate.Referrals.GetAsync("ref_01J…");</code></example>
     public Task<Referral> GetAsync(string referralId, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default) =>
         ReferralAsync(new ApiRequest("GET", ReferralPath(referralId)).With(requestOptions), cancellationToken);
 
@@ -125,12 +125,12 @@ public sealed class Referrals
     }
 
     /// <summary>Qualifies a referral by hand (audit-logged).</summary>
-    /// <example><code>await clikgate.Referrals.QualifyAsync("rfl_01J…", "Verified with support ticket #812");</code></example>
+    /// <example><code>await clikgate.Referrals.QualifyAsync("ref_01J…", "Verified with support ticket #812");</code></example>
     public Task<Referral> QualifyAsync(string referralId, string reason, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default) =>
         OverrideAsync(referralId, "qualify", reason, requestOptions, cancellationToken);
 
     /// <summary>Disqualifies a referral by hand (audit-logged).</summary>
-    /// <example><code>await clikgate.Referrals.DisqualifyAsync("rfl_01J…", "Same household");</code></example>
+    /// <example><code>await clikgate.Referrals.DisqualifyAsync("ref_01J…", "Same household");</code></example>
     public Task<Referral> DisqualifyAsync(string referralId, string reason, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default) =>
         OverrideAsync(referralId, "disqualify", reason, requestOptions, cancellationToken);
 
@@ -142,7 +142,7 @@ public sealed class Referrals
     }
 
     /// <summary>Completes the referral's current goal step from your server.</summary>
-    /// <example><code>await clikgate.Referrals.CompleteStepAsync("rfl_01J…", new CompleteStepParams { Goal = "first_deposit", OccurredAt = DateTimeOffset.UtcNow, Value = 15_000m, Currency = "NGN" });</code></example>
+    /// <example><code>await clikgate.Referrals.CompleteStepAsync("ref_01J…", new CompleteStepParams { Goal = "first_deposit", OccurredAt = DateTimeOffset.UtcNow, Value = 15_000m, Currency = "NGN" });</code></example>
     public Task<Referral> CompleteStepAsync(string referralId, CompleteStepParams parameters, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
     {
         var p = parameters ?? throw new ArgumentNullException(nameof(parameters));

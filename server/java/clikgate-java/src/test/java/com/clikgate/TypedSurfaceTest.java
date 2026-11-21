@@ -47,7 +47,7 @@ class TypedSurfaceTest {
           + "\"disqualified\":0,\"rejected\":0},\"attributes\":{\"tier\":\"gold\"},\"leaderboard_opt_out\":false,\"quality_score\":null,"
           + "\"quality_band\":null,\"last_activity_at\":\"2026-11-01T10:00:00Z\",\"created_at\":\"2026-10-01T10:00:00Z\",\"updated_at\":\"2026-10-02T10:00:00Z\",\"livemode\":false}";
   private static final String REFERRAL =
-      "{\"object\":\"referral\",\"id\":\"rfl_1\",\"program_id\":\"rpg_1\",\"referrer_id\":\"rfr_1\",\"status\":\"qualified\",\"source\":\"link\","
+      "{\"object\":\"referral\",\"id\":\"ref_1\",\"program_id\":\"rpg_1\",\"referrer_id\":\"rfr_1\",\"status\":\"qualified\",\"source\":\"link\","
           + "\"match_type\":\"deterministic\",\"current_step\":1,\"steps_completed\":[{\"index\":0,\"goal\":\"first_deposit\",\"completed_at\":\"2026-11-01T10:00:00Z\"}],"
           + "\"step_deadline_at\":null,\"hold_until\":null,\"qualified_at\":\"2026-11-02T10:00:00Z\",\"disqualified_at\":null,\"rejected_at\":null,"
           + "\"reason\":null,\"fraud_flags\":[],\"referee_uninstalled_after_qualification\":false,\"program\":{\"id\":\"rpg_1\",\"name\":\"Invite friends\"},"
@@ -112,7 +112,7 @@ class TypedSurfaceTest {
   void getOrCreateReferrerReadsTheTypedReferrerAndTheCreatedFlag() throws Exception {
     Scripted t = new Scripted().then(201, REFERRER).then(200, REFERRER);
     Clikgate c = client(t);
-    Referrer r = c.referrals().getOrCreateReferrer("rpg_1", GetOrCreateReferrerParams.builder().customerId("user_42").displayName("Ada").build());
+    Referrer r = c.referrals().getOrCreateReferrer("rpg_1", GetOrCreateReferrerParams.builder().customerId("user_42").displayName("Ada").code("ADA42").build());
     assertTrue(r.isCreated());
     assertEquals("user_42", r.getCustomerId());
     assertEquals("ADA42", r.getCode());
@@ -121,7 +121,8 @@ class TypedSurfaceTest {
     assertEquals("gold", r.getAttributes().get("tier"));
     assertEquals(Instant.parse("2026-10-01T10:00:00Z"), r.getCreatedAt());
     assertEquals("/v1/referral-programs/rpg_1/referrers", t.path(0));
-    assertEquals("{customer_user_id=user_42, display_name=Ada}", String.valueOf(t.body(0)));
+    assertEquals("{customer_user_id=user_42, display_name=Ada, code=ADA42}", String.valueOf(t.body(0)));
+    assertNull(r.getStats().getRefereeUninstallRate7d());
     assertFalse(c.referrals().getOrCreateReferrer("rpg_1", "user_42").isCreated());
     assertEquals("{customer_user_id=user_42}", String.valueOf(t.body(1)));
     assertThrows(InvalidRequestException.class, () -> c.referrals().getOrCreateReferrer("rpg_1", GetOrCreateReferrerParams.builder().build()));
@@ -142,7 +143,7 @@ class TypedSurfaceTest {
   @Test
   void referralModelReadsNestedObjectsAndMoney() throws Exception {
     Scripted t = new Scripted().then(200, REFERRAL);
-    Referral r = client(t).referrals().get("rfl_1");
+    Referral r = client(t).referrals().get("ref_1");
     assertEquals("qualified", r.getStatus());
     assertEquals("Invite friends", r.getProgram().getName());
     assertEquals("user_42", r.getReferrer().getCustomerId());
@@ -157,15 +158,15 @@ class TypedSurfaceTest {
 
   @Test
   void listPagesLazilyWithTheCursor() {
-    Scripted t = new Scripted().then(200, page(REFERRAL, true, "rfl_1")).then(200, page(REFERRAL, false, null));
+    Scripted t = new Scripted().then(200, page(REFERRAL, true, "ref_1")).then(200, page(REFERRAL, false, null));
     Clikgate c = client(t);
     List<Referral> all = new ArrayList<>();
-    for (Referral r : c.referrals().list(ListReferralsParams.builder().programId("rpg_1").refereeCustomerId("user_77").limit(1).build())) {
+    for (Referral r : c.referrals().list(ListReferralsParams.builder().programId("rpg_1").refereeCustomerId("user_77").reason(null).limit(1).build())) {
       all.add(r);
     }
     assertEquals(2, all.size());
     assertEquals("/v1/referrals?program_id=rpg_1&referee_customer_user_id=user_77&limit=1", t.path(0));
-    assertEquals("/v1/referrals?program_id=rpg_1&referee_customer_user_id=user_77&limit=1&starting_after=rfl_1", t.path(1));
+    assertEquals("/v1/referrals?program_id=rpg_1&referee_customer_user_id=user_77&limit=1&starting_after=ref_1", t.path(1));
     Page<Referral> p = client(new Scripted().then(200, page(REFERRAL, true, "c2"))).referrals().listPage(ListReferralsParams.NONE);
     assertTrue(p.hasMore());
     assertEquals("c2", p.getNextCursor());
@@ -175,26 +176,34 @@ class TypedSurfaceTest {
   void overridesStepsBlockAndUpdate() throws Exception {
     Scripted t = new Scripted().then(200, REFERRAL).then(200, REFERRAL).then(200, REFERRAL).then(200, REFERRER).then(200, REFERRER).then(200, REFERRER).then(200, REFERRER);
     Clikgate c = client(t);
-    c.referrals().qualify("rfl_1", "ticket 812");
-    c.referrals().disqualify("rfl_1", "same household");
-    c.referrals().completeStep("rfl_1", CompleteStepParams.builder().goal("first_deposit").occurredAt(Instant.parse("2026-11-21T12:00:00Z")).value(new BigDecimal("15000.50")).currency("NGN").build());
+    c.referrals().qualify("ref_1", "ticket 812");
+    c.referrals().disqualify("ref_1", "same household");
+    c.referrals().completeStep("ref_1", CompleteStepParams.builder().goal("first_deposit").occurredAt(Instant.parse("2026-11-21T12:00:00Z")).value(new BigDecimal("15000.50")).currency("NGN").build());
     c.referrals().blockReferrer("rfr_1", "self-referrals");
     c.referrals().blockReferrer("rfr_1");
     c.referrals().unblockReferrer("rfr_1");
-    c.referrals().updateReferrer("rfr_1", UpdateReferrerParams.builder().displayName(null).attributes(Collections.singletonMap("tier", "gold")).build());
+    c.referrals().updateReferrer("rfr_1", UpdateReferrerParams.builder().displayName(null).externalCode("ADA-OLD").leaderboardOptOut(true).attributes(Collections.singletonMap("tier", "gold")).build());
     assertEquals("{action=qualify, reason=ticket 812}", String.valueOf(t.body(0)));
-    assertEquals("/v1/referrals/rfl_1/override", t.path(1));
+    assertEquals("/v1/referrals/ref_1/override", t.path(1));
     assertEquals("{action=disqualify, reason=same household}", String.valueOf(t.body(1)));
-    assertEquals("/v1/referrals/rfl_1/steps", t.path(2));
+    assertEquals("/v1/referrals/ref_1/steps", t.path(2));
     assertEquals("{goal=first_deposit, occurred_at=2026-11-21T12:00:00Z, value=15000.50, currency=NGN}", String.valueOf(t.body(2)));
-    InvalidRequestException missing = assertThrows(InvalidRequestException.class, () -> c.referrals().completeStep("rfl_1", CompleteStepParams.builder().goal("first_deposit").build()));
+    InvalidRequestException missing = assertThrows(InvalidRequestException.class, () -> c.referrals().completeStep("ref_1", CompleteStepParams.builder().goal("first_deposit").build()));
     assertEquals("occurred_at", missing.getParam());
     assertEquals("/v1/referrers/rfr_1/block", t.path(3));
     assertEquals("{reason=self-referrals}", String.valueOf(t.body(3)));
     assertEquals("{}", String.valueOf(t.body(4)));
     assertEquals("/v1/referrers/rfr_1/unblock", t.path(5));
     assertEquals("PATCH", t.requests.get(6).getMethod());
-    assertEquals("{display_name=null, attributes={tier=gold}}", String.valueOf(t.body(6)));
+    assertEquals("{display_name=null, external_code=ADA-OLD, leaderboard_opt_out=true, attributes={tier=gold}}", String.valueOf(t.body(6)));
+    @SuppressWarnings("unchecked")
+    Map<String, Object> goal = (Map<String, Object>) Json.parse("{\"object\":\"goal_event\",\"link\":{\"id\":\"lnk_1\"},\"campaign\":{\"id\":\"cmp_1\"}}");
+    assertEquals("lnk_1", new com.clikgate.model.GoalEvent(goal).getLinkId());
+    assertEquals("cmp_1", new com.clikgate.model.GoalEvent(goal).getCampaignId());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> answer = (Map<String, Object>) Json.parse("{\"object\":\"goal_event\",\"attributed_to\":{\"link_id\":\"lnk_2\",\"campaign_id\":null}}");
+    assertEquals("lnk_2", new com.clikgate.model.GoalEvent(answer).getLinkId());
+    assertNull(new com.clikgate.model.GoalEvent(answer).getCampaignId());
   }
 
   @Test
@@ -228,7 +237,7 @@ class TypedSurfaceTest {
     assertEquals(EventType.REFERRAL_QUALIFIED, ev.getType());
     assertEquals("2026-10-01", ev.getApiVersion());
     assertEquals("org_1", ev.getOrganizationId());
-    assertEquals("rfl_1", ev.asReferral().getId());
+    assertEquals("ref_1", ev.asReferral().getId());
     IllegalStateException e = assertThrows(IllegalStateException.class, ev::asReferrer);
     assertTrue(e.getMessage().contains("referrer."));
     assertThrows(IllegalStateException.class, ev::asPayment);

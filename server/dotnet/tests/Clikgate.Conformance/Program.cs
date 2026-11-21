@@ -334,6 +334,7 @@ internal static class Program
         ReferrerId = Arg(a, p, "referrer_id"),
         RefereeCustomerId = Arg(a, p, "referee_customer_id", "referee_customer_user_id"),
         Status = Arg(a, p, "status"),
+        Reason = Arg(a, p, "reason"),
         From = Time(Raw(a, p, "from")),
         To = Time(Raw(a, p, "to")),
         Limit = Raw(a, p, "limit") is long l ? (int)l : null,
@@ -363,6 +364,7 @@ internal static class Program
                     CustomerId = Arg(a, p, "customer_id", "customer_user_id") ?? string.Empty,
                     DisplayName = Arg(a, p, "display_name"),
                     ExternalCode = Arg(a, p, "external_code"),
+                    Code = Arg(a, p, "code"),
                 }, ro).ConfigureAwait(false);
             case "referrals.get_referrer":
                 return await client.Referrals.GetReferrerAsync(Arg(a, p, "referrer_id", "id")!).ConfigureAwait(false);
@@ -405,6 +407,9 @@ internal static class Program
                 {
                     DisplayName = Arg(a, p, "display_name"),
                     ClearDisplayName = Has(a, p, "display_name") && Raw(a, p, "display_name") is null,
+                    ExternalCode = Arg(a, p, "external_code"),
+                    ClearExternalCode = Has(a, p, "external_code") && Raw(a, p, "external_code") is null,
+                    LeaderboardOptOut = Raw(a, p, "leaderboard_opt_out") as bool?,
                     Attributes = Raw(a, p, "attributes") as Dictionary<string, object?>,
                     ClearAttributes = Has(a, p, "attributes") && Raw(a, p, "attributes") is null,
                 }, ro).ConfigureAwait(false);

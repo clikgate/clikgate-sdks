@@ -11,7 +11,7 @@ public final class Referral extends WireObject {
     super(fields);
   }
 
-  /** The referral ID ({@code rfl_...}). */
+  /** The referral ID ({@code ref_...}). */
   public @Nullable String getId() {
     return string("id");
   }

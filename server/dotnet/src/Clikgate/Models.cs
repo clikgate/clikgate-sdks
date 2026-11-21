@@ -93,6 +93,12 @@ public sealed class GoalEvent(JsonObject? raw) : WireObject(raw)
 
     /// <summary><c>link_id</c>, <c>campaign_id</c>, <c>clicked_at</c>, or null when unattributed.</summary>
     public JsonObject? AttributedTo => Raw["attributed_to"] as JsonObject;
+
+    /// <summary>The link the event is attributed to: <c>link.id</c> in goal webhooks, <c>attributed_to.link_id</c> in API answers; null when unattributed.</summary>
+    public string? LinkId => (Raw["link"] as JsonObject)?["id"] is JsonNode n ? Json.Str(n) : Json.Str(AttributedTo?["link_id"]);
+
+    /// <summary>The campaign the event is attributed to: <c>campaign.id</c> in goal webhooks, <c>attributed_to.campaign_id</c> in API answers; null when none.</summary>
+    public string? CampaignId => (Raw["campaign"] as JsonObject)?["id"] is JsonNode n ? Json.Str(n) : Json.Str(AttributedTo?["campaign_id"]);
 }
 
 /// <summary>One item of a batch result.</summary>

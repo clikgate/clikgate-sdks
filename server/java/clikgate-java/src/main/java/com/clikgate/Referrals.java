@@ -137,7 +137,7 @@ public final class Referrals {
    * A referral by ID.
    *
    * <pre>{@code
-   * Referral referral = clikgate.referrals().get("rfl_01J…");
+   * Referral referral = clikgate.referrals().get("ref_01J…");
    * }</pre>
    */
   public Referral get(String referralId) {
@@ -202,7 +202,7 @@ public final class Referrals {
    * Qualify a referral by hand (audit-logged).
    *
    * <pre>{@code
-   * clikgate.referrals().qualify("rfl_01J…", "Verified with support ticket #812");
+   * clikgate.referrals().qualify("ref_01J…", "Verified with support ticket #812");
    * }</pre>
    */
   public Referral qualify(String referralId, String reason) {
@@ -218,7 +218,7 @@ public final class Referrals {
    * Disqualify a referral by hand (audit-logged).
    *
    * <pre>{@code
-   * clikgate.referrals().disqualify("rfl_01J…", "Same household");
+   * clikgate.referrals().disqualify("ref_01J…", "Same household");
    * }</pre>
    */
   public Referral disqualify(String referralId, String reason) {
@@ -241,7 +241,7 @@ public final class Referrals {
    * Complete the referral's current goal step from your server.
    *
    * <pre>{@code
-   * clikgate.referrals().completeStep("rfl_01J…", CompleteStepParams.builder().goal("first_deposit").occurredAt(Instant.now()).value(15000).currency("NGN").build());
+   * clikgate.referrals().completeStep("ref_01J…", CompleteStepParams.builder().goal("first_deposit").occurredAt(Instant.now()).value(15000).currency("NGN").build());
    * }</pre>
    */
   public Referral completeStep(String referralId, CompleteStepParams params) {

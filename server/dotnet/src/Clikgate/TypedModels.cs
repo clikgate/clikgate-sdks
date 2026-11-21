@@ -212,6 +212,9 @@ public sealed record ReferrerStats : WireRecord
 
     /// <summary>Rejected referrals.</summary>
     public long Rejected => Long("rejected") ?? 0;
+
+    /// <summary>Share of referees (0 to 1) who uninstalled within 7 days; null when none is old enough yet, or not computed yet.</summary>
+    public double? RefereeUninstallRate7d => Double("referee_uninstall_rate_7d");
 }
 
 /// <summary>A referral (<c>/v1/referrals</c>, <c>referral.*</c> webhooks).</summary>
@@ -223,7 +226,7 @@ public sealed record Referral : WireRecord
     {
     }
 
-    /// <summary>The referral ID (<c>rfl_…</c>).</summary>
+    /// <summary>The referral ID (<c>ref_…</c>).</summary>
     public string? Id => Str("id");
 
     /// <summary>The program.</summary>

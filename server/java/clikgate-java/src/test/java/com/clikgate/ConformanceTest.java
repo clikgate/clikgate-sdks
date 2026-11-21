@@ -554,6 +554,7 @@ class ConformanceTest {
         .referrerId(str(a, p, "referrer_id"))
         .refereeCustomerId(str(a, p, "referee_customer_id", "referee_customer_user_id"))
         .status(str(a, p, "status"))
+        .reason(str(a, p, "reason"))
         .startingAfter(str(a, p, "starting_after"))
         .endingBefore(str(a, p, "ending_before"));
     Object from = a.containsKey("from") ? a.get("from") : p.get("from");
@@ -593,7 +594,7 @@ class ConformanceTest {
     switch (call) {
       case "referrals.get_or_create_referrer":
         return client.referrals().getOrCreateReferrer(str(a, p, "program_id"),
-            GetOrCreateReferrerParams.builder().customerId(str(a, p, "customer_id", "customer_user_id")).displayName(str(a, p, "display_name")).externalCode(str(a, p, "external_code")).build(), ro);
+            GetOrCreateReferrerParams.builder().customerId(str(a, p, "customer_id", "customer_user_id")).displayName(str(a, p, "display_name")).externalCode(str(a, p, "external_code")).code(str(a, p, "code")).build(), ro);
       case "referrals.get_referrer":
         return client.referrals().getReferrer(str(a, p, "referrer_id", "id"));
       case "referrals.find_referrer":
@@ -646,6 +647,13 @@ class ConformanceTest {
           UpdateReferrerParams.Builder b = UpdateReferrerParams.builder();
           if (a.containsKey("display_name") || p.containsKey("display_name")) {
             b.displayName(str(a, p, "display_name"));
+          }
+          if (a.containsKey("external_code") || p.containsKey("external_code")) {
+            b.externalCode(str(a, p, "external_code"));
+          }
+          Object optOut = a.containsKey("leaderboard_opt_out") ? a.get("leaderboard_opt_out") : p.get("leaderboard_opt_out");
+          if (optOut instanceof Boolean) {
+            b.leaderboardOptOut((Boolean) optOut);
           }
           if (a.containsKey("attributes") || p.containsKey("attributes")) {
             Object attrs = a.containsKey("attributes") ? a.get("attributes") : p.get("attributes");

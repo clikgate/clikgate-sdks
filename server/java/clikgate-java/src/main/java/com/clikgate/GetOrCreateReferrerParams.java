@@ -15,11 +15,13 @@ public final class GetOrCreateReferrerParams {
   final @Nullable String customerId;
   final @Nullable String displayName;
   final @Nullable String externalCode;
+  final @Nullable String code;
 
   private GetOrCreateReferrerParams(Builder b) {
     customerId = b.customerId;
     displayName = b.displayName;
     externalCode = b.externalCode;
+    code = b.code;
   }
 
   /** Only the customer ID. */
@@ -40,6 +42,9 @@ public final class GetOrCreateReferrerParams {
     if (externalCode != null) {
       m.put("external_code", externalCode);
     }
+    if (code != null) {
+      m.put("code", code);
+    }
     return m;
   }
 
@@ -48,8 +53,15 @@ public final class GetOrCreateReferrerParams {
     private @Nullable String customerId;
     private @Nullable String displayName;
     private @Nullable String externalCode;
+    private @Nullable String code;
 
     Builder() {}
+
+    /** The referral code to give a new referrer (default: one Clikgate makes up). An existing referrer keeps theirs. */
+    public Builder code(@Nullable String code) {
+      this.code = code;
+      return this;
+    }
 
     /** Required: your signed-in user's ID (never a value read from the request). */
     public Builder customerId(String customerId) {

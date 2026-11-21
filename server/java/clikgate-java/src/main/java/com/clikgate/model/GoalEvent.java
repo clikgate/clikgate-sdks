@@ -122,6 +122,33 @@ public final class GoalEvent extends WireObject {
     return map("attributed_to");
   }
 
+  /**
+   * The link the event is attributed to: {@code link.id} in goal webhooks, {@code attributed_to.link_id} in API
+   * answers; null when unattributed.
+   */
+  public @Nullable String getLinkId() {
+    return ref("link", "attributed_to", "link_id");
+  }
+
+  /**
+   * The campaign the event is attributed to: {@code campaign.id} in goal webhooks, {@code attributed_to.campaign_id}
+   * in API answers; null when none.
+   */
+  public @Nullable String getCampaignId() {
+    return ref("campaign", "attributed_to", "campaign_id");
+  }
+
+  private @Nullable String ref(String object, String fallback, String fallbackKey) {
+    Map<String, @Nullable Object> o = map(object);
+    Object id = o == null ? null : o.get("id");
+    if (id instanceof String) {
+      return (String) id;
+    }
+    Map<String, @Nullable Object> f = map(fallback);
+    Object v = f == null ? null : f.get(fallbackKey);
+    return v instanceof String ? (String) v : null;
+  }
+
   public @Nullable String getOccurredAt() {
     return string("occurred_at");
   }

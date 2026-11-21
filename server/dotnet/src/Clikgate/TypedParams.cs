@@ -18,9 +18,16 @@ public sealed record GetOrCreateReferrerParams
     /// <summary>Your own code for this referrer.</summary>
     public string? ExternalCode { get; init; }
 
+    /// <summary>The referral code to give a new referrer (default: one Clikgate makes up). An existing referrer keeps theirs.</summary>
+    public string? Code { get; init; }
+
     internal JsonObject Wire()
     {
         var o = new JsonObject { ["customer_user_id"] = Requester.RequireId(CustomerId, "customer_id") };
+        if (Code is not null)
+        {
+            o["code"] = Code;
+        }
         if (DisplayName is not null)
         {
             o["display_name"] = DisplayName;
@@ -60,6 +67,9 @@ public sealed record ListReferralsParams
     /// <summary><c>in_progress</c>, <c>holding</c>, <c>qualified</c>, <c>disqualified</c> or <c>rejected</c>.</summary>
     public string? Status { get; init; }
 
+    /// <summary>Why referrals were disqualified or rejected, e.g. <c>existing_user</c>.</summary>
+    public string? Reason { get; init; }
+
     /// <summary>Created at or after.</summary>
     public DateTimeOffset? From { get; init; }
 
@@ -89,6 +99,7 @@ public sealed record ListReferralsParams
         Put("referrer_id", ReferrerId);
         Put("referee_customer_user_id", RefereeCustomerId);
         Put("status", Status);
+        Put("reason", Reason);
         Put("from", From is DateTimeOffset f ? Dates.Format(f) : null);
         Put("to", To is DateTimeOffset t ? Dates.Format(t) : null);
         Put("limit", Limit);
@@ -177,6 +188,15 @@ public sealed record UpdateReferrerParams
     /// <summary>Sends <c>display_name: null</c>.</summary>
     public bool ClearDisplayName { get; init; }
 
+    /// <summary>Your own code for this referrer.</summary>
+    public string? ExternalCode { get; init; }
+
+    /// <summary>Sends <c>external_code: null</c>.</summary>
+    public bool ClearExternalCode { get; init; }
+
+    /// <summary>True hides the referrer from leaderboards.</summary>
+    public bool? LeaderboardOptOut { get; init; }
+
     /// <summary>Your own keys on this referrer (replaces them).</summary>
     public IReadOnlyDictionary<string, object?>? Attributes { get; init; }
 
@@ -189,6 +209,14 @@ public sealed record UpdateReferrerParams
         if (DisplayName is not null || ClearDisplayName)
         {
             o["display_name"] = DisplayName;
+        }
+        if (ExternalCode is not null || ClearExternalCode)
+        {
+            o["external_code"] = ExternalCode;
+        }
+        if (LeaderboardOptOut is bool optOut)
+        {
+            o["leaderboard_opt_out"] = optOut;
         }
         if (Attributes is not null || ClearAttributes)
         {

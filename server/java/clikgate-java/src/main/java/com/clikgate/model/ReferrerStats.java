@@ -40,4 +40,9 @@ public final class ReferrerStats extends WireObject {
   public long getRejected() {
     return longOrZero("rejected");
   }
+
+  /** Share of referees (0 to 1) who uninstalled within 7 days; null when none is old enough yet, or not computed yet. */
+  public @Nullable Double getRefereeUninstallRate7d() {
+    return doubleNumber("referee_uninstall_rate_7d");
+  }
 }
