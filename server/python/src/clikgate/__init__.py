@@ -50,6 +50,14 @@ from ._errors import (
 from ._goals import AsyncGoals, GoalBatchEvent, Goals
 from ._http import Clock, RequestOptions
 from ._identity import IDENTITY_SECRET_ENV, IDENTITY_SECRETS_ENV, CustomerSince, create_identity_token
+from ._installation import (
+    INSTALLATION_HEADER,
+    INSTALLATION_HEADER_MAX_LENGTH,
+    INSTALLATION_PATTERN,
+    Installation,
+    installation_from_request,
+    parse_installation_header,
+)
 from ._known_customers import KNOWN_CUSTOMERS_BATCH, AsyncKnownCustomers, KnownCustomers, KnownCustomersImportResult
 from ._money import MoneyInput, format_value
 from ._payments import AsyncPayments, Payments, build_from_flutterwave, build_from_monnify, build_from_paystack, build_from_stripe
@@ -93,6 +101,12 @@ WARNING_CODES = (
 
 __all__ = [
     "PersonIdentified",
+    "INSTALLATION_HEADER",
+    "INSTALLATION_HEADER_MAX_LENGTH",
+    "INSTALLATION_PATTERN",
+    "Installation",
+    "installation_from_request",
+    "parse_installation_header",
     "CUSTOMER_ID_MAX_LENGTH",
     "KNOWN_CUSTOMERS_BATCH",
     "AsyncKnownCustomers",

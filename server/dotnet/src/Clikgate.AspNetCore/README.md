@@ -23,6 +23,7 @@ app.MapPost("/applications/{id}/approve", (string id, IClikgateClient clikgate) 
 - It logs through `ILogger` (category `Clikgate`).
 - Queued goals are flushed when the host stops.
 - `app.MapClikgateKeep("/cg/keep")` maps the `/cg/keep` route (below).
+- `HttpContext.GetClikgateInstallation()` reads the app's `Clikgate-Installation` header for `IdentifyUserAsync`: an `Installation` or `null` when it is missing or invalid (never an error). Call `IdentifyUserAsync` only after your own sign-in check, with your signed-in user's ID; never read the customer ID from the request.
 
 ## Keep the click ID longer (Safari)
 

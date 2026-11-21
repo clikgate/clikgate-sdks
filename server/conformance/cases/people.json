@@ -271,6 +271,562 @@
       "now_ms": 1793016000000
     },
     {
+      "id": "people.identify.installation_id_without_app_id",
+      "description": "installationId alone is sent as is: the API finds the app (appId is optional)",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "person_identified",
+            "person_id": "per_01JCK8Z9V7Q4M2N6P8R0S2T4PE",
+            "label_ignored": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "identify_user",
+          "args": {
+            "installation_id": "6a1f0c2e-0000-4000-8000-000000000001",
+            "customer_id": "user_42"
+          },
+          "expect": {
+            "result": {
+              "object": "person_identified"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/people/identify",
+            "json": {
+              "installation_id": "6a1f0c2e-0000-4000-8000-000000000001",
+              "customer_id": "user_42"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "people.identify.installation_header",
+      "description": "The raw Clikgate-Installation header value (trimmed) becomes app_id + installation_id; the raw value is never sent",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "person_identified",
+            "person_id": "per_01JCK8Z9V7Q4M2N6P8R0S2T4PE",
+            "label_ignored": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "identify_user",
+          "args": {
+            "installation": " app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001 ",
+            "customer_id": "user_42"
+          },
+          "expect": {
+            "result": {
+              "object": "person_identified"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/people/identify",
+            "json": {
+              "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP",
+              "installation_id": "6a1f0c2e-0000-4000-8000-000000000001",
+              "customer_id": "user_42"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "people.identify.explicit_ids_win_over_the_header",
+      "description": "When installationId is given, the installation header is not used",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "person_identified",
+            "person_id": "per_01JCK8Z9V7Q4M2N6P8R0S2T4PE",
+            "label_ignored": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "identify_user",
+          "args": {
+            "installation": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001",
+            "installation_id": "6a1f0c2e-0000-4000-8000-000000000002",
+            "customer_id": "user_42"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/people/identify",
+            "json": {
+              "installation_id": "6a1f0c2e-0000-4000-8000-000000000002",
+              "customer_id": "user_42"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "people.identify.bad_installation_header_ignored",
+      "description": "An invalid installation header is ignored (never an error, never sent, never logged); without another reference the local check applies",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "person_identified",
+            "person_id": "per_01JCK8Z9V7Q4M2N6P8R0S2T4PE",
+            "label_ignored": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "identify_user",
+          "args": {
+            "installation": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6A1F0C2E-0000-4000-8000-000000000001",
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          }
+        },
+        {
+          "call": "identify_user",
+          "args": {
+            "installation": "secret-header-value"
+          },
+          "expect": {
+            "error": {
+              "class": "InvalidRequestError",
+              "code": "invalid_request",
+              "param": "click_id",
+              "http_status": null,
+              "message_excludes": [
+                "secret-header-value"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/people/identify",
+            "json": {
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        ],
+        "logs_exclude": [
+          "secret-header-value",
+          "6A1F0C2E-0000-4000-8000-000000000001"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "people.identify.installation_in_several_apps",
+      "description": "The API answers 409 installation_in_several_apps (param app_id) when the installation ID is in several apps: a ConflictError",
+      "responses": [
+        {
+          "status": 409,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "conflict",
+              "code": "installation_in_several_apps",
+              "message": "This installation ID was active in several of your apps. Send app_id to say which app it belongs to.",
+              "param": "app_id",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "identify_user",
+          "args": {
+            "installation_id": "6a1f0c2e-0000-4000-8000-000000000001",
+            "customer_id": "user_42"
+          },
+          "expect": {
+            "error": {
+              "class": "ConflictError",
+              "code": "installation_in_several_apps",
+              "param": "app_id",
+              "http_status": 409
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/people/identify",
+            "json": {
+              "installation_id": "6a1f0c2e-0000-4000-8000-000000000001",
+              "customer_id": "user_42"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "people.installations.parse_header",
+      "description": "parse_header: `<app_id>:<installation_id>` with a lowercase UUID, ASCII whitespace trimmed, at most 128 characters; anything else is null",
+      "steps": [
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001"
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP",
+                "installation_id": "6a1f0c2e-0000-4000-8000-000000000001"
+              }
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "\tapp_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001  "
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP",
+                "installation_id": "6a1f0c2e-0000-4000-8000-000000000001"
+              }
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "\r\n\u000bapp_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001\f"
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP",
+                "installation_id": "6a1f0c2e-0000-4000-8000-000000000001"
+              }
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": " app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001"
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001 "
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6A1F0C2E-0000-4000-8000-000000000001"
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "app_01jck8z9v7q4m2n6p8r0s2t4ap:6a1f0c2e-0000-4000-8000-000000000001"
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001:x"
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP::6a1f0c2e-0000-4000-8000-000000000001"
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP6a1f0c2e-0000-4000-8000-000000000001"
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:"
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": ":6a1f0c2e-0000-4000-8000-000000000001"
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "cli_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001"
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e00004000800000000000000a"
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001                                        x"
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "                                                                      app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001"
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": ""
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": "   "
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": null
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.parse_header",
+          "args": {
+            "value": 42
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "people.installations.from_request",
+      "description": "from_request reads the Clikgate-Installation header (any case); missing or invalid is null",
+      "steps": [
+        {
+          "call": "installations.from_request",
+          "args": {
+            "request": {
+              "url": "https://api.example.com/me",
+              "headers": {
+                "clikgate-installation": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP",
+                "installation_id": "6a1f0c2e-0000-4000-8000-000000000001"
+              }
+            }
+          }
+        },
+        {
+          "call": "installations.from_request",
+          "args": {
+            "request": {
+              "url": "https://api.example.com/me",
+              "headers": {
+                "Clikgate-Installation": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": {
+                "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP",
+                "installation_id": "6a1f0c2e-0000-4000-8000-000000000001"
+              }
+            }
+          }
+        },
+        {
+          "call": "installations.from_request",
+          "args": {
+            "request": {
+              "url": "https://api.example.com/me",
+              "headers": {
+                "clikgate-installation": "not-an-installation"
+              }
+            }
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        },
+        {
+          "call": "installations.from_request",
+          "args": {
+            "request": {
+              "url": "https://api.example.com/me",
+              "headers": {}
+            }
+          },
+          "expect": {
+            "result": {
+              "value": null
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": []
+      },
+      "now_ms": 1793016000000
+    },
+    {
       "id": "people.identify.labels_off_in_private_mode",
       "description": "The API error labels_off_in_private_mode (422) is an InvalidRequestError",
       "responses": [

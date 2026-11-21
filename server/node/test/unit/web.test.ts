@@ -53,10 +53,10 @@ test('express/connect middleware exposes req.clikgate and persists query click I
       res.end(JSON.stringify((req as IncomingMessage & { clikgate: unknown }).clikgate));
     });
   const fromQuery = await serve(handler, `/landing?cgid=${CLICK}`);
-  assert.deepEqual(JSON.parse(fromQuery.body), { clickId: CLICK });
+  assert.deepEqual(JSON.parse(fromQuery.body), { clickId: CLICK, installation: null });
   assert.equal(fromQuery.setCookie.length, 2);
   const fromCookie = await serve(handler, '/signup', { cookie: `_cg_cgid=${CLICK}` });
-  assert.deepEqual(JSON.parse(fromCookie.body), { clickId: CLICK });
+  assert.deepEqual(JSON.parse(fromCookie.body), { clickId: CLICK, installation: null });
   assert.equal(fromCookie.setCookie.length, 0);
 });
 

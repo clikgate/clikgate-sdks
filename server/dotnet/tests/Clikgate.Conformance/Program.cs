@@ -147,6 +147,9 @@ internal static class Program
 
     private static Dictionary<string, object?> Map(object? o) => o as Dictionary<string, object?> ?? [];
 
+    private static Dictionary<string, object?>? InstallationWire(Installation? i) =>
+        i is null ? null : new Dictionary<string, object?> { ["app_id"] = i.AppId, ["installation_id"] = i.InstallationId };
+
     private static string? Str(Dictionary<string, object?> a, string k) => a.TryGetValue(k, out var v) ? v as string : null;
 
     private static MoneyValue? Money(object? v) => v switch
@@ -314,6 +317,17 @@ internal static class Program
                 return Webhooks.Verify(Bytes(a["raw_body"]), Str(a, "header"), Str(a, "secret")!, (long)a["tolerance"]!, (long)a["now"]!);
             case "webhooks.verify_any":
                 return Webhooks.VerifyAny(Bytes(a["raw_body"]), Str(a, "header"), ((List<object?>)a["secrets"]!).Cast<string>().ToList(), (long)a["tolerance"]!, (long)a["now"]!);
+            case "installations.parse_header":
+                return new Dictionary<string, object?> { ["value"] = InstallationWire(Installation.ParseHeader(Str(a, "value"))) };
+            case "installations.from_request":
+                {
+                    var r = Map(a["request"]);
+                    var values = Map(r.TryGetValue("headers", out var ih) ? ih : null)
+                        .Where(kv => string.Equals(kv.Key, Installation.Header, StringComparison.OrdinalIgnoreCase))
+                        .Select(kv => kv.Value as string)
+                        .ToList();
+                    return new Dictionary<string, object?> { ["value"] = InstallationWire(values.Count == 1 ? Installation.ParseHeader(values[0]) : null) };
+                }
             case "click_ids.is_valid":
                 return new Dictionary<string, object?> { ["value"] = ClickIds.IsValid(a.TryGetValue("id", out var iv) ? iv : null) };
             case "click_ids.from_request":
@@ -408,6 +422,7 @@ internal static class Program
                 return await client.IdentifyUserAsync(new IdentifyUserParams
                 {
                     ClickId = Str(a, "click_id"),
+                    Installation = Str(a, "installation"),
                     AppId = Str(a, "app_id"),
                     InstallationId = Str(a, "installation_id"),
                     CustomerId = Str(a, "customer_id"),

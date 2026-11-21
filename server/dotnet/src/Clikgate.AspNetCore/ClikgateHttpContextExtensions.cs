@@ -1,3 +1,4 @@
+using System;
 using Clikgate;
 using Clikgate.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,31 @@ public static class ClikgateHttpContextExtensions
         }
         var helpers = context.RequestServices.GetService<IClikgateClient>()?.ClickIds ?? new ClickIds();
         return helpers.FromRequest(context.Request.Path + context.Request.QueryString, name => context.Request.Headers.TryGetValue(name, out var h) ? h.ToString() : null);
+    }
+
+    /// <summary>
+    /// The app's <c>Clikgate-Installation</c> header as an <see cref="Installation"/>, or null when it is missing,
+    /// invalid or sent more than once. Never throws. Use it with <c>IdentifyUserAsync</c> after your own sign-in check;
+    /// the customer ID always comes from your signed-in user, never from the request.
+    /// </summary>
+    /// <example><code>
+    /// var installation = ctx.GetClikgateInstallation();
+    /// if (installation is not null) await clikgate.IdentifyUserAsync(IdentifyUserParams.For(installation, user.Id));
+    /// </code></example>
+    public static Installation? GetClikgateInstallation(this HttpContext context)
+    {
+        try
+        {
+            if (!context.Request.Headers.TryGetValue(Installation.Header, out var values) || values.Count != 1)
+            {
+                return null;
+            }
+            return Installation.ParseHeader(values[0]);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
     /// <summary>

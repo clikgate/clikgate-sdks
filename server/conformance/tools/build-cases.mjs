@@ -2450,6 +2450,11 @@ const schema = JSON.parse(readFileSync(join(here, '..', 'schema', 'case.schema.j
 // ---------------------------------------------------------------------------------------------
 // identifyUser() and goal labels (SPEC 24; backend POST /v1/people/identify).
 const IDENTIFY_POST = { method: 'POST', path: '/v1/people/identify' };
+const APP_ID = 'app_01JCK8Z9V7Q4M2N6P8R0S2T4AP';
+const INSTALLATION_ID = '6a1f0c2e-0000-4000-8000-000000000001';
+const OTHER_INSTALLATION_ID = '6a1f0c2e-0000-4000-8000-000000000002';
+// The Clikgate-Installation header the mobile SDKs produce: `<app_id>:<installation_id>`
+const INSTALLATION_HEADER = `${APP_ID}:${INSTALLATION_ID}`;
 const identified = (labelIgnored = null) => ok({ object: 'person_identified', person_id: 'per_01JCK8Z9V7Q4M2N6P8R0S2T4PE', label_ignored: labelIgnored }, 200);
 add('people', 'identifyUser() and goal labels (SPEC 24)', [
   {
@@ -2493,6 +2498,84 @@ add('people', 'identifyUser() and goal labels (SPEC 24)', [
     responses: [created],
     steps: [{ call: 'goals.send', args: { key: 'account_opened', reference: 'APP-1', click_id: CLICK, is_first: true, label: 'Ada' } }],
     expect: { requests: [{ ...GOAL_POST, json: { goal: 'account_opened', reference: 'APP-1', click_id: CLICK, is_first: true, label: 'Ada' } }] },
+  },
+  {
+    id: 'people.identify.installation_id_without_app_id',
+    description: 'installationId alone is sent as is: the API finds the app (appId is optional)',
+    responses: [identified()],
+    steps: [{ call: 'identify_user', args: { installation_id: INSTALLATION_ID, customer_id: 'user_42' }, expect: { result: { object: 'person_identified' } } }],
+    expect: { requests: [{ ...IDENTIFY_POST, json: { installation_id: INSTALLATION_ID, customer_id: 'user_42' } }] },
+  },
+  {
+    id: 'people.identify.installation_header',
+    description: 'The raw Clikgate-Installation header value (trimmed) becomes app_id + installation_id; the raw value is never sent',
+    responses: [identified()],
+    steps: [{ call: 'identify_user', args: { installation: ` ${INSTALLATION_HEADER} `, customer_id: 'user_42' }, expect: { result: { object: 'person_identified' } } }],
+    expect: { requests: [{ ...IDENTIFY_POST, json: { app_id: APP_ID, installation_id: INSTALLATION_ID, customer_id: 'user_42' } }] },
+  },
+  {
+    id: 'people.identify.explicit_ids_win_over_the_header',
+    description: 'When installationId is given, the installation header is not used',
+    responses: [identified()],
+    steps: [{ call: 'identify_user', args: { installation: INSTALLATION_HEADER, installation_id: OTHER_INSTALLATION_ID, customer_id: 'user_42' } }],
+    expect: { requests: [{ ...IDENTIFY_POST, json: { installation_id: OTHER_INSTALLATION_ID, customer_id: 'user_42' } }] },
+  },
+  {
+    id: 'people.identify.bad_installation_header_ignored',
+    description: 'An invalid installation header is ignored (never an error, never sent, never logged); without another reference the local check applies',
+    responses: [identified()],
+    steps: [
+      { call: 'identify_user', args: { installation: `${APP_ID}:${INSTALLATION_ID.toUpperCase()}`, click_id: CLICK } },
+      { call: 'identify_user', args: { installation: 'secret-header-value' }, expect: { error: { class: 'InvalidRequestError', code: 'invalid_request', param: 'click_id', http_status: null, message_excludes: ['secret-header-value'] } } },
+    ],
+    expect: { requests: [{ ...IDENTIFY_POST, json: { click_id: CLICK } }], logs_exclude: ['secret-header-value', INSTALLATION_ID.toUpperCase()] },
+  },
+  {
+    id: 'people.identify.installation_in_several_apps',
+    description: 'The API answers 409 installation_in_several_apps (param app_id) when the installation ID is in several apps: a ConflictError',
+    responses: [err(409, 'conflict', 'installation_in_several_apps', 'This installation ID was active in several of your apps. Send app_id to say which app it belongs to.', 'app_id')],
+    steps: [{ call: 'identify_user', args: { installation_id: INSTALLATION_ID, customer_id: 'user_42' }, expect: { error: { class: 'ConflictError', code: 'installation_in_several_apps', param: 'app_id', http_status: 409 } } }],
+    expect: { requests: [{ ...IDENTIFY_POST, json: { installation_id: INSTALLATION_ID, customer_id: 'user_42' } }] },
+  },
+  {
+    id: 'people.installations.parse_header',
+    description: 'parse_header: `<app_id>:<installation_id>` with a lowercase UUID, ASCII whitespace trimmed, at most 128 characters; anything else is null',
+    steps: [
+      ...[
+        [INSTALLATION_HEADER, { app_id: APP_ID, installation_id: INSTALLATION_ID }],
+        [`\t${INSTALLATION_HEADER}  `, { app_id: APP_ID, installation_id: INSTALLATION_ID }],
+        [`\r\n\v${INSTALLATION_HEADER}\f`, { app_id: APP_ID, installation_id: INSTALLATION_ID }],
+        [`\u00a0${INSTALLATION_HEADER}`, null],
+        [`${INSTALLATION_HEADER}\u2003`, null],
+        [`${APP_ID}:${INSTALLATION_ID.toUpperCase()}`, null],
+        [`${APP_ID.toLowerCase()}:${INSTALLATION_ID}`, null],
+        [`${APP_ID}:${INSTALLATION_ID}:x`, null],
+        [`${APP_ID}::${INSTALLATION_ID}`, null],
+        [`${APP_ID}${INSTALLATION_ID}`, null],
+        [`${APP_ID}:`, null],
+        [`:${INSTALLATION_ID}`, null],
+        [`cli_01JCK8Z9V7Q4M2N6P8R0S2T4AP:${INSTALLATION_ID}`, null],
+        [`${APP_ID}:6a1f0c2e00004000800000000000000a`, null],
+        [`${APP_ID}:${INSTALLATION_ID}${' '.repeat(40)}x`, null],
+        [`${' '.repeat(70)}${INSTALLATION_HEADER}`, null],
+        ['', null],
+        ['   ', null],
+        [null, null],
+        [42, null],
+      ].map(([value, expected]) => ({ call: 'installations.parse_header', args: { value }, expect: { result: { value: expected } } })),
+    ],
+    expect: { requests: [] },
+  },
+  {
+    id: 'people.installations.from_request',
+    description: 'from_request reads the Clikgate-Installation header (any case); missing or invalid is null',
+    steps: [
+      { call: 'installations.from_request', args: { request: { url: 'https://api.example.com/me', headers: { 'clikgate-installation': INSTALLATION_HEADER } } }, expect: { result: { value: { app_id: APP_ID, installation_id: INSTALLATION_ID } } } },
+      { call: 'installations.from_request', args: { request: { url: 'https://api.example.com/me', headers: { 'Clikgate-Installation': INSTALLATION_HEADER } } }, expect: { result: { value: { app_id: APP_ID, installation_id: INSTALLATION_ID } } } },
+      { call: 'installations.from_request', args: { request: { url: 'https://api.example.com/me', headers: { 'clikgate-installation': 'not-an-installation' } } }, expect: { result: { value: null } } },
+      { call: 'installations.from_request', args: { request: { url: 'https://api.example.com/me', headers: {} } }, expect: { result: { value: null } } },
+    ],
+    expect: { requests: [] },
   },
   {
     id: 'people.identify.labels_off_in_private_mode',

@@ -63,11 +63,26 @@ res.json({ user, clikgateIdentityToken: createIdentityToken(user.id) });   // re
 createIdentityToken(user.id, { appId: 'app_…' });                          // several apps: CLIKGATE_IDENTITY_SECRETS
 ```
 
-**Path B: installation ID, no secret or token.** The app reads `getInstallationId()` and includes it in its sign-in request; your server calls `identifyUser` with the app ID, installation ID and customer ID, after sign-in and at every signed-in app open. Clikgate accepts installations active in the last 7 days.
+**Path B: the installation header, no secret or token.** The mobile SDK gives your app a `Clikgate-Installation` header (`<app_id>:<installation_id>`, not a secret), which the app sends to your server with its sign-in request and signed-in requests. After your own sign-in check succeeds, and at every signed-in app open, pass it to `identifyUser` with your signed-in user's ID. Your server never needs to know which Clikgate app ID belongs to which platform. Clikgate accepts installations active in the last 7 days.
+
+- **The customer ID always comes from your own authenticated user.** The header only names the app installation. Call `identifyUser` only after your sign-in check succeeds, and never read the customer ID from the request.
+- **A missing or invalid header is ignored** (`null`, never an error or a log line): skip the call. Parsing is strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, trimmed.
+- **`appId` is optional.** With only an installation ID, Clikgate finds the app. If the same installation ID is active in several of your apps (iOS apps sharing a Keychain access group can share one), the API answers `409 installation_in_several_apps`, a `ConflictError` with param `app_id`: send `appId` too.
 
 ```ts
-// The app sends Clikgate.getInstallationId() with its sign-in request (null when tracking is off: skip)
-if (body.installationId) await clikgate.identifyUser({ appId: 'app_…', installationId: body.installationId, customerId: user.id });
+import { clikgateMiddleware } from '@clikgate/node/express';
+app.use(clikgateMiddleware(clikgate));                // also reads the Clikgate-Installation header
+app.post('/login', async (req, res) => {
+  const user = await signIn(req.body);                // your own sign-in check first
+  if (req.clikgate.installation) {
+    await clikgate.identifyUser({ ...req.clikgate.installation, customerId: user.id });
+  }
+});
+
+// Without the middleware: pass the raw header value (ignored when missing or invalid)
+await clikgate.identifyUser({ installation: req.get('Clikgate-Installation'), customerId: user.id });
+// Or parse it yourself: { appId, installationId } or null
+const installation = parseInstallationHeader(req.get('Clikgate-Installation'));
 ```
 
 ## Customers from before Clikgate
@@ -76,7 +91,7 @@ Tell Clikgate who was already your customer before you added it, so they are nev
 
 ```ts
 res.json({ user, clikgateIdentityToken: createIdentityToken(user.id, { customerSince: user.createdAt }) }); // version 2
-await clikgate.identifyUser({ appId: 'app_…', installationId, customerId: user.id, customerSince: user.createdAt });
+await clikgate.identifyUser({ installation: req.get('Clikgate-Installation'), customerId: user.id, customerSince: user.createdAt });
 const result = await clikgate.knownCustomers.import([{ customerId: 'u_10482', customerSince: '2024-03-02' }]); // batches of 10,000
 console.log(result.accepted, result.refused_by_reason); // refused rows are counted by reason, never returned
 ```
@@ -110,6 +125,7 @@ clikgate.goal('account_opened', { clickId: application.clickId, reference: appli
 - **Fastify:** `await app.register(clikgatePlugin, { client: clikgate })` from `@clikgate/node/fastify`, then read `request.clikgate.clickId`.
 - **Next.js 16+:** in `proxy.ts`, `export { clikgateProxy as proxy } from '@clikgate/node/next'`. Then read it with `getClickId(await cookies())`.
 - **Without a framework:** `clikgate.clickIds.fromRequest(req)` and `clikgate.clickIds.persist(res, clickId)`.
+- **The app's installation** (`Clikgate-Installation` header, for `identifyUser`): Express `req.clikgate.installation`, Fastify `request.clikgate.installation`, Next.js `getInstallation(await headers())` from `@clikgate/node/next`, and without a framework `installationFromRequest(req)` or `parseInstallationHeader(value)`. Each is `{ appId, installationId }` or `null`.
 - **From payment payloads** (Paystack, Flutterwave, Shopify, WooCommerce): `clikgate.clickIds.fromPaymentMetadata(payload)`.
 
 ## Keep the click ID longer (Safari)

@@ -181,6 +181,12 @@ function asProvider(mixed $v): mixed
 
 const PAYMENT_CAMEL = ['amount_minor' => 'amountMinor', 'occurred_at' => 'occurredAt', 'click_id' => 'clickId'];
 
+/** @return array{app_id: string, installation_id: string}|null */
+function installationWire(?\Clikgate\Installation $i): ?array
+{
+    return null === $i ? null : ['app_id' => $i->appId, 'installation_id' => $i->installationId];
+}
+
 function paymentOptions(array $a): array
 {
     $out = [];
@@ -317,6 +323,8 @@ function runCase(string $base, array $c): array
                 'clicks.get' => $client->clicks->get((string) $a['id']),
                 'webhooks.verify' => (static fn() => \Clikgate\Webhooks::verify($a['raw_body'], $a['header'] ?? null, (string) $a['secret'], (int) $a['tolerance'], (int) $a['now']))(),
                 'webhooks.verify_any' => (static fn() => \Clikgate\Webhooks::verifyAny($a['raw_body'], $a['header'] ?? null, $a['secrets'], (int) $a['tolerance'], (int) $a['now']))(),
+                'installations.parse_header' => ['value' => installationWire(\Clikgate\Installation::parseHeader($a['value'] ?? null))],
+                'installations.from_request' => ['value' => installationWire(\Clikgate\Installation::fromRequest(['headers' => $a['request']['headers'] ?? []]))],
                 'click_ids.is_valid' => ['value' => $client->clickIds->isValid($a['id'] ?? null)],
                 'click_ids.from_request' => ['value' => $client->clickIds->fromRequest(['url' => $a['request']['url'], 'headers' => $a['request']['headers'] ?? []])],
                 'click_ids.cookie_header' => ['value' => $client->clickIds->cookieHeader((string) $a['id'], cookieOptions($a))],
@@ -352,6 +360,7 @@ function runCase(string $base, array $c): array
                 })(),
                 'identify_user' => $client->identifyUser(array_filter([
                     'clickId' => $a['click_id'] ?? null,
+                    'installation' => $a['installation'] ?? null,
                     'appId' => $a['app_id'] ?? null,
                     'installationId' => $a['installation_id'] ?? null,
                     'customerId' => $a['customer_id'] ?? null,

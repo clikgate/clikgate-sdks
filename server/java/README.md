@@ -13,11 +13,11 @@ It supports Java 8+ (bytecode 52, for banks still on Java 8) and has one runtime
 <dependency>
   <groupId>com.clikgate</groupId>
   <artifactId>clikgate-java</artifactId>
-  <version>2.0.2</version>
+  <version>2.0.3</version>
 </dependency>
 ```
 
-Gradle: `implementation("com.clikgate:clikgate-java:2.0.2")`.
+Gradle: `implementation("com.clikgate:clikgate-java:2.0.3")`.
 
 ```java
 Clikgate clikgate = Clikgate.fromEnv();   // reads CLIKGATE_API_KEY (cg_live_… or cg_test_…)
@@ -65,22 +65,35 @@ response.put("clikgateIdentityToken", IdentityTokens.create(user.getId()));   //
 IdentityTokens.create(user.getId(), "app_…");                                  // several apps: CLIKGATE_IDENTITY_SECRETS
 ```
 
-**Path B: installation ID, no secret or token.** The app reads `getInstallationId()` and includes it in its sign-in request; your server calls `identifyUser` with the app ID, installation ID and customer ID, after sign-in and at every signed-in app open. Clikgate accepts installations active in the last 7 days.
+**Path B: the installation header, no secret or token.** The mobile SDK gives your app a `Clikgate-Installation` header (`<app_id>:<installation_id>`, not a secret), which the app sends to your server with its sign-in request and signed-in requests. After your own sign-in check succeeds, and at every signed-in app open, pass it to `identifyUser` as `installation` with your signed-in user's ID. Your server never needs to know which Clikgate app ID belongs to which platform. Clikgate accepts installations active in the last 7 days.
+
+- **The customer ID always comes from your own authenticated user.** The header only names the app installation. Call `identifyUser` only after your sign-in check succeeds, and never read the customer ID from the request.
+- **A missing or invalid header is ignored** (`null`, never an error or a log line): skip the call. Parsing is strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, trimmed.
+- **`appId` is optional.** With only an installation ID, Clikgate finds the app. If the same installation ID is active in several of your apps (iOS apps sharing a Keychain access group can share one), the API answers `409 installation_in_several_apps`, a `ConflictException` with param `app_id`: send `appId` too.
 
 ```java
-// The app sends Clikgate.getInstallationId() with its sign-in request (null when tracking is off: skip)
-if (installationId != null) {
-  clikgate.identifyUser(IdentifyUserParams.builder().appId("app_…").installationId(installationId).customerId(user.getId()).build());
+// Spring Boot (the starter): the header, parsed; null when missing or invalid
+@PostMapping("/login")
+Session login(@RequestBody Credentials credentials, @ClikgateInstallation Installation installation) {
+  User user = auth.signIn(credentials);   // your own sign-in check first
+  if (installation != null) {
+    clikgate.identifyUser(IdentifyUserParams.builder().installation(installation).customerId(user.getId()).build());
+  }
+  return Session.of(user);
 }
-```
 
+// Servlets (Spring Boot 2/3, Jakarta EE, Java EE): ClikgateInstallations from clikgate-servlet-jakarta or -javax
+Installation installation = ClikgateInstallations.from(request);
+// Or pass the raw header value (ignored when missing or invalid)
+clikgate.identifyUser(IdentifyUserParams.builder().installation(request.getHeader("Clikgate-Installation")).customerId(user.getId()).build());
+```
 ## Customers from before Clikgate
 
 Tell Clikgate who was already your customer before you added it, so they are never counted as a referral or a new customer. Send the account's creation date with the identity token (version 2) or from your server, and import the rest of your existing customers once. Use your own customer IDs, never emails or phone numbers: Clikgate stores a keyed fingerprint of each imported ID, not the ID itself. Not available in private mode. Guide: https://clikgate.com/docs/identify-users.
 
 ```java
 String token = clikgate.createIdentityToken(user.getId(), null, user.getCreatedAt()); // version 2 (an Instant); null → version 1
-clikgate.identifyUser(IdentifyUserParams.builder().appId("app_…").installationId(installationId).customerId(user.getId()).customerSince(user.getCreatedAt()).build());
+clikgate.identifyUser(IdentifyUserParams.builder().installation(request.getHeader("Clikgate-Installation")).customerId(user.getId()).customerSince(user.getCreatedAt()).build());
 KnownCustomersImportResult result = clikgate.knownCustomers().importCustomers(
     Collections.singletonList(KnownCustomer.of("u_10482", LocalDate.of(2024, 3, 2)))); // batches of 10,000
 ```
@@ -111,6 +124,7 @@ clikgate.goal("account_opened", Goal.builder().clickId(app.getClickId()).referen
 
 - **Spring, anywhere in the request thread:** `ClikgateContext.currentClickId()`.
 - **Servlet without Spring:** register `new ClikgateFilter(clikgate)` and read `ClikgateFilter.clickId(request)` (the request attribute `clikgate.click_id`).
+- **The app's installation** (`Clikgate-Installation` header, for `identifyUser`): Spring Boot `@ClikgateInstallation Installation installation` (the starter), servlets `ClikgateInstallations.from(request)` (`clikgate-servlet-jakarta` / `clikgate-servlet-javax`, for Spring Boot 2/3 too), and by hand `Installation.parseHeader(value)`. Each is an `Installation` (`getAppId()`, `getInstallationId()`) or `null`, never an error.
 - **The filter** keeps a `?cgid=…` in the first-party `_cg_cgid` cookie, which the web script also reads.
 - **By hand:** `clikgate.clickIds().fromRequest(url, request::getHeader)` and `clikgate.clickIds().persist(response::addHeader, clickId, CookieOptions.defaults())`.
 - **From payment payloads** (Paystack, Flutterwave, Shopify, WooCommerce): `clikgate.clickIds().fromPaymentMetadata(json)`.

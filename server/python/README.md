@@ -71,21 +71,31 @@ return {"user": user, "clikgate_identity_token": create_identity_token(str(user.
 create_identity_token(str(user.id), app_id="app_…")                                    # several apps: CLIKGATE_IDENTITY_SECRETS
 ```
 
-**Path B: installation ID, no secret or token.** The app reads `getInstallationId()` and includes it in its sign-in request; your server calls `identifyUser` with the app ID, installation ID and customer ID, after sign-in and at every signed-in app open. Clikgate accepts installations active in the last 7 days.
+**Path B: the installation header, no secret or token.** The mobile SDK gives your app a `Clikgate-Installation` header (`<app_id>:<installation_id>`, not a secret), which the app sends to your server with its sign-in request and signed-in requests. After your own sign-in check succeeds, and at every signed-in app open, pass it to `identify_user` as `installation` with your signed-in user's ID. Your server never needs to know which Clikgate app ID belongs to which platform. Clikgate accepts installations active in the last 7 days.
+
+- **The customer ID always comes from your own authenticated user.** The header only names the app installation. Call `identify_user` only after your sign-in check succeeds, and never read the customer ID from the request.
+- **A missing or invalid header is ignored** (`None`, never an error or a log line): skip the call. Parsing is strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, trimmed.
+- **`app_id` is optional.** With only an installation ID, Clikgate finds the app. If the same installation ID is active in several of your apps (iOS apps sharing a Keychain access group can share one), the API answers `409 installation_in_several_apps`, a `ConflictError` with param `app_id`: send `app_id` too.
 
 ```python
-# The app sends Clikgate.getInstallationId() with its sign-in request (None when tracking is off: skip)
-if installation_id:
-    clikgate.identify_user(app_id="app_…", installation_id=installation_id, customer_id=str(user.id))
-```
+# Django (the middleware sets request.clikgate_installation: an Installation or None)
+user = authenticate(request, username=form["email"], password=form["password"])  # your own sign-in check first
+if user is not None and request.clikgate_installation:
+    inst = request.clikgate_installation
+    clikgate.identify_user(app_id=inst.app_id, installation_id=inst.installation_id, customer_id=str(user.id))
 
+# Any framework: pass the raw header value (ignored when missing or invalid)
+clikgate.identify_user(installation=request.headers.get("Clikgate-Installation"), customer_id=str(user.id))
+# Or parse it yourself: Installation(app_id, installation_id) or None
+inst = parse_installation_header(request.headers.get("Clikgate-Installation"))
+```
 ## Customers from before Clikgate
 
 Tell Clikgate who was already your customer before you added it, so they are never counted as a referral or a new customer. Send the account's creation date with the identity token (version 2) or from your server, and import the rest of your existing customers once. Use your own customer IDs, never emails or phone numbers: Clikgate stores a keyed fingerprint of each imported ID, not the ID itself. Not available in private mode. Guide: https://clikgate.com/docs/identify-users.
 
 ```python
 token = create_identity_token(str(user.id), customer_since=user.created_at)  # version 2
-clikgate.identify_user(app_id="app_…", installation_id=installation_id, customer_id=str(user.id), customer_since=user.created_at)
+clikgate.identify_user(installation=request.headers.get("Clikgate-Installation"), customer_id=str(user.id), customer_since=user.created_at)
 result = clikgate.known_customers.import_customers([{"customer_id": "u_10482", "customer_since": "2024-03-02"}])  # batches of 10,000
 print(result["accepted"], result["refused_by_reason"])  # refused rows are counted by reason, never returned
 ```
@@ -121,6 +131,7 @@ get_client().goal("account_opened", click_id=app.click_id, reference=app.referen
 ```
 
 - **Without a framework:** `clikgate.click_ids.from_request(request)` and `clikgate.click_ids.persist(response, click_id, request=request)`.
+- **The app's installation** (`Clikgate-Installation` header, for `identify_user`): Django `request.clikgate_installation`, Flask `g.clikgate_installation`, FastAPI / Starlette `Depends(installation)` from `clikgate.fastapi`, and without a framework `installation_from_request(request)` or `parse_installation_header(value)`. Each is an `Installation(app_id, installation_id)` or `None`.
 - **From payment payloads** (Paystack, Flutterwave, Shopify, WooCommerce): `clikgate.click_ids.from_payment_metadata(payload)`.
 
 ## Keep the click ID longer (Safari)

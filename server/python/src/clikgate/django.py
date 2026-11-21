@@ -1,7 +1,9 @@
 """Django add-on: ``clikgate.django.ClikgateMiddleware`` (SPEC section 17).
 
 Add it to ``MIDDLEWARE``; it sets ``request.clikgate_click_id`` (``None`` when there is none) and keeps a
-click ID that arrives in the query string in the first-party ``_cg_<param>`` cookie (last click wins).
+click ID that arrives in the query string in the first-party ``_cg_<param>`` cookie (last click wins). It also sets
+``request.clikgate_installation``: the app's ``Clikgate-Installation`` header as an ``Installation``, or ``None`` when
+it is missing or invalid (for ``identify_user``, after your own sign-in check).
 
 Settings (all optional)::
 
@@ -38,6 +40,7 @@ from ._addon import capture, helpers_for, warm_config
 from ._click_ids import KeepRoute, click_ids
 from ._client import Clikgate
 from ._errors import ConfigurationError
+from ._installation import installation_from_request
 
 __all__ = ["ClikgateMiddleware", "get_client", "keep_view"]
 
@@ -70,7 +73,8 @@ def get_client() -> Clikgate:
 
 
 class ClikgateMiddleware:
-    """Sets ``request.clikgate_click_id`` and persists a click ID from the query string.
+    """Sets ``request.clikgate_click_id`` and ``request.clikgate_installation``, and persists a click ID from the
+    query string.
 
     Example (``settings.py``)::
 
@@ -104,6 +108,7 @@ class ClikgateMiddleware:
         warm_config(self.client)
         click_id, from_query = capture(self.helpers, request)
         request.clikgate_click_id = click_id
+        request.clikgate_installation = installation_from_request(request)
         return click_id, from_query
 
     def _after(self, request: Any, response: Any, click_id: Optional[str], from_query: bool) -> Any:

@@ -313,41 +313,56 @@ public sealed class ClikgateClient : IClikgateClient
         customerSince is DateTimeOffset since ? CreateIdentityToken(customerId, appId, since) : CreateIdentityToken(customerId, appId);
 
     /// <summary>
-    /// Tells Clikgate who a person is (<c>POST /v1/people/identify</c>): a click, an app installation (<c>AppId</c> +
-    /// <c>InstallationId</c>) or your <c>CustomerId</c>, at least one. With a click or installation, <c>CustomerId</c>
+    /// Tells Clikgate who a person is (<c>POST /v1/people/identify</c>): a click, an app installation
+    /// (<c>Installation</c>, or <c>InstallationId</c> with an optional <c>AppId</c>) or your <c>CustomerId</c>, at least one. With a click or installation, <c>CustomerId</c>
     /// links it to that customer. <c>Label</c> is what your team sees instead of the click ID (1-80 characters, <c>""</c>
     /// clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
     /// <c>require_identity_token</c>. In private mode <c>CustomerId</c> is refused locally and <c>Label</c> needs
     /// "Allow labels in private mode". <c>CustomerSince</c> is when they became your customer, so existing
     /// customers are never counted as referrals or new customers; it is refused in private mode too.
     /// <para>
-    /// Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
-    /// <c>getInstallationId()</c> and sends it in its sign-in request; your server calls this with <c>AppId</c>,
-    /// <c>InstallationId</c>, <c>CustomerId</c> and optionally <c>Label</c>, after sign-in and at every signed-in app
-    /// open. When the app sends no installation ID (tracking is off), skip the call. Clikgate accepts installations
-    /// active in the last 7 days.
+    /// Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app sends the
+    /// <c>Clikgate-Installation</c> header (from the mobile SDK) to your server. After your own sign-in check
+    /// succeeds, and at every signed-in app open, pass the header as <c>Installation</c> with your signed-in user's ID
+    /// as <c>CustomerId</c> (never a customer ID read from the request). A missing or invalid header is ignored: skip
+    /// the call. <c>InstallationId</c> given explicitly wins over the header. <c>AppId</c> is optional: Clikgate finds
+    /// the app; if the installation ID is in several of your apps, the API answers
+    /// <c>409 installation_in_several_apps</c> (a <c>ConflictException</c>, param <c>app_id</c>): send <c>AppId</c>
+    /// too. Clikgate accepts installations active in the last 7 days.
     /// </para>
     /// </summary>
     /// <example><code>
     /// await clikgate.IdentifyUserAsync(new IdentifyUserParams { ClickId = clickId, CustomerId = "user_42", Label = "Ada (VIP)" });
-    /// if (installationId is not null)
-    ///     await clikgate.IdentifyUserAsync(new IdentifyUserParams { AppId = "app_…", InstallationId = installationId, CustomerId = user.Id });
+    /// // after your sign-in check: the header from the app, your user's ID
+    /// await clikgate.IdentifyUserAsync(new IdentifyUserParams { Installation = Request.Headers["Clikgate-Installation"], CustomerId = user.Id });
     /// </code></example>
     public async Task<PersonIdentified> IdentifyUserAsync(IdentifyUserParams parameters, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
     {
         var p = parameters ?? throw new ArgumentNullException(nameof(parameters));
-        if ((p.AppId is null) != (p.InstallationId is null))
+        var appId = p.AppId;
+        var installationId = p.InstallationId;
+        if (installationId is null && p.Installation is not null)
         {
-            throw Errors.Local("invalid_request", "Send AppId and InstallationId together.", p.AppId is null ? "app_id" : "installation_id");
+            // The raw Clikgate-Installation header: ignored (never sent) when missing or invalid
+            var fromHeader = Installation.ParseHeader(p.Installation);
+            if (fromHeader is not null)
+            {
+                appId ??= fromHeader.AppId;
+                installationId = fromHeader.InstallationId;
+            }
         }
-        if (p.ClickId is null && p.InstallationId is null && p.CustomerId is null)
+        if (appId is not null && installationId is null)
         {
-            throw Errors.Local("invalid_request", "Send ClickId, AppId + InstallationId, or CustomerId.", "click_id");
+            throw Errors.Local("invalid_request", "Send InstallationId with AppId.", "installation_id");
+        }
+        if (p.ClickId is null && installationId is null && p.CustomerId is null)
+        {
+            throw Errors.Local("invalid_request", "Send ClickId, an installation (Installation or InstallationId), or CustomerId.", "click_id");
         }
         var body = new JsonObject();
         if (p.ClickId is not null) body["click_id"] = p.ClickId;
-        if (p.AppId is not null) body["app_id"] = p.AppId;
-        if (p.InstallationId is not null) body["installation_id"] = p.InstallationId;
+        if (appId is not null) body["app_id"] = appId;
+        if (installationId is not null) body["installation_id"] = installationId;
         if (p.CustomerId is not null) body["customer_id"] = p.CustomerId;
         if (p.Label is not null) body["label"] = p.Label;
         if (p.CustomerSince is { } since)

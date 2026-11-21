@@ -2,6 +2,12 @@
 
 All notable changes to this package. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package uses [semantic versioning](https://semver.org/).
 
+## [2.0.3] - unreleased
+
+### Identify users with the installation header
+
+- **Added:** `$request->clikgateInstallation()`: the app's `Clikgate-Installation` header as a `Clikgate\Installation` (`->appId`, `->installationId`), or `null` when it is missing or invalid. Spread `$installation->toArray()` into `Clikgate::identifyUser()`, after your own sign-in check, with your signed-in user's ID (never a customer ID read from the request). `Clikgate::identifyUser()` also takes the raw header as `installation`, and `appId` is optional. Requires `clikgate/clikgate-php` 2.0.3.
+
 ## [2.0.1] - unreleased
 
 ### Existing users

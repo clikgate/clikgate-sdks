@@ -279,16 +279,34 @@ public sealed class BinaryResponse(string contentType, byte[] data)
 /// <summary>The parameters of <see cref="ClikgateClient.IdentifyUserAsync"/>: at least one of <c>ClickId</c>, <c>AppId</c> + <c>InstallationId</c>, <c>CustomerId</c>.</summary>
 public sealed class IdentifyUserParams
 {
+    /// <summary>The parameters for an installation parsed with <see cref="Clikgate.Installation.ParseHeader"/>.</summary>
+    /// <example><code>await clikgate.IdentifyUserAsync(IdentifyUserParams.For(installation, user.Id));</code></example>
+    public static IdentifyUserParams For(global::Clikgate.Installation installation, string? customerId = null)
+    {
+        if (installation is null) throw new ArgumentNullException(nameof(installation));
+        return new() { AppId = installation.AppId, InstallationId = installation.InstallationId, CustomerId = customerId };
+    }
+
     /// <summary>The Clikgate click ID you kept (<c>clk_…</c>).</summary>
     public string? ClickId { get; set; }
 
-    /// <summary>An app installation: the app's ID, with <see cref="InstallationId"/>.</summary>
+    /// <summary>
+    /// The raw <c>Clikgate-Installation</c> header your app sent (<c>&lt;app_id&gt;:&lt;installation_id&gt;</c>). It fills
+    /// <see cref="AppId"/> and <see cref="InstallationId"/>. Missing or invalid values are ignored, never sent. Not used
+    /// when <see cref="InstallationId"/> is given.
+    /// </summary>
+    public string? Installation { get; set; }
+
+    /// <summary>The app the installation belongs to. Optional: without it Clikgate finds the app. Only with <see cref="InstallationId"/>.</summary>
     public string? AppId { get; set; }
 
-    /// <summary>The SDK's installation ID, with <see cref="AppId"/>.</summary>
+    /// <summary>The SDK's installation ID, sent by your app.</summary>
     public string? InstallationId { get; set; }
 
-    /// <summary>Your customer ID. With a click or installation, links it to this customer. Refused in private mode.</summary>
+    /// <summary>
+    /// Your signed-in user's ID (never a value read from the request). With a click or installation, links it to this
+    /// customer. Refused in private mode.
+    /// </summary>
     public string? CustomerId { get; set; }
 
     /// <summary>A label your team sees instead of the click ID (1-80 characters, <c>""</c> clears it; Growth and up).</summary>

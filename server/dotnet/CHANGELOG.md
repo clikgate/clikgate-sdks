@@ -3,6 +3,16 @@
 All notable changes to these packages, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the packages use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and .NET versions are dropped only after their end of support.
 
 
+## [2.0.3] - unreleased
+
+### Identify users with the installation header
+
+- **Added:** `IdentifyUserParams.Installation` takes the raw `Clikgate-Installation` header your app sends (`<app_id>:<installation_id>`, from the mobile SDK) and fills `AppId` and `InstallationId` from it, so your server never needs to know which Clikgate app ID belongs to which platform. A missing or invalid header is ignored, never sent and never logged. `InstallationId` given explicitly wins over the header. `IdentifyUserParams.For(installation, customerId)` takes a parsed one.
+- **Changed:** `AppId` is optional with `InstallationId`: Clikgate finds the app. `AppId` without `InstallationId` is still refused locally (`invalid_request`, param `installation_id`). Calls that send both behave as before.
+- **Added:** `Installation.ParseHeader(string?)` → `Installation?` (`AppId`, `InstallationId`; strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, ASCII whitespace trimmed; never throws) and `Installation.Header`.
+- **Added (Clikgate.AspNetCore):** `HttpContext.GetClikgateInstallation()`: null when the header is missing, invalid or sent more than once; never throws.
+- **Docs:** when the installation ID is active in several of your apps, the API answers `409 installation_in_several_apps` (a `ConflictException`, param `app_id`): send `AppId` too. Call `IdentifyUserAsync` only after your own sign-in check, with your signed-in user's ID; never read the customer ID from the request.
+
 ## [2.0.2] - unreleased
 
 ### Fixed

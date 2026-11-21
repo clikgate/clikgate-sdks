@@ -7,7 +7,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline';
-import { Clikgate, ClikgateError, formatValue, hashForAds, type ClikgateOptions, type ErrorContext, type GoalOptions, type PaymentConfirmParams, type PaymentHelperOptions } from '../../src/index.js';
+import { Clikgate, ClikgateError, formatValue, hashForAds, installationFromRequest, parseInstallationHeader, type Installation, type ClikgateOptions, type ErrorContext, type GoalOptions, type PaymentConfirmParams, type PaymentHelperOptions } from '../../src/index.js';
 
 type Json = null | boolean | number | string | Json[] | { [k: string]: Json };
 interface RunnerCase {
@@ -66,6 +66,10 @@ function decode(v: Json): unknown {
 }
 
 const CAMEL: Record<string, string> = { click_id: 'clickId', is_first: 'isFirst', occurred_at: 'occurredAt', kept_by: 'keptBy', browser_engine: 'browserEngine', hashed_email: 'hashedEmail', hashed_phone_e164: 'hashedPhoneE164', hashed_phone_digits: 'hashedPhoneDigits' };
+function installationWire(i: Installation | null): Record<string, string> | null {
+  return i ? { app_id: i.appId, installation_id: i.installationId } : null;
+}
+
 function goalOptions(args: Record<string, unknown>): GoalOptions {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(args)) {
@@ -285,6 +289,14 @@ async function runCase(c: RunnerCase): Promise<Record<string, unknown>> {
           result = out;
           break;
         }
+        case 'installations.parse_header':
+          result = { value: installationWire(parseInstallationHeader(a.value)) };
+          break;
+        case 'installations.from_request': {
+          const r = a.request as { url: string; headers: Record<string, string> };
+          result = { value: installationWire(installationFromRequest({ headers: r.headers })) };
+          break;
+        }
         case 'click_ids.from_payment_metadata':
           result = { value: client.clickIds.fromPaymentMetadata(a.payload) };
           break;
@@ -299,6 +311,7 @@ async function runCase(c: RunnerCase): Promise<Record<string, unknown>> {
           result = await client.identifyUser(
             {
               clickId: a.click_id as string | undefined,
+              installation: a.installation as string | undefined,
               appId: a.app_id as string | undefined,
               installationId: a.installation_id as string | undefined,
               customerId: a.customer_id as string | undefined,

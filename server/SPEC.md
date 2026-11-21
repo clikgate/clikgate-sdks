@@ -660,6 +660,7 @@ Each add-on reads the click ID with `click_ids.from_request`. When the ID came f
 | Servlet | `ClikgateFilter` (`javax` and `jakarta` artifacts) | request attribute `clikgate.click_id` |
 | ASP.NET Core | `builder.Services.AddClikgate(…)`; `app.UseClikgateClickId()` | `HttpContext.GetClikgateClickId()`, `IClikgateClient` via DI |
 
+- **The app's installation:** every add-on also exposes the `Clikgate-Installation` header, parsed (section 24.1).
 - **No hard dependency:** add-ons MUST NOT add runtime dependencies to the core package. Framework packages are optional peer dependencies or extras.
 - **No blocking:** an add-on MAY start a background config load (in `auto` mode) so the organisation's `click_id_param` is known, but MUST NOT block the request on it.
 
@@ -954,26 +955,69 @@ An SDK released today MUST keep working against a newer API:
 
 ## 24. People: `identifyUser` and goal labels
 
-- **Method** (section 2 casing): Node `identifyUser(params, requestOptions?)`, Python `identify_user(*, click_id, app_id,
-  installation_id, customer_id, label, request_options)` (sync and async), PHP `identifyUser(array $params, array
-  $requestOptions = [])`, Java `identifyUser(IdentifyUserParams[, RequestOptions])` → `PersonIdentified`, .NET
-  `IdentifyUserAsync(IdentifyUserParams, RequestOptions?, CancellationToken)` → `PersonIdentified`.
+- **Method** (section 2 casing): Node `identifyUser(params, requestOptions?)`, Python `identify_user(*, click_id,
+  installation, app_id, installation_id, customer_id, label, request_options)` (sync and async), PHP
+  `identifyUser(array $params, array $requestOptions = [])`, Java `identifyUser(IdentifyUserParams[, RequestOptions])` →
+  `PersonIdentified`, .NET `IdentifyUserAsync(IdentifyUserParams, RequestOptions?, CancellationToken)` →
+  `PersonIdentified`.
 - **Wire:** `POST /v1/people/identify` `{click_id?, app_id?, installation_id?, customer_id?, label?}` (nulls omitted),
   answer `{object: "person_identified", person_id, label_ignored: "plan" | "lower_rank" | null}` returned as is.
-- **Local checks** (before any request): `app_id` and `installation_id` together (`invalid_request`, param the missing
-  one); at least one of `click_id`, the installation, `customer_id` (`invalid_request`, param `click_id`).
+- **`installation` argument** (canonical; Node `installation`, Python `installation`, PHP `'installation'`, Java
+  `IdentifyUserParams.Builder.installation(String)`, .NET `IdentifyUserParams.Installation`): the raw
+  `Clikgate-Installation` header value (24.1). It is parsed with `installations.parse_header`; when valid and
+  `installation_id` isn't given, it fills `installation_id`, and `app_id` unless `app_id` is given. A missing or
+  invalid value is ignored: never an error, never sent, never logged. The raw value never reaches the wire.
+- **Local checks** (before any request, after `installation` is applied): `app_id` without `installation_id`
+  (`invalid_request`, param `installation_id`); at least one of `click_id`, the installation, `customer_id`
+  (`invalid_request`, param `click_id`). `installation_id` without `app_id` is sent as is: the API finds the app.
+- **Several apps:** when the installation ID is active in several of the organisation's apps (same environment, last
+  7 days), the API answers `409 installation_in_several_apps` (`param: app_id`), a `ConflictError` (section 5); the
+  caller sends `app_id`. The body never names the apps. Without `app_id`, an unknown installation is `404` and one
+  inactive for more than 7 days `422 installation_inactive`, as with `app_id`.
 - **Guard** (section 12.2): kind `identify` allows `click_id`, `app_id`, `installation_id`, `label`; `customer_id` is
   refused (`private_mode_field_rejected`). Goals allow `label` too. The server SDK config has no labels switch, so the
   API decides (`422 labels_off_in_private_mode`, an `InvalidRequestError`).
 - **Goals:** optional `label` (wire `label`) on `goal`, `goals.send` and batch events; `is_first` is unchanged (from the
   server it is what counts a new customer).
-- The removed `POST /v1/apps/{app_id}/identify` is gone from the generated layer. Conformance: suite `people` (6 cases).
-- **Path B:** the app reads `getInstallationId()` and sends it in its sign-in request; the
-  server calls `identifyUser` with `app_id`, `installation_id`, `customer_id` (and `label`) after sign-in and at every
-  signed-in app open, and skips the call when the app sends no installation ID (tracking off). No identity secret or
-  token is needed; the API accepts installations active in the last 7 days, and the call satisfies
-  `require_identity_token`. Each SDK's `identifyUser` doc comment and README show this path next to path A (section 26)
-  and link to https://clikgate.com/docs/identify-users.
+- The removed `POST /v1/apps/{app_id}/identify` is gone from the generated layer. Conformance: suite `people` (13
+  cases: the original 6, `installation_id` without `app_id`, the header, explicit IDs winning, bad headers ignored,
+  the 409, `installations.parse_header` and `installations.from_request`).
+- **Path B:** the app sends the `Clikgate-Installation` header (24.1) to its own server with its sign-in request and
+  signed-in requests. After the server's own sign-in check succeeds, and at every signed-in app open, the server calls
+  `identifyUser` with `installation` (the header) and `customer_id` (and `label`), and skips the call when the header
+  is missing or invalid (tracking off). No identity secret or token is needed; the API accepts installations active in
+  the last 7 days, and the call satisfies `require_identity_token`. Each SDK's `identifyUser` doc comment and README
+  show this path next to path A (section 26), the 409, and link to https://clikgate.com/docs/identify-users.
+- **The customer ID never comes from the request.** The header only supplies `app_id` and `installation_id`.
+  `customer_id` is always the server's own authenticated user. Every README and the `identifyUser` doc comment say:
+  call `identifyUser` only after your own sign-in check succeeds, and never read the customer ID from the request.
+
+### 24.1 The `Clikgate-Installation` header
+
+- **Contract** (produced by the mobile SDKs): header name `Clikgate-Installation`, value `<app_id>:<installation_id>`,
+  e.g. `app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001`. Not a secret.
+- **Parsing** (`installations.parse_header(value)`), strict, the same in every SDK:
+  1. Not a string, or longer than **128** characters (before trimming) → null.
+  2. Trim leading and trailing ASCII whitespace (space, tab, CR, LF, form feed, vertical tab), nothing else.
+  3. Match `^(app_[0-9A-Z]{26}):([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$`: the app ID
+     (prefixed ULID, uppercase), exactly one colon, a **lowercase** UUID. Anything else → null.
+  4. Never throws, never logs the value, never passes a malformed value on.
+- **Result:** an installation with `app_id` and `installation_id` (section 2 casing), or null.
+- **`installations.from_request(request)`:** the header from the framework's request (case-insensitive name). Missing,
+  invalid, or sent more than once → null. Never throws.
+
+| Canonical | Node | Python | PHP | Java | .NET |
+|---|---|---|---|---|---|
+| `installations.parse_header(value)` | `parseInstallationHeader(value)` → `{ appId, installationId }` \| `null` | `parse_installation_header(value)` → `Installation(app_id, installation_id)` \| `None` | `Installation::parseHeader($value)` → `?Installation` (`->appId`, `->installationId`) | `Installation.parseHeader(String)` → `Installation` (`getAppId()`, `getInstallationId()`) or `null` | `Installation.ParseHeader(string?)` → `Installation?` (`AppId`, `InstallationId`) |
+| `installations.from_request(request)` | `installationFromRequest(req)` | `installation_from_request(request)` | `Installation::fromRequest(ServerRequestInterface)` | `ClikgateInstallations.from(HttpServletRequest)` (servlet modules) | `HttpContext.GetClikgateInstallation()` (`Clikgate.AspNetCore`) |
+| header constant | `INSTALLATION_HEADER` | `INSTALLATION_HEADER` | `Installation::HEADER` | `Installation.HEADER` | `Installation.Header` |
+
+- **Framework add-ons** expose it next to the click ID (section 17): Express `req.clikgate.installation`, Fastify
+  `request.clikgate.installation`, Next.js `getInstallation(await headers())`, Django `request.clikgate_installation`,
+  Flask `g.clikgate_installation`, FastAPI / Starlette `Depends(installation)`, PSR-15 attribute
+  `clikgate.installation`, Laravel `$request->clikgateInstallation()`, Spring Boot `@ClikgateInstallation Installation`
+  (null when missing or invalid; never fails the request), Servlet `ClikgateInstallations.from(request)`, ASP.NET Core
+  `HttpContext.GetClikgateInstallation()`.
 
 
 ## 26. Identity tokens: `createIdentityToken`

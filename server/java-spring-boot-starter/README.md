@@ -5,6 +5,7 @@ Spring Boot 4 (Java 17+) auto-configuration for [`com.clikgate:clikgate-java`](h
 - a `Clikgate` bean from `clikgate.*` properties (closed with the context, which flushes queued goals);
 - the click-ID servlet filter;
 - `@ClikgateClickId String clickId` handler parameters;
+- `@ClikgateInstallation Installation installation` handler parameters (the app's `Clikgate-Installation` header, for `identifyUser`; null when missing or invalid, never an error);
 - `ClikgateContext.currentClickId()`;
 - the `/cg/keep` route, when `clikgate.keep-route.enabled=true`.
 
@@ -12,7 +13,7 @@ Spring Boot 4 (Java 17+) auto-configuration for [`com.clikgate:clikgate-java`](h
 <dependency>
   <groupId>com.clikgate</groupId>
   <artifactId>clikgate-spring-boot-starter</artifactId>
-  <version>2.0.2</version>
+  <version>2.0.3</version>
 </dependency>
 ```
 
@@ -47,7 +48,24 @@ Map<String, Object> me(@AuthenticationPrincipal AppUser user) {
 }
 ```
 
-**Path B (no secret or token):** the app sends `getInstallationId()` with its sign-in request, and your server calls `clikgate.identifyUser(...)` with `appId`, `installationId` and `customerId` after sign-in and at every signed-in app open (skip it when there's no installation ID). See the [Java SDK](../java/README.md#identify-your-users).
+**Path B: the installation header, no secret or token.** The mobile SDK gives your app a `Clikgate-Installation` header (`<app_id>:<installation_id>`, not a secret), which the app sends to your server with its sign-in request and signed-in requests. After your own sign-in check succeeds, and at every signed-in app open, pass it to `clikgate.identifyUser(...)` as `installation` with your signed-in user's ID. Your server never needs to know which Clikgate app ID belongs to which platform. Clikgate accepts installations active in the last 7 days.
+
+- **The customer ID always comes from your own authenticated user.** The header only names the app installation. Call `clikgate.identifyUser(...)` only after your sign-in check succeeds, and never read the customer ID from the request.
+- **A missing or invalid header is ignored** (`null`, never an error or a log line): skip the call. Parsing is strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, trimmed.
+- **`appId` is optional.** With only an installation ID, Clikgate finds the app. If the same installation ID is active in several of your apps (iOS apps sharing a Keychain access group can share one), the API answers `409 installation_in_several_apps`, a `ConflictException` with param `app_id`: send `appId` too.
+
+```java
+@PostMapping("/login")
+Session login(@RequestBody Credentials credentials, @ClikgateInstallation Installation installation) {
+  User user = auth.signIn(credentials);   // your own sign-in check first
+  if (installation != null) {
+    clikgate.identifyUser(IdentifyUserParams.builder().installation(installation).customerId(user.getId()).build());
+  }
+  return Session.of(user);
+}
+```
+
+See the [Java SDK](../java/README.md#identify-your-users).
 
 ## Customers from before Clikgate
 

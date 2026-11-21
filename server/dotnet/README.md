@@ -53,21 +53,33 @@ return Results.Ok(new { user, clikgateIdentityToken = IdentityTokens.Create(user
 IdentityTokens.Create(user.Id, appId: "app_…");                                            // several apps: CLIKGATE_IDENTITY_SECRETS
 ```
 
-**Path B: installation ID, no secret or token.** The app reads `getInstallationId()` and includes it in its sign-in request; your server calls `identifyUser` with the app ID, installation ID and customer ID, after sign-in and at every signed-in app open. Clikgate accepts installations active in the last 7 days.
+**Path B: the installation header, no secret or token.** The mobile SDK gives your app a `Clikgate-Installation` header (`<app_id>:<installation_id>`, not a secret), which the app sends to your server with its sign-in request and signed-in requests. After your own sign-in check succeeds, and at every signed-in app open, pass it to `IdentifyUserAsync` as `Installation` with your signed-in user's ID. Your server never needs to know which Clikgate app ID belongs to which platform. Clikgate accepts installations active in the last 7 days.
+
+- **The customer ID always comes from your own authenticated user.** The header only names the app installation. Call `IdentifyUserAsync` only after your sign-in check succeeds, and never read the customer ID from the request.
+- **A missing or invalid header is ignored** (`null`, never an error or a log line): skip the call. Parsing is strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, trimmed.
+- **`AppId` is optional.** With only an installation ID, Clikgate finds the app. If the same installation ID is active in several of your apps (iOS apps sharing a Keychain access group can share one), the API answers `409 installation_in_several_apps`, a `ConflictException` with param `app_id`: send `AppId` too.
 
 ```csharp
-// The app sends Clikgate.getInstallationId() with its sign-in request (null when tracking is off: skip)
-if (installationId is not null)
-    await clikgate.IdentifyUserAsync(new IdentifyUserParams { AppId = "app_…", InstallationId = installationId, CustomerId = user.Id });
-```
+// ASP.NET Core (Clikgate.AspNetCore): the header, parsed; null when missing or invalid
+app.MapPost("/login", async (HttpContext ctx, Credentials credentials, IClikgateClient clikgate) =>
+{
+    var user = await SignInAsync(credentials);             // your own sign-in check first
+    if (user is null) return Results.Unauthorized();
+    if (ctx.GetClikgateInstallation() is { } installation)
+        await clikgate.IdentifyUserAsync(IdentifyUserParams.For(installation, user.Id));
+    return Results.Ok();
+});
 
+// Or pass the raw header value (ignored when missing or invalid)
+await clikgate.IdentifyUserAsync(new IdentifyUserParams { Installation = Request.Headers["Clikgate-Installation"], CustomerId = user.Id });
+```
 ## Customers from before Clikgate
 
 Tell Clikgate who was already your customer before you added it, so they are never counted as a referral or a new customer. Send the account's creation date with the identity token (version 2) or from your server, and import the rest of your existing customers once. Use your own customer IDs, never emails or phone numbers: Clikgate stores a keyed fingerprint of each imported ID, not the ID itself. Not available in private mode. Guide: https://clikgate.com/docs/identify-users.
 
 ```csharp
 var token = clikgate.CreateIdentityToken(user.Id, null, user.CreatedAt); // version 2 (a DateTimeOffset); null → version 1
-await clikgate.IdentifyUserAsync(new IdentifyUserParams { AppId = "app_…", InstallationId = installationId, CustomerId = user.Id, CustomerSince = user.CreatedAt });
+await clikgate.IdentifyUserAsync(new IdentifyUserParams { Installation = Request.Headers["Clikgate-Installation"], CustomerId = user.Id, CustomerSince = user.CreatedAt });
 var result = await clikgate.KnownCustomers.ImportAsync(new[] { new KnownCustomer("u_10482", new DateTimeOffset(2024, 3, 2, 0, 0, 0, TimeSpan.Zero)) }); // batches of 10,000
 ```
 
@@ -108,6 +120,7 @@ app.MapPost("/applications/{id}/approve", (string id, IClikgateClient clikgate) 
 The pattern is: capture it on landing, save it with your own record, then send the goal later from any job.
 
 - **ASP.NET Core:** `UseClikgateClickId()` and `HttpContext.GetClikgateClickId()`. The middleware keeps a `?cgid=…` in the first-party `_cg_cgid` cookie, which the web script also reads.
+- **The app's installation** (`Clikgate-Installation` header, for `IdentifyUserAsync`): `HttpContext.GetClikgateInstallation()` from `Clikgate.AspNetCore` (no middleware needed), and by hand `Installation.ParseHeader(value)`. Each is an `Installation` (`AppId`, `InstallationId`) or `null`, never an error.
 - **Elsewhere:**
   - `clikgate.ClickIds.FromRequest(url, name => headers[name])`
   - `clikgate.ClickIds.Persist((n, v) => response.AddHeader(n, v), clickId)`

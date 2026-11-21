@@ -28,7 +28,19 @@ from typing import Any, Dict, List, Optional, Tuple
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "src"))
 
-from clikgate import AsyncClikgate, Clikgate, ClikgateError, Clock, ErrorContext, Provider, format_value, hash_for_ads  # noqa: E402
+from clikgate import (  # noqa: E402
+    AsyncClikgate,
+    Clikgate,
+    ClikgateError,
+    Clock,
+    ErrorContext,
+    Installation,
+    Provider,
+    format_value,
+    hash_for_ads,
+    installation_from_request,
+    parse_installation_header,
+)
 
 MOCK = HERE.parents[2] / "conformance" / "mock-server" / "server.mjs"
 CLEAR = ("CLIKGATE_API_KEY", "CLIKGATE_BASE_URL", "HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy")
@@ -54,6 +66,10 @@ def control(base: str, path: str, body: Any = None) -> Any:
     )
     with urllib.request.urlopen(req, timeout=60) as res:
         return json.loads(res.read())
+
+
+def _installation_wire(i: Optional[Installation]) -> Optional[Dict[str, str]]:
+    return None if i is None else {"app_id": i.app_id, "installation_id": i.installation_id}
 
 
 def decode(v: Any) -> Any:
@@ -224,6 +240,11 @@ def local_step(client: Any, call: str, a: Dict[str, Any], run: Run) -> Tuple[boo
         return True, client.webhooks.verify(a["raw_body"], a.get("header"), a["secret"], tolerance=a["tolerance"], now=a["now"])
     if call == "webhooks.verify_any":
         return True, client.webhooks.verify_any(a["raw_body"], a.get("header"), a["secrets"], tolerance=a["tolerance"], now=a["now"])
+    if call == "installations.parse_header":
+        return True, {"value": _installation_wire(parse_installation_header(a.get("value")))}
+    if call == "installations.from_request":
+        r = a["request"]
+        return True, {"value": _installation_wire(installation_from_request({"url": r["url"], "headers": r.get("headers") or {}}))}
     if call == "click_ids.is_valid":
         return True, {"value": client.click_ids.is_valid(a.get("id"))}
     if call == "click_ids.from_request":
@@ -320,7 +341,7 @@ def sync_step(client: Clikgate, call: str, a: Dict[str, Any]) -> Any:
         return client.conversions.create(request_options=ro, **(a.get("params") or {}))
     if call == "identify_user":
         return client.identify_user(
-            request_options=ro, **{k: a.get(k) for k in ("click_id", "app_id", "installation_id", "customer_id", "label")}
+            request_options=ro, **{k: a.get(k) for k in ("click_id", "installation", "app_id", "installation_id", "customer_id", "label")}
         )
     if call == "payments.confirm":
         return client.payments.confirm(request_options=ro, **confirm_kwargs(a))
@@ -371,7 +392,7 @@ async def async_step(client: AsyncClikgate, call: str, a: Dict[str, Any]) -> Any
         return await client.conversions.create(request_options=ro, **(a.get("params") or {}))
     if call == "identify_user":
         return await client.identify_user(
-            request_options=ro, **{k: a.get(k) for k in ("click_id", "app_id", "installation_id", "customer_id", "label")}
+            request_options=ro, **{k: a.get(k) for k in ("click_id", "installation", "app_id", "installation_id", "customer_id", "label")}
         )
     if call == "payments.confirm":
         return await client.payments.confirm(request_options=ro, **confirm_kwargs(a))

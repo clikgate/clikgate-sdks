@@ -316,6 +316,25 @@ class ConformanceTest {
           }
           return Webhooks.verifyAny(bytes(a.get("raw_body")), (String) a.get("header"), secrets, ((Number) a.get("tolerance")).longValue(), ((Number) a.get("now")).longValue());
         }
+      case "installations.parse_header": {
+        Object v = a.get("value");
+        return Collections.singletonMap("value", installationWire(Installation.parseHeader(v instanceof String ? (String) v : null)));
+      }
+      case "installations.from_request": {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> headers = (Map<String, Object>) ((Map<String, Object>) a.get("request")).get("headers");
+        String value = null;
+        int count = 0;
+        if (headers != null) {
+          for (Map.Entry<String, Object> e : headers.entrySet()) {
+            if (e.getKey().equalsIgnoreCase(Installation.HEADER)) {
+              value = e.getValue() instanceof String ? (String) e.getValue() : null;
+              count++;
+            }
+          }
+        }
+        return Collections.singletonMap("value", installationWire(count == 1 ? Installation.parseHeader(value) : null));
+      }
       case "click_ids.is_valid":
         return Collections.singletonMap("value", ClickIds.isValid(a.get("id")));
       case "click_ids.from_request":
@@ -415,6 +434,7 @@ class ConformanceTest {
         return client.identifyUser(
             IdentifyUserParams.builder()
                 .clickId((String) a.get("click_id"))
+                .installation((String) a.get("installation"))
                 .appId((String) a.get("app_id"))
                 .installationId((String) a.get("installation_id"))
                 .customerId((String) a.get("customer_id"))
@@ -600,5 +620,13 @@ class ConformanceTest {
     System.out.println("\nconformance (java): " + passed + " passed, " + failed + " failed, " + (passed + failed) + " total");
     assertEquals(0, failed, report.toString());
     assertTrue(passed > 0, "no cases ran");
+  }
+
+  private static @org.jspecify.annotations.Nullable Map<String, String> installationWire(@org.jspecify.annotations.Nullable Installation i) {
+    if (i == null) return null;
+    Map<String, String> m = new java.util.LinkedHashMap<>();
+    m.put("app_id", i.getAppId());
+    m.put("installation_id", i.getInstallationId());
+    return m;
   }
 }

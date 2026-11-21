@@ -1,4 +1,5 @@
-"""FastAPI add-on: the Starlette middleware and the ``click_id`` dependency (see :mod:`clikgate.starlette`).
+"""FastAPI add-on: the Starlette middleware and the ``click_id`` and ``installation`` dependencies (see
+:mod:`clikgate.starlette`).
 
 Example::
 
@@ -6,6 +7,6 @@ Example::
     app.add_middleware(ClikgateMiddleware, client=clikgate)
 """
 
-from .starlette import ClikgateMiddleware, click_id, keep_endpoint
+from .starlette import ClikgateMiddleware, click_id, installation, keep_endpoint
 
-__all__ = ["ClikgateMiddleware", "click_id", "keep_endpoint"]
+__all__ = ["ClikgateMiddleware", "click_id", "installation", "keep_endpoint"]

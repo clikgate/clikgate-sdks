@@ -1,6 +1,6 @@
 # clikgate/clikgate-laravel
 
-Laravel integration for [`clikgate/clikgate-php`](https://github.com/clikgate/clikgate-php): an auto-discovered service provider, the `Clikgate` facade, the `clikgate` middleware, `$request->clikgateClickId()`, and queued goal sending. Laravel 12 and 13.
+Laravel integration for [`clikgate/clikgate-php`](https://github.com/clikgate/clikgate-php): an auto-discovered service provider, the `Clikgate` facade, the `clikgate` middleware, `$request->clikgateClickId()`, `$request->clikgateInstallation()`, and queued goal sending. Laravel 12 and 13.
 
 ```bash
 composer require clikgate/clikgate-laravel
@@ -28,6 +28,7 @@ Application::create(['reference' => 'APP-55231', 'click_id' => $request->clikgat
 
 - The middleware keeps a `?cgid=…` in the first-party `_cg_cgid` cookie, which the web script also reads.
 - The provider excludes that cookie from `EncryptCookies`, so the web script can read it.
+- `$request->clikgateInstallation()` reads the app's `Clikgate-Installation` header (for `identifyUser`): an `Installation` (`->appId`, `->installationId`) or `null` when it is missing or invalid. It works with or without the middleware.
 
 ## Keep the click ID longer (Safari)
 
@@ -61,14 +62,18 @@ return response()->json(['user' => $user, 'clikgateIdentityToken' => Clikgate::c
 Clikgate::createIdentityToken((string) $user->id, ['appId' => 'app_…']);   // several apps
 ```
 
-**Path B (no secret or token):** the app sends `getInstallationId()` with its sign-in request, and you call `Clikgate::identifyUser()` after sign-in and at every signed-in app open (skip it when there's no installation ID):
+**Path B: the installation header, no secret or token.** The mobile SDK gives your app a `Clikgate-Installation` header (`<app_id>:<installation_id>`, not a secret), which the app sends to your server with its sign-in request and signed-in requests. After your own sign-in check succeeds, and at every signed-in app open, pass it to `Clikgate::identifyUser()` as `installation` with your signed-in user's ID. Your server never needs to know which Clikgate app ID belongs to which platform. Clikgate accepts installations active in the last 7 days.
+
+- **The customer ID always comes from your own authenticated user.** The header only names the app installation. Call `Clikgate::identifyUser()` only after your sign-in check succeeds, and never read the customer ID from the request.
+- **A missing or invalid header is ignored** (`null`, never an error or a log line): skip the call. Parsing is strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, trimmed.
+- **`appId` is optional.** With only an installation ID, Clikgate finds the app. If the same installation ID is active in several of your apps (iOS apps sharing a Keychain access group can share one), the API answers `409 installation_in_several_apps`, a `ConflictException` with param `app_id`: send `appId` too.
 
 ```php
-if ($request->filled('installation_id')) {
-    Clikgate::identifyUser(['appId' => 'app_…', 'installationId' => $request->string('installation_id')->toString(), 'customerId' => (string) $user->id]);
+// After your own sign-in check (Auth::attempt), with the signed-in user's ID
+if (Auth::attempt($credentials) && ($installation = $request->clikgateInstallation()) !== null) {
+    Clikgate::identifyUser($installation->toArray() + ['customerId' => (string) Auth::id()]);
 }
 ```
-
 ## Customers from before Clikgate
 
 Tell Clikgate who was already your customer before you added it, so they are never counted as a referral or a new customer. Send the account's creation date with the identity token (version 2) or from your server, and import the rest of your existing customers once. Use your own customer IDs, never emails or phone numbers: Clikgate stores a keyed fingerprint of each imported ID, not the ID itself. Not available in private mode. Guide: https://clikgate.com/docs/identify-users.

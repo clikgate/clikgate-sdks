@@ -12,10 +12,18 @@
  * import { getClickId } from '@clikgate/node/next';
  * const clickId = getClickId(await cookies());
  *
+ * // app/api/login/route.ts: the app's Clikgate-Installation header
+ * import { headers } from 'next/headers';
+ * import { getInstallation } from '@clikgate/node/next';
+ * const installation = getInstallation(await headers());
+ *
  * @packageDocumentation
  */
 import { NextResponse, type NextRequest } from 'next/server.js';
 import { ClickIds, keptMarkerHeader, type KeepRoute, type KeepRouteOptions, type PersistOptions } from './click-ids.js';
+import { installationFromRequest, type Installation } from './installation.js';
+
+export type { Installation } from './installation.js';
 
 /** A cookie store: `request.cookies` or the awaited `cookies()` from `next/headers`. */
 export interface CookieStoreLike {
@@ -111,4 +119,23 @@ export function getClickId(store: CookieStoreLike, clickIdParam?: string): strin
 export function keepRoute(options: KeepRouteOptions & { clickIdParam?: string } = {}): KeepRoute {
   const { clickIdParam, ...rest } = options;
   return helpersFor(clickIdParam).keepRoute(rest);
+}
+
+/** A header store: the awaited `headers()` from `next/headers`, `request.headers` or a Fetch `Headers`. */
+export interface HeaderStoreLike {
+  get(name: string): string | null;
+}
+
+/**
+ * Read the app installation from the `Clikgate-Installation` header, e.g. `getInstallation(await headers())` in a
+ * route handler or server action, or `getInstallation(request.headers)`. `null` when it is missing or invalid.
+ *
+ * @example
+ * import { headers } from 'next/headers';
+ * const user = await requireSignedInUser();          // your own sign-in check first
+ * const installation = getInstallation(await headers());
+ * if (installation) await clikgate.identifyUser({ ...installation, customerId: user.id });
+ */
+export function getInstallation(store: HeaderStoreLike | null | undefined): Installation | null {
+  return store ? installationFromRequest({ headers: store }) : null;
 }

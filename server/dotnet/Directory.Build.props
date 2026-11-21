@@ -7,7 +7,7 @@
     <AnalysisLevel>latest</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <Deterministic>true</Deterministic>
-    <Version>2.0.2</Version>
+    <Version>2.0.3</Version>
     <Authors>Clikgate</Authors>
     <Company>Clikgate</Company>
     <Copyright>Copyright (c) 2026 Clikgate</Copyright>

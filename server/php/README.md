@@ -68,22 +68,30 @@ return ['user' => $user, 'clikgateIdentityToken' => IdentityToken::create((strin
 IdentityToken::create((string) $user->id, ['appId' => 'app_…']);                                  // several apps: CLIKGATE_IDENTITY_SECRETS
 ```
 
-**Path B: installation ID, no secret or token.** The app reads `getInstallationId()` and includes it in its sign-in request; your server calls `identifyUser` with the app ID, installation ID and customer ID, after sign-in and at every signed-in app open. Clikgate accepts installations active in the last 7 days.
+**Path B: the installation header, no secret or token.** The mobile SDK gives your app a `Clikgate-Installation` header (`<app_id>:<installation_id>`, not a secret), which the app sends to your server with its sign-in request and signed-in requests. After your own sign-in check succeeds, and at every signed-in app open, pass it to `identifyUser` as `installation` with your signed-in user's ID. Your server never needs to know which Clikgate app ID belongs to which platform. Clikgate accepts installations active in the last 7 days.
+
+- **The customer ID always comes from your own authenticated user.** The header only names the app installation. Call `identifyUser` only after your sign-in check succeeds, and never read the customer ID from the request.
+- **A missing or invalid header is ignored** (`null`, never an error or a log line): skip the call. Parsing is strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, trimmed.
+- **`appId` is optional.** With only an installation ID, Clikgate finds the app. If the same installation ID is active in several of your apps (iOS apps sharing a Keychain access group can share one), the API answers `409 installation_in_several_apps`, a `ConflictException` with param `app_id`: send `appId` too.
 
 ```php
-// The app sends Clikgate.getInstallationId() with its sign-in request (null when tracking is off: skip)
-if ($installationId !== null) {
-    $clikgate->identifyUser(['appId' => 'app_…', 'installationId' => $installationId, 'customerId' => (string) $user->id]);
-}
-```
+use Clikgate\Installation;
 
+// After your own sign-in check: the header from the app, your user's ID (ignored when missing or invalid)
+$installation = Installation::fromRequest($request);           // PSR-7, Symfony/Laravel, or null for $_SERVER
+if ($installation !== null) {
+    $clikgate->identifyUser($installation->toArray() + ['customerId' => (string) $user->id]);
+}
+// Or pass the raw header value
+$clikgate->identifyUser(['installation' => $request->getHeaderLine('Clikgate-Installation'), 'customerId' => (string) $user->id]);
+```
 ## Customers from before Clikgate
 
 Tell Clikgate who was already your customer before you added it, so they are never counted as a referral or a new customer. Send the account's creation date with the identity token (version 2) or from your server, and import the rest of your existing customers once. Use your own customer IDs, never emails or phone numbers: Clikgate stores a keyed fingerprint of each imported ID, not the ID itself. Not available in private mode. Guide: https://clikgate.com/docs/identify-users.
 
 ```php
 $token = IdentityToken::create((string) $user->id, ['customerSince' => $user->created_at]); // version 2
-$clikgate->identifyUser(['appId' => 'app_…', 'installationId' => $installationId, 'customerId' => (string) $user->id, 'customerSince' => $user->created_at]);
+$clikgate->identifyUser(['installation' => $request->getHeaderLine('Clikgate-Installation'), 'customerId' => (string) $user->id, 'customerSince' => $user->created_at]);
 $result = $clikgate->knownCustomers->import([['customerId' => 'u_10482', 'customerSince' => '2024-03-02']]); // batches of 10,000
 ```
 
@@ -121,6 +129,7 @@ $clikgate->goal('account_opened', ['clickId' => $application['click_id'], 'refer
 ```
 
 - **PSR-15** (Slim, Mezzio, …): `new \Clikgate\Psr15\ClikgateMiddleware($clikgate)` sets the request attribute `clikgate.click_id` and keeps a `?cgid=…` in the first-party `_cg_cgid` cookie (needs `psr/http-server-middleware`).
+- **The app's installation** (`Clikgate-Installation` header, for `identifyUser`): the PSR-15 middleware also sets the attribute `clikgate.installation`; without it, `Installation::fromRequest($request)` or `Installation::parseHeader($value)`. Each is an `Installation` (`->appId`, `->installationId`) or `null`.
 - **By hand:** `$response = $clikgate->clickIds->persist($response, $clickId, ['request' => $request])`. PSR-7 responses are immutable, so use the returned one.
 - **From payment payloads** (Paystack, Flutterwave, Shopify, WooCommerce): `$clikgate->clickIds->fromPaymentMetadata($payload)`.
 

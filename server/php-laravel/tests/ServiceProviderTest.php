@@ -37,10 +37,26 @@ final class ServiceProviderTest extends TestCase
     protected function defineRoutes($router): void
     {
         Route::middleware('clikgate')->get('/landing', static fn(Request $request): string => (string) $request->clikgateClickId());
+        Route::get('/me', static function (Request $request): array {
+            $installation = $request->clikgateInstallation();
+
+            return ['installation' => $installation?->toArray()];
+        });
         Route::clikgateKeep('/cg/keep');
         Route::middleware('web')->group(static function (): void {
             Route::clikgateKeep('/web/cg/keep');
         });
+    }
+
+    public function testInstallationMacroReadsTheHeader(): void
+    {
+        $header = 'app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6a1f0c2e-0000-4000-8000-000000000001';
+        $this->get('/me', ['Clikgate-Installation' => $header])
+            ->assertOk()
+            ->assertExactJson(['installation' => ['appId' => 'app_01JCK8Z9V7Q4M2N6P8R0S2T4AP', 'installationId' => '6a1f0c2e-0000-4000-8000-000000000001']]);
+        $this->get('/me', ['Clikgate-Installation' => str_repeat('x', 500)])->assertOk()->assertExactJson(['installation' => null]);
+        $this->get('/me', ['Clikgate-Installation' => 'app_01JCK8Z9V7Q4M2N6P8R0S2T4AP:6A1F0C2E-0000-4000-8000-000000000001'])->assertOk()->assertExactJson(['installation' => null]);
+        $this->get('/me')->assertOk()->assertExactJson(['installation' => null]);
     }
 
     public function testClientIsASingletonConfiguredFromConfig(): void

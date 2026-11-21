@@ -2,6 +2,17 @@
 
 All notable changes to these artifacts, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the artifacts use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Java versions are dropped only after their end of life.
 
+## [2.0.3] - unreleased
+
+### Identify users with the installation header
+
+- **Added:** `IdentifyUserParams.Builder.installation(String)` takes the raw `Clikgate-Installation` header your app sends (`<app_id>:<installation_id>`, from the mobile SDK) and fills `appId` and `installationId` from it, so your server never needs to know which Clikgate app ID belongs to which platform. A missing or invalid header is ignored, never sent and never logged. `installationId` given explicitly wins over the header. `installation(Installation)` takes a parsed one.
+- **Changed:** `appId` is optional with `installationId`: Clikgate finds the app. `appId` without `installationId` is still refused locally (`invalid_request`, param `installation_id`). Calls that send both behave as before.
+- **Added:** `Installation.parseHeader(String)` → `Installation` (`getAppId()`, `getInstallationId()`) or `null` (strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, ASCII whitespace trimmed; never throws) and `Installation.HEADER`.
+- **Added:** `ClikgateInstallations.from(HttpServletRequest)` in `clikgate-servlet-jakarta` and `clikgate-servlet-javax` (Spring Boot 2/3, Jakarta EE, Java EE): null when the header is missing, invalid or sent more than once.
+- **Added (starter):** `@ClikgateInstallation Installation installation` handler parameters, resolved from the header; null when missing or invalid, never a failed request.
+- **Docs:** when the installation ID is active in several of your apps, the API answers `409 installation_in_several_apps` (a `ConflictException`, param `app_id`): send `appId` too. Call `identifyUser` only after your own sign-in check, with your signed-in user's ID; never read the customer ID from the request.
+
 ## [2.0.2] - unreleased
 
 ### Fixed

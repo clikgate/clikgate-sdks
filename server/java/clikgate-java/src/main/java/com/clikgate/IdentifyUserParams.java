@@ -6,8 +6,8 @@ import java.time.LocalDate;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The parameters of {@link Clikgate#identifyUser(IdentifyUserParams)}: at least one of {@code clickId},
- * {@code appId} + {@code installationId}, {@code customerId}.
+ * The parameters of {@link Clikgate#identifyUser(IdentifyUserParams)}: at least one of {@code clickId}, an
+ * installation ({@code installation}, or {@code installationId} with an optional {@code appId}), {@code customerId}.
  *
  * <pre>{@code
  * clikgate.identifyUser(IdentifyUserParams.builder().clickId(order.clickId()).customerId("user_42").label("Ada (VIP)").build());
@@ -15,6 +15,7 @@ import org.jspecify.annotations.Nullable;
  */
 public final class IdentifyUserParams {
   final @Nullable String clickId;
+  final @Nullable String installation;
   final @Nullable String appId;
   final @Nullable String installationId;
   final @Nullable String customerId;
@@ -24,6 +25,7 @@ public final class IdentifyUserParams {
 
   private IdentifyUserParams(Builder b) {
     clickId = b.clickId;
+    installation = b.installation;
     appId = b.appId;
     installationId = b.installationId;
     customerId = b.customerId;
@@ -39,6 +41,7 @@ public final class IdentifyUserParams {
   /** Builder for {@link IdentifyUserParams}. */
   public static final class Builder {
     private @Nullable String clickId;
+    private @Nullable String installation;
     private @Nullable String appId;
     private @Nullable String installationId;
     private @Nullable String customerId;
@@ -54,19 +57,41 @@ public final class IdentifyUserParams {
       return this;
     }
 
-    /** An app installation: the app's ID, with {@link #installationId(String)}. */
+    /**
+     * The raw {@code Clikgate-Installation} header your app sent ({@code <app_id>:<installation_id>}). It fills
+     * {@code appId} and {@code installationId}. Missing or invalid values are ignored, never sent. Not used when
+     * {@link #installationId(String)} is given.
+     */
+    public Builder installation(@Nullable String installation) {
+      this.installation = installation;
+      return this;
+    }
+
+    /** An app installation parsed with {@link Installation#parseHeader(String)} (null is ignored). */
+    public Builder installation(@Nullable Installation installation) {
+      if (installation != null) {
+        this.appId = installation.getAppId();
+        this.installationId = installation.getInstallationId();
+      }
+      return this;
+    }
+
+    /** The app the installation belongs to. Optional: without it Clikgate finds the app. Only with {@link #installationId(String)}. */
     public Builder appId(@Nullable String appId) {
       this.appId = appId;
       return this;
     }
 
-    /** The SDK's installation ID, with {@link #appId(String)}. */
+    /** The SDK's installation ID, sent by your app. */
     public Builder installationId(@Nullable String installationId) {
       this.installationId = installationId;
       return this;
     }
 
-    /** Your customer ID. With a click or installation, links it to this customer. Refused in private mode. */
+    /**
+     * Your signed-in user's ID (never a value read from the request). With a click or installation, links it to this
+     * customer. Refused in private mode.
+     */
     public Builder customerId(@Nullable String customerId) {
       this.customerId = customerId;
       return this;
