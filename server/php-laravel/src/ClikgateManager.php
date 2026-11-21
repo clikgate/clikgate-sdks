@@ -198,21 +198,23 @@ final class ClikgateManager
 
     /**
      * Tell Clikgate who a person is (see {@see Client::identifyUser()}). Path B of
-     * https://clikgate.com/docs/identify-users needs no identity secret or token: the app sends its installation ID
-     * (`getInstallationId()`) with the sign-in request, and you call this after sign-in and at every signed-in app
-     * open. Skip it when the app sends no installation ID (tracking is off).
+     * https://clikgate.com/docs/identify-users needs no identity secret or token: the app sends the mobile SDK's
+     * `Clikgate-Installation` header with its sign-in request and signed-in requests. After your own sign-in check
+     * succeeds, and at every signed-in app open, pass that header as `installation` with your signed-in user's ID
+     * (never a customer ID read from the request). `$request->clikgateInstallation()` is `null` when the header is
+     * missing or invalid (tracking is off): skip the call.
      *
      * ```php
-     * if ($request->filled('installation_id')) {
-     *     Clikgate::identifyUser(['appId' => 'app_…', 'installationId' => $request->string('installation_id')->toString(), 'customerId' => (string) $user->id]);
+     * if ($request->clikgateInstallation() !== null) {
+     *     Clikgate::identifyUser(['installation' => $request->header('Clikgate-Installation'), 'customerId' => (string) $user->id]);
      * }
      * ```
      *
      * `customerSince` is when they became your customer; Clikgate keeps the earliest date unless
      * `customerSinceReplace` is true.
      *
-     * @param array{clickId?: ?string, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string, customerSince?: string|\DateTimeInterface|int|null, customerSinceReplace?: ?bool} $params
-     * @param array<string, mixed>                                                                                                                                                                       $requestOptions
+     * @param array{clickId?: ?string, installation?: ?string, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string, customerSince?: string|\DateTimeInterface|int|null, customerSinceReplace?: ?bool} $params
+     * @param array<string, mixed> $requestOptions
      *
      * @return array<string, mixed>
      */
