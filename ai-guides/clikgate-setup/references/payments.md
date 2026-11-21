@@ -35,7 +35,7 @@ Put the call in the gateway's **success callback**. Report the reference that th
 
 Pick one route, in this order of preference. Most of them need no code:
 
-1. **Read-only key** (Stripe, Square, Checkout.com): set it up in the dashboard, Integrations › Payments.
+1. **Read-only key** (Stripe, Square, Checkout.com): set it up in the dashboard, Connect › Integrations › Payments.
 2. **Direct webhook with a separate webhook secret** (Flutterwave, Stripe, PayPal, Adyen, Square, Yoco, Peach Payments, Checkout.com): set it up in the dashboard.
 3. **WordPress plugin or Shopify app.**
 4. **One line on the server, after the server's own verification.** This is the route for a developer. See below.

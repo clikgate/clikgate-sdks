@@ -1,5 +1,5 @@
 /**
- * Express / Connect middleware: keeps the click ID (SPEC section 17).
+ * Express / Connect middleware: keeps the click ID and reads the app's `Clikgate-Installation` header (SPEC section 17).
  *
  * @example
  * import express from 'express';
@@ -12,17 +12,26 @@
  * app.post('/signup', (req, res) => {
  *   const clickId = req.clikgate.clickId;   // save it with the application
  * });
+ * app.post('/login', async (req, res) => {
+ *   const user = await signIn(req.body);     // your own sign-in check first
+ *   if (req.clikgate.installation) {
+ *     await clikgate.identifyUser({ installation: req.clikgate.installation, customerId: user.id });
+ *   }
+ * });
  *
  * @packageDocumentation
  */
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { clickIds as defaultClickIds, type ClickIds, type PersistOptions } from './click-ids.js';
 import type { Clikgate } from './client.js';
+import { installationFromRequest, type Installation } from './installation.js';
 
 /** What the middleware puts on the request. */
 export interface ClikgateRequestContext {
   /** The click ID from the query, the `_cg_<param>` cookie or the `Clikgate-Click-Id` header; `null` when there is none. */
   clickId: string | null;
+  /** The app installation from the `Clikgate-Installation` header; `null` when it is missing or invalid. */
+  installation: Installation | null;
 }
 
 declare global {
@@ -57,7 +66,7 @@ export function captureClickId(helpers: ClickIds, req: IncomingMessage & { origi
 }
 
 /**
- * Express/Connect middleware: sets `req.clikgate.clickId`, and stores a click ID that arrives in
+ * Express/Connect middleware: sets `req.clikgate.clickId` and `req.clikgate.installation`, and stores a click ID that arrives in
  * the query string in the first-party `_cg_<param>` cookie. Pass the client so the organisation's
  * click-ID parameter is used; without it, `cgid`.
  *
@@ -75,7 +84,7 @@ export function clikgateMiddleware(client?: Clikgate | null, options: ClikgateMi
         void client.config().catch(() => undefined);
       }
       const clickId = captureClickId(helpers, req, res, options);
-      (req as IncomingMessage & { clikgate?: ClikgateRequestContext }).clikgate = { clickId };
+      (req as IncomingMessage & { clikgate?: ClikgateRequestContext }).clikgate = { clickId, installation: installationFromRequest(req) };
       next();
     } catch (err) {
       next(err);

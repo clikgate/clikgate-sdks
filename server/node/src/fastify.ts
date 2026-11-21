@@ -18,11 +18,14 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { clickIds as defaultClickIds, type PersistOptions } from './click-ids.js';
 import type { Clikgate } from './client.js';
+import { installationFromRequest, type Installation } from './installation.js';
 
 /** What the plugin puts on the request. */
 export interface ClikgateRequestContext {
   /** The click ID, or `null`. */
   clickId: string | null;
+  /** The app installation from the `Clikgate-Installation` header; `null` when it is missing or invalid. */
+  installation: Installation | null;
 }
 
 declare module 'fastify' {
@@ -48,7 +51,7 @@ const plugin: FastifyPluginAsync<ClikgatePluginOptions> = async (fastify, option
   fastify.decorateRequest('clikgate', null as unknown as ClikgateRequestContext);
   fastify.addHook('onRequest', async (request, reply) => {
     const clickId = helpers.fromRequest({ url: request.url, headers: request.headers });
-    request.clikgate = { clickId };
+    request.clikgate = { clickId, installation: installationFromRequest(request) };
     if (clickId && persist !== false) {
       const url = new URL(request.url, 'http://localhost');
       if (url.searchParams.getAll(helpers.paramName).includes(clickId)) helpers.persist(reply, clickId, cookie);
@@ -63,7 +66,7 @@ meta[Symbol.for('fastify.display-name')] = '@clikgate/node/fastify';
 meta[Symbol.for('plugin-meta')] = { name: '@clikgate/node/fastify', fastify: '>=5' };
 
 /**
- * Fastify plugin: sets `request.clikgate.clickId` and keeps a click ID from the query string in the
+ * Fastify plugin: sets `request.clikgate.clickId` and `request.clikgate.installation`, and keeps a click ID from the query string in the
  * `_cg_<param>` cookie.
  *
  * @example

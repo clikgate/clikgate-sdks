@@ -58,11 +58,62 @@ The email is trimmed and lowercased. The phone must include its country code (`+
 
 In private mode, hash on your own server: Clikgate never hashes for you there.
 
+## End to end
+
+A Django app that signs users in, counts goals and payments, runs a referral program and handles webhooks, with typed methods only:
+
+```python
+import os
+from decimal import Decimal
+
+from django.http import HttpResponse, JsonResponse
+from clikgate import Clikgate, EventType, SignatureVerificationError, create_identity_token, webhooks
+
+clikgate = Clikgate()   # CLIKGATE_API_KEY; CLIKGATE_IDENTITY_SECRET for identity tokens
+PROGRAM_ID = "rpg_01J…"
+
+
+def sign_in(request):
+    user = authenticate_from_your_own_form(request)   # your own sign-in check
+    # Path A: an identity token in the response; the app passes it to the mobile SDK.
+    token = create_identity_token(str(user.id), customer_since=user.date_joined)
+    # Path B: the app's Clikgate-Installation header, with the customer ID from your own session.
+    clikgate.identify_user(installation=request.headers.get("Clikgate-Installation"), customer_id=str(user.id))
+    # The customer's referral code and link (created the first time).
+    referrer = clikgate.referrals.get_or_create_referrer(PROGRAM_ID, customer_id=str(user.id), display_name=user.first_name)
+    return JsonResponse({"clikgate_identity_token": token, "referral_code": referrer["code"], "referral_url": referrer["url"]})
+
+
+def application_approved(application):
+    clikgate.goal("account_opened", click_id=application.click_id, reference=application.ref, value=Decimal("2000000"))
+
+
+def order_paid(order, verify_response):
+    # After your own GET /transaction/verify/{reference} with Paystack.
+    clikgate.payments.from_paystack(verify_response, goal="order_paid", click_id=order.click_id)
+    # Or any gateway: clikgate.payments.confirm(provider="paystack", reference=order.ref, status="success", amount=order.total, currency="NGN")
+
+
+def clikgate_webhook(request):
+    try:
+        event = webhooks.verify(request.body, request.headers.get("Clikgate-Signature"), os.environ["CLIKGATE_WEBHOOK_SECRET"])
+    except SignatureVerificationError as err:
+        return HttpResponse(err.code, status=400)
+    referral = event.as_referral()                     # None for any other event type
+    if referral is not None and event.type == EventType.REFERRAL_QUALIFIED:
+        reward = (referral.get("reward_snapshot") or {}).get("referrer") or {}
+        credit_wallet(referral["referrer"]["customer_id"], reward.get("amount"), reward.get("currency"))   # "500.00", "NGN"
+    goal = event.as_goal_event()
+    if goal is not None and event.type == EventType.GOAL_COMPLETED:
+        record_sale(goal["goal"], goal["value"])       # dedupe on event.id: delivery is at-least-once
+    return HttpResponse(status=200)
+```
+
 ## Identify your users
 
 Two ways to tell Clikgate which of your users is using the app. Full guide: https://clikgate.com/docs/identify-users. The customer ID is your own user ID from your database, never an email, phone number or ID number. Anonymous users don't need either path.
 
-**Path A (default): identity token.** Create the identity secret in Apps › your app › Identity secret and store it as `CLIKGATE_IDENTITY_SECRET` on your server only. `create_identity_token(customer_id, app_id=None)` (also `clikgate.create_identity_token()`, with the `identity_secret` / `identity_secrets` options) signs a token with no network call; return it in the responses the app already calls, and the app passes it to the mobile SDK's `identifyUser()`. Tokens last 30 days by default and are never force-refreshed. Throws `ClikgateServerOnlyError` in browser or mobile Python builds (Pyodide, WASI, iOS, Android).
+**Path A (default): identity token.** Create the identity secret in Developers › SDKs › your app › Set up identity › Identity secret and store it as `CLIKGATE_IDENTITY_SECRET` on your server only. `create_identity_token(customer_id, app_id=None)` (also `clikgate.create_identity_token()`, with the `identity_secret` / `identity_secrets` options) signs a token with no network call; return it in the responses the app already calls, and the app passes it to the mobile SDK's `identifyUser()`. Tokens last 30 days by default and are never force-refreshed. Throws `ClikgateServerOnlyError` in browser or mobile Python builds (Pyodide, WASI, iOS, Android).
 
 ```python
 from clikgate import create_identity_token
@@ -71,21 +122,30 @@ return {"user": user, "clikgate_identity_token": create_identity_token(str(user.
 create_identity_token(str(user.id), app_id="app_…")                                    # several apps: CLIKGATE_IDENTITY_SECRETS
 ```
 
-**Path B: installation ID, no secret or token.** The app reads `getInstallationId()` and includes it in its sign-in request; your server calls `identifyUser` with the app ID, installation ID and customer ID, after sign-in and at every signed-in app open. Clikgate accepts installations active in the last 7 days.
+**Path B: the installation header, no secret or token.** The mobile SDK gives your app a `Clikgate-Installation` header (`<app_id>:<installation_id>`, not a secret), which the app sends to your server with its sign-in request and signed-in requests. After your own sign-in check succeeds, and at every signed-in app open, pass it to `identify_user` as `installation` with your signed-in user's ID. Your server never needs to know which Clikgate app ID belongs to which platform. Clikgate accepts installations active in the last 7 days.
+
+- **The customer ID always comes from your own authenticated user.** The header only names the app installation. Call `identify_user` only after your sign-in check succeeds, and never read the customer ID from the request.
+- **A missing or invalid header is ignored** (`None`, never an error or a log line): skip the call. Parsing is strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, trimmed.
+- **`app_id` is optional.** With only an installation ID, Clikgate finds the app. If the same installation ID is active in several of your apps (iOS apps sharing a Keychain access group can share one), the API answers `409 installation_in_several_apps`, a `ConflictError` with param `app_id`: send `app_id` too.
 
 ```python
-# The app sends Clikgate.getInstallationId() with its sign-in request (None when tracking is off: skip)
-if installation_id:
-    clikgate.identify_user(app_id="app_…", installation_id=installation_id, customer_id=str(user.id))
-```
+# Django (the middleware sets request.clikgate_installation: an Installation or None)
+user = authenticate(request, username=form["email"], password=form["password"])  # your own sign-in check first
+if user is not None and request.clikgate_installation:
+    clikgate.identify_user(installation=request.clikgate_installation, customer_id=str(user.id))  # the parsed installation
 
+# Any framework: pass the raw header value (ignored when missing or invalid)
+clikgate.identify_user(installation=request.headers.get("Clikgate-Installation"), customer_id=str(user.id))
+# Or parse it yourself: Installation(app_id, installation_id) or None
+inst = parse_installation_header(request.headers.get("Clikgate-Installation"))
+```
 ## Customers from before Clikgate
 
 Tell Clikgate who was already your customer before you added it, so they are never counted as a referral or a new customer. Send the account's creation date with the identity token (version 2) or from your server, and import the rest of your existing customers once. Use your own customer IDs, never emails or phone numbers: Clikgate stores a keyed fingerprint of each imported ID, not the ID itself. Not available in private mode. Guide: https://clikgate.com/docs/identify-users.
 
 ```python
 token = create_identity_token(str(user.id), customer_since=user.created_at)  # version 2
-clikgate.identify_user(app_id="app_…", installation_id=installation_id, customer_id=str(user.id), customer_since=user.created_at)
+clikgate.identify_user(installation=request.headers.get("Clikgate-Installation"), customer_id=str(user.id), customer_since=user.created_at)
 result = clikgate.known_customers.import_customers([{"customer_id": "u_10482", "customer_since": "2024-03-02"}])  # batches of 10,000
 print(result["accepted"], result["refused_by_reason"])  # refused rows are counted by reason, never returned
 ```
@@ -121,6 +181,7 @@ get_client().goal("account_opened", click_id=app.click_id, reference=app.referen
 ```
 
 - **Without a framework:** `clikgate.click_ids.from_request(request)` and `clikgate.click_ids.persist(response, click_id, request=request)`.
+- **The app's installation** (`Clikgate-Installation` header, for `identify_user`): Django `request.clikgate_installation`, Flask `g.clikgate_installation`, FastAPI / Starlette `Depends(installation)` from `clikgate.fastapi`, and without a framework `installation_from_request(request)` or `parse_installation_header(value)`. Each is an `Installation(app_id, installation_id)` or `None`, and can be passed to `identify_user` as `installation`, like the raw header.
 - **From payment payloads** (Paystack, Flutterwave, Shopify, WooCommerce): `clikgate.click_ids.from_payment_metadata(payload)`.
 
 ## Keep the click ID longer (Safari)
@@ -209,13 +270,19 @@ clikgate.payments.confirm(provider=Provider.PAYSTACK, reference="T_ref_001", sta
 ## Webhooks
 
 ```python
-from clikgate import webhooks, SignatureVerificationError
+from clikgate import EventType, webhooks, SignatureVerificationError
 
 event = webhooks.verify(request.body, request.headers.get("Clikgate-Signature"), os.environ["CLIKGATE_WEBHOOK_SECRET"])
+referral = event.as_referral()                  # a typed Referral, or None for other event types
+if referral is not None and event.type == EventType.REFERRAL_QUALIFIED:
+    ...
 ```
 
 - Pass the **raw** body (`request.body` in Django, `request.get_data()` in Flask, `await request.body()` in Starlette).
-- Deliveries are at-least-once: dedupe on `event["id"]`.
+- Deliveries are at-least-once: dedupe on `event.id`.
+- `event` is a `WebhookEvent`: a `dict` (`event["data"]["object"]` keeps working) with the attributes `id`, `type`, `api_version`, `created_at`, `organization_id`, `livemode` and `data`.
+- Typed accessors give `data.object` for their family of events, or `None` for any other: `as_referral()` (`referral.*`, with reward `amount`s), `as_referrer()` (`referrer.*`), `as_goal_event()` (`goal.completed`, `goal.reversed`), `as_install()` (`install.*`), `as_payment()` (`payment.*`), `as_conversion()` (`conversion.*`) and `as_device_change()` (`person.device_changed`).
+- `EventType` lists every event type (`EventType.REFERRAL_QUALIFIED == "referral.qualified"`). `event.typed()` returns the event typed as the `TypedWebhookEvent` union, which mypy narrows on `e["type"] == "referral.qualified"`.
 - Use `webhooks.verify_any(body, header, [new_secret, old_secret])` while you rotate your own secrets.
 
 ## Async
@@ -256,7 +323,40 @@ for link in clikgate.links.list(metadata={"seller_id": "sel_ada"}):
 ada = clikgate.api.analytics.analytics_summary(var_from="2026-10-01T00:00:00Z", to="2026-11-01T00:00:00Z", metadata={"seller_id": "sel_ada"})
 ```
 
+`links.create` and `links.update` also take a typed `LinkCreateParams` / `LinkUpdateParams` dict as the first argument (`clikgate.links.create({"destination_url": …})`). `links.archive(id)`, `links.pause(id)`, `links.resume(id)` and `links.get_by_reference("order-1001")` return the link.
+
 A locked link raises `LinkLockedError`. `clikgate.api.<resource>.<operation>()` exposes every other API-key operation ("advanced"), generated from the OpenAPI document and sent through the same pipeline.
+
+## Referrals
+
+```python
+referrer = clikgate.referrals.get_or_create_referrer(PROGRAM_ID, customer_id=str(user.id), display_name="Ada")
+referrer["code"], referrer["url"], referrer["created"]          # created: True the first time
+clikgate.referrals.find_referrer(PROGRAM_ID, code="ADA42")      # a Referrer, or None when there is none
+for referral in clikgate.referrals.list(program_id=PROGRAM_ID, status="qualified"):
+    print(referral["referee"]["customer_id"], referral.get("reward_snapshot"))
+clikgate.referrals.complete_step(referral_id, goal="first_order", occurred_at=order.paid_at, value=Decimal("1500.50"), currency="NGN")
+clikgate.referrals.qualify(referral_id, reason="Checked by support")   # or disqualify(...)
+jobs = clikgate.referrals.import_referrers(PROGRAM_ID, [{"customer_id": "user-42", "external_code": "ADA-OLD"}])   # batches of 1000
+clikgate.referrals.block_referrer(referrer["id"], reason="Fake installs")   # unblock_referrer, update_referrer(display_name=, attributes=)
+```
+
+- Results are typed dicts with the API's keys; your customer ID is `customer_user_id`, and the SDK adds the same value as `customer_id` on referrers and on a referral's `referrer` and `referee`. `list_page(...)` returns one page; `list(...)` iterates lazily (filters `program_id`, `referrer_id`, `referee_customer_id`, `status`, `from_`, `to`, `limit`).
+- A reward side's `amount_minor` (minor units, as the API sends it) comes with `amount`, the same amount in normal units as a decimal string with the currency's decimals (`50000` NGN is `"500.00"`, `1500` JPY is `"1500"`). Clikgate never pays rewards.
+
+## Privacy, people, installs and codes
+
+```python
+clikgate.privacy.create_request(type="erasure", subject_type="customer_user", subject_id=str(user.id))
+clikgate.privacy.get_request("prq_01J…")                            # an export's result has its download link
+clikgate.people.get("per_01J…"); clikgate.people.set_label("per_01J…", "Ada (VIP)")
+for person in clikgate.people.search("Ada"):                          # the text goes in the body, never the URL
+    print(person["id"], person.get("label"))
+clikgate.installs.get_by_customer(str(user.id), app_id="app_01J…")    # or get_by_installation(installation_id, app_id=…)
+redemption = clikgate.codes.redeem(external_id="POS-991", code="ADA42", channel="pos")
+```
+
+All of it is on `AsyncClikgate` too (`await`, `async for`).
 
 ## Errors
 

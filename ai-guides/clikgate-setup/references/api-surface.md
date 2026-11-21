@@ -7,7 +7,7 @@ Signatures are shown in each language's own syntax, with comments and bodies rem
 
 ## Mobile
 
-### Flutter: `clikgate_flutter` 2.1.2
+### Flutter: `clikgate_flutter` 2.1.6
 
 `import 'package:clikgate_flutter/clikgate_flutter.dart';` Every method is static on `Clikgate`.
 
@@ -23,6 +23,7 @@ class Clikgate {
   static Future<GoalResult> goal(String key, {Object? value, String? currency, String? reference, ClikgateProvider? provider, bool? isFirst, String? label});
   static Future<void> identifyUser({String? label, String? customerId = _keepCustomerId, String? identityToken});
   static Future<String?> getInstallationId();
+  static Future<ClikgateInstallationHeader?> getInstallationHeader();
   static Future<void> setTrackingEnabled(bool enabled);
   static Future<void> setPushToken(String? token, {required PushProvider provider});
   static bool isClikgateMessage(Map<String, dynamic>? data);
@@ -56,7 +57,7 @@ class ClikgateDeepLink {
 }
 ```
 
-### React Native and Expo: `@clikgate/react-native` 2.1.2
+### React Native and Expo: `@clikgate/react-native` 2.1.6
 
 `import { Clikgate } from '@clikgate/react-native';`
 
@@ -70,6 +71,7 @@ const Clikgate: {
   goal(key: string, options: GoalOptions = {}): Promise<GoalResult>;
   identifyUser(options: IdentifyUserOptions = {}): Promise<void>;
   getInstallationId(): Promise<string | null>;
+  getInstallationHeader(): Promise<ClikgateInstallationHeader | null>;
   setTrackingEnabled(enabled: boolean): Promise<void>;
   setPushToken(token: string | null | undefined, options: {provider: PushProvider}): Promise<void>;
   handleUrl(url: string): Promise<boolean>;
@@ -135,7 +137,7 @@ type ClikgateLogLevel = 'verbose' | 'debug' | 'info' | 'warn' | 'error' | 'none'
 
 Expo config plugin props (`app.json` › `plugins` › `["@clikgate/react-native", {…}]`): `linkDomains` (live domains: the app link subdomain and custom domains, never a shared domain), `testLinkDomain` (the app test subdomain, e.g. `"yourapp.dev.ciz.to"`), `testVariants` (default `["development", "preview"]`), `uriScheme`, `enableBackgroundRemoteNotifications`, `enableWhatsAppSharing`.
 
-### Android: `com.clikgate:clikgate-android:2.1.2`
+### Android: `com.clikgate:clikgate-android:2.1.6`
 
 `import com.clikgate.Clikgate` (and `com.clikgate.ClikgateOptions`, `com.clikgate.Provider`, `com.clikgate.GoalStatus`). Every method is on the `Clikgate` object.
 
@@ -156,6 +158,8 @@ object Clikgate {
     fun identifyUser(label: String? = null, customerId: String? = KEEP_CUSTOMER_ID, identityToken: String? = null)
     fun getInstallationId(listener: InstallationIdListener)
     suspend fun getInstallationId(): String?
+    fun getInstallationHeader(listener: InstallationHeaderListener)
+    suspend fun getInstallationHeader(): ClikgateInstallationHeader?
     fun setTrackingEnabled(enabled: Boolean)
     fun setConsent(analytics: ConsentState? = null, attribution: ConsentState? = null, adUserData: ConsentState? = null, adPersonalization: ConsentState? = null)
     fun getConsent(): ClikgateConsent
@@ -182,7 +186,7 @@ class Provider { companion object { val PAYSTACK: Provider; val FLUTTERWAVE: Pro
 data class ClikgateDeepLink(val url: String?, val path: String?, val data: Map<String, Any?>, val isDeferred: Boolean, val clickId: String?, val matchType: String?, val link: ClikgateLink?, val referral: Referral?, val blockMessage: String? = null)
 ```
 
-### iOS: pod `Clikgate` / Swift package `clikgate-ios-sdk` 2.1.2
+### iOS: pod `Clikgate` / Swift package `clikgate-ios-sdk` 2.1.6
 
 `import Clikgate`. `configure` is static; everything else is on `Clikgate.shared`.
 
@@ -204,6 +208,7 @@ final class Clikgate {
     func goal(_ key: String, decimalString value: String?, currency: String? = nil, reference: String? = nil, providerKey: String? = nil, isFirst: Bool? = nil, label: String? = nil, completion: (@MainActor @Sendable (ClikgateGoalResult) -> Void)? = nil)
     func identifyUser(label: String? = nil, customerId: String? = "\u{0}", identityToken: String? = nil)
     func installationId() async throws -> String?
+    func installationHeader() async -> (name: String, value: String)?
     func installationId(completion: @escaping @MainActor @Sendable (Result<String?, ClikgateError>) -> Void)
     func setTrackingEnabled(_ enabled: Bool)
     func setPushToken(deviceToken: Data)
@@ -259,9 +264,9 @@ Constants: `Clikgate.GoalStatus` (`COUNTED`, `WAITING`, `REFUSED`); `Clikgate.Pr
 
 ## Server
 
-### Node.js: `@clikgate/node` 2.0.1
+### Node.js: `@clikgate/node` 2.1.0
 
-`import { Clikgate, webhooks } from '@clikgate/node';` Add-ons: `@clikgate/node/express` (`clikgateMiddleware`), `@clikgate/node/fastify` (`clikgatePlugin`), `@clikgate/node/next` (`applyClikgate`, `createClikgateProxy`, `clikgateProxy`, `clikgateMiddleware`, `getClickId`, `keepRoute`).
+`import { Clikgate, webhooks } from '@clikgate/node';` Add-ons: `@clikgate/node/express` (`clikgateMiddleware`), `@clikgate/node/fastify` (`clikgatePlugin`), `@clikgate/node/next` (`applyClikgate`, `createClikgateProxy`, `clikgateProxy`, `clikgateMiddleware`, `getClickId`, `keepRoute`, `getInstallation`).
 
 ```ts
 class Clikgate {
@@ -272,6 +277,11 @@ class Clikgate {
   readonly links: Links;
   readonly clicks: Clicks;
   readonly knownCustomers: KnownCustomers;
+  readonly referrals: Referrals;
+  readonly privacy: Privacy;
+  readonly people: People;
+  readonly installs: Installs;
+  readonly codes: Codes;
   readonly clickIds: ClickIds;
   readonly api: ApiClient;
   readonly webhooks: {verify: typeof webhooks.verify; verifyAny: typeof webhooks.verifyAny;};
@@ -344,11 +354,17 @@ class ClickIds { // clikgate.clickIds
 }
 
 class Links { // clikgate.links
+  create(params: LinkCreateParams, requestOptions?: RequestOptions): Promise<Link>;
   create(params: Params, requestOptions?: RequestOptions): Promise<Link>;
   get(id: string, requestOptions?: RequestOptions): Promise<Link>;
+  update(id: string, params: LinkUpdateParams, requestOptions?: RequestOptions): Promise<LinkUpdateResult>;
   update(id: string, params: Params, requestOptions?: RequestOptions): Promise<LinkUpdateResult>;
   listPage(params?: Params, requestOptions?: RequestOptions): Promise<ListPage<Link>>;
   list(params?: Params, requestOptions?: RequestOptions): LinkIterator;
+  archive(id: string, requestOptions?: RequestOptions): Promise<Link>;
+  getByReference(reference: string, requestOptions?: RequestOptions): Promise<Link>;
+  pause(id: string, requestOptions?: RequestOptions): Promise<Link>;
+  resume(id: string, requestOptions?: RequestOptions): Promise<Link>;
   qr(id: string, options?: QrOptions, requestOptions?: RequestOptions): Promise<QrCode>;
 }
 

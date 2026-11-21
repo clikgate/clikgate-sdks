@@ -21,7 +21,7 @@ Don't add a dependency on a package marked "not available yet": it isn't publish
    - save it with the business record;
    - send the goal where it happens.
 4. Run the project's typecheck or tests. Then tell the user:
-   - to define the goal in the dashboard (Settings › Goals) if it isn't there yet;
+   - to define the goal in the dashboard (Grow › Goals) if it isn't there yet;
    - to set `CLIKGATE_API_KEY` (a `cg_test_` key while testing).
 
 ## Keys

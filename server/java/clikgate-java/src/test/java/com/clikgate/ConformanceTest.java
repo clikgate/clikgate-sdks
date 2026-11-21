@@ -215,14 +215,72 @@ class ConformanceTest {
     return o;
   }
 
+  /** The referral as wire JSON, each reward side with its typed {@code amount} (normal units) added. */
+  private static Map<String, Object> referralWire(com.clikgate.model.Referral r) {
+    Map<String, Object> m = new LinkedHashMap<String, Object>(r.toMap());
+    com.clikgate.model.RewardInfo reward = r.getReward();
+    if (reward != null) {
+      Map<String, Object> rw = new LinkedHashMap<String, Object>(reward.toMap());
+      com.clikgate.model.RewardInfo.Side[] sides = {reward.getReferrer(), reward.getReferee()};
+      String[] keys = {"referrer", "referee"};
+      for (int i = 0; i < 2; i++) {
+        if (sides[i] != null) {
+          Map<String, Object> side = new LinkedHashMap<String, Object>(sides[i].toMap());
+          if (sides[i].getAmount() != null) {
+            side.put("amount", sides[i].getAmount().toPlainString());
+          }
+          rw.put(keys[i], side);
+        }
+      }
+      m.put("reward_snapshot", rw);
+    }
+    return m;
+  }
+
   private static Object canonical(Object r) {
+    if (r instanceof com.clikgate.model.Referrer) {
+      Map<String, Object> m = new LinkedHashMap<String, Object>(((WireObject) r).toMap());
+      m.put("created", ((com.clikgate.model.Referrer) r).isCreated());
+      return m;
+    }
+    if (r instanceof com.clikgate.model.Referral) {
+      return referralWire((com.clikgate.model.Referral) r);
+    }
+    if (r instanceof com.clikgate.model.Page) {
+      Map<String, Object> m = new LinkedHashMap<String, Object>(((WireObject) r).toMap());
+      m.put("data", canonical(((com.clikgate.model.Page<?>) r).getData()));
+      return m;
+    }
     if (r instanceof WireObject) {
       return ((WireObject) r).toMap();
+    }
+    if (r instanceof List) {
+      List<Object> out = new ArrayList<>();
+      for (Object o : (List<?>) r) {
+        out.add(canonical(o));
+      }
+      return out;
     }
     if (r instanceof LinkUpdateResult) {
       return ((LinkUpdateResult) r).toMap();
     }
     return r;
+  }
+
+  private static LinkCreateParams linkCreate(Map<String, Object> params) {
+    LinkCreateParams.Builder b = LinkCreateParams.builder();
+    for (Map.Entry<String, Object> e : params.entrySet()) {
+      b.extra(e.getKey(), e.getValue());
+    }
+    return b.build();
+  }
+
+  private static LinkUpdateParams linkUpdate(Map<String, Object> params) {
+    LinkUpdateParams.Builder b = LinkUpdateParams.builder();
+    for (Map.Entry<String, Object> e : params.entrySet()) {
+      b.extra(e.getKey(), e.getValue());
+    }
+    return b.build();
   }
 
   private static byte[] bytes(Object raw) {
@@ -275,11 +333,11 @@ class ConformanceTest {
       case "conversions.reverse":
         return client.conversions().reverse((String) a.get("id"), params);
       case "links.create":
-        return client.links().create(params, ro);
+        return a.get("typed") != null ? client.links().create(linkCreate(params), ro) : client.links().create(params, ro);
       case "links.get":
         return client.links().get((String) a.get("id"));
       case "links.update":
-        return client.links().update((String) a.get("id"), params, ro);
+        return a.get("typed") != null ? client.links().update((String) a.get("id"), linkUpdate(params), ro) : client.links().update((String) a.get("id"), params, ro);
       case "links.list":
         {
           List<Object> items = new ArrayList<>();
@@ -307,7 +365,7 @@ class ConformanceTest {
       case "clicks.get":
         return client.clicks().get((String) a.get("id"));
       case "webhooks.verify":
-        return Webhooks.verify(bytes(a.get("raw_body")), (String) a.get("header"), (String) a.get("secret"), ((Number) a.get("tolerance")).longValue(), ((Number) a.get("now")).longValue());
+        return webhookAs(Webhooks.verify(bytes(a.get("raw_body")), (String) a.get("header"), (String) a.get("secret"), ((Number) a.get("tolerance")).longValue(), ((Number) a.get("now")).longValue()), (String) a.get("as"));
       case "webhooks.verify_any":
         {
           List<String> secrets = new ArrayList<>();
@@ -316,6 +374,25 @@ class ConformanceTest {
           }
           return Webhooks.verifyAny(bytes(a.get("raw_body")), (String) a.get("header"), secrets, ((Number) a.get("tolerance")).longValue(), ((Number) a.get("now")).longValue());
         }
+      case "installations.parse_header": {
+        Object v = a.get("value");
+        return Collections.singletonMap("value", installationWire(Installation.parseHeader(v instanceof String ? (String) v : null)));
+      }
+      case "installations.from_request": {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> headers = (Map<String, Object>) ((Map<String, Object>) a.get("request")).get("headers");
+        String value = null;
+        int count = 0;
+        if (headers != null) {
+          for (Map.Entry<String, Object> e : headers.entrySet()) {
+            if (e.getKey().equalsIgnoreCase(Installation.HEADER)) {
+              value = e.getValue() instanceof String ? (String) e.getValue() : null;
+              count++;
+            }
+          }
+        }
+        return Collections.singletonMap("value", installationWire(count == 1 ? Installation.parseHeader(value) : null));
+      }
       case "click_ids.is_valid":
         return Collections.singletonMap("value", ClickIds.isValid(a.get("id")));
       case "click_ids.from_request":
@@ -412,15 +489,24 @@ class ConformanceTest {
       case "money.format":
         return Collections.singletonMap("value", moneyFormat(a.get("value")));
       case "identify_user":
-        return client.identifyUser(
-            IdentifyUserParams.builder()
-                .clickId((String) a.get("click_id"))
-                .appId((String) a.get("app_id"))
-                .installationId((String) a.get("installation_id"))
-                .customerId((String) a.get("customer_id"))
-                .label((String) a.get("label"))
-                .build(),
-            ro);
+        {
+          IdentifyUserParams.Builder b = IdentifyUserParams.builder().clickId((String) a.get("click_id"));
+          Object inst = a.get("installation");
+          if (inst instanceof Map) {
+            // the parsed form {app_id, installation_id}: the language's Installation, as the framework helpers give it
+            Map<?, ?> m = (Map<?, ?>) inst;
+            b.installation(Installation.parseHeader(m.get("app_id") + ":" + m.get("installation_id")));
+          } else {
+            b.installation((String) inst);
+          }
+          return client.identifyUser(
+              b.appId((String) a.get("app_id"))
+                  .installationId((String) a.get("installation_id"))
+                  .customerId((String) a.get("customer_id"))
+                  .label((String) a.get("label"))
+                  .build(),
+              ro);
+        }
       case "payments.confirm":
         return client.payments().confirm(payment(a), ro);
       case "payments.from":
@@ -439,6 +525,221 @@ class ConformanceTest {
           return "paystack".equals(g) ? client.payments().fromPaystack(r, o)
               : "flutterwave".equals(g) ? client.payments().fromFlutterwave(r, o)
               : "monnify".equals(g) ? client.payments().fromMonnify(r, o) : client.payments().fromStripe(r, o);
+        }
+      default:
+        return typedStep(client, call, a, params, ro);
+    }
+  }
+
+  private static @org.jspecify.annotations.Nullable String str(Map<String, Object> a, Map<String, Object> params, String... keys) {
+    for (String k : keys) {
+      Object v = a.containsKey(k) ? a.get(k) : params.get(k);
+      if (v != null) {
+        return String.valueOf(v);
+      }
+    }
+    return null;
+  }
+
+  private static Instant instantArg(Object v) {
+    return v instanceof Instant ? (Instant) v : v == null ? null : Instant.parse(String.valueOf(v));
+  }
+
+  private static Object items(Iterable<? extends WireObject> it, Object max) {
+    List<Object> items = new ArrayList<>();
+    for (WireObject o : it) {
+      items.add(canonical(o));
+      if (max != null && items.size() >= ((Number) max).intValue()) {
+        break;
+      }
+    }
+    return Collections.singletonMap("items", items);
+  }
+
+  private static ListReferralsParams referralQuery(Map<String, Object> a, Map<String, Object> p) {
+    ListReferralsParams.Builder b = ListReferralsParams.builder()
+        .programId(str(a, p, "program_id"))
+        .referrerId(str(a, p, "referrer_id"))
+        .refereeCustomerId(str(a, p, "referee_customer_id", "referee_customer_user_id"))
+        .status(str(a, p, "status"))
+        .reason(str(a, p, "reason"))
+        .startingAfter(str(a, p, "starting_after"))
+        .endingBefore(str(a, p, "ending_before"));
+    Object from = a.containsKey("from") ? a.get("from") : p.get("from");
+    Object to = a.containsKey("to") ? a.get("to") : p.get("to");
+    Object limit = a.containsKey("limit") ? a.get("limit") : p.get("limit");
+    b.from(instantArg(from)).to(instantArg(to));
+    if (limit != null) {
+      b.limit(((Number) limit).intValue());
+    }
+    return b.build();
+  }
+
+  private static Object webhookAs(com.clikgate.model.WebhookEvent ev, @org.jspecify.annotations.Nullable String as) {
+    if (as == null) {
+      return ev;
+    }
+    switch (as) {
+      case "referral":
+        return ev.asReferral();
+      case "referrer":
+        return ev.asReferrer();
+      case "goal_event":
+        return ev.asGoalEvent();
+      case "install":
+        return ev.asInstall();
+      case "payment":
+        return ev.asPayment();
+      case "conversion":
+        return ev.asConversion();
+      case "device_change":
+        return ev.asDeviceChange();
+      default:
+        throw new IllegalStateException("runner: unknown accessor " + as);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private Object typedStep(Clikgate client, String call, Map<String, Object> a, Map<String, Object> p, RequestOptions ro) throws Exception {
+    switch (call) {
+      case "referrals.get_or_create_referrer":
+        return client.referrals().getOrCreateReferrer(str(a, p, "program_id"),
+            GetOrCreateReferrerParams.builder().customerId(str(a, p, "customer_id", "customer_user_id")).displayName(str(a, p, "display_name")).externalCode(str(a, p, "external_code")).code(str(a, p, "code")).build(), ro);
+      case "referrals.get_referrer":
+        return client.referrals().getReferrer(str(a, p, "referrer_id", "id"));
+      case "referrals.find_referrer":
+        {
+          String code = str(a, p, "code");
+          return client.referrals().findReferrer(str(a, p, "program_id"), FindReferrerParams.of(str(a, p, "customer_id", "customer_user_id"), code));
+        }
+      case "referrals.get":
+        return client.referrals().get(str(a, p, "referral_id", "id"));
+      case "referrals.list":
+        return items(client.referrals().list(referralQuery(a, p)), a.get("max_items"));
+      case "referrals.list_page":
+        return client.referrals().listPage(referralQuery(a, p));
+      case "referrals.qualify":
+        return client.referrals().qualify(str(a, p, "referral_id", "id"), str(a, p, "reason"), ro);
+      case "referrals.disqualify":
+        return client.referrals().disqualify(str(a, p, "referral_id", "id"), str(a, p, "reason"), ro);
+      case "referrals.complete_step":
+        {
+          CompleteStepParams.Builder b = CompleteStepParams.builder().goal(str(a, p, "goal")).currency(str(a, p, "currency"));
+          Object occurred = a.containsKey("occurred_at") ? a.get("occurred_at") : p.get("occurred_at");
+          if (occurred != null) {
+            b.occurredAt(instantArg(occurred));
+          }
+          Object value = a.containsKey("value") ? a.get("value") : p.get("value");
+          if (value instanceof BigDecimal) {
+            b.value((BigDecimal) value);
+          } else if (value instanceof Number) {
+            b.value(((Number) value).longValue());
+          } else if (value != null) {
+            b.value(String.valueOf(value));
+          }
+          return client.referrals().completeStep(str(a, p, "referral_id", "id"), b.build(), ro);
+        }
+      case "referrals.import_referrers":
+        {
+          List<ReferrerImport> rows = new ArrayList<>();
+          for (Object o : list(a.containsKey("rows") ? a.get("rows") : p.get("rows"))) {
+            Map<String, Object> row = map(o);
+            rows.add(ReferrerImport.of(str(row, row, "customer_id", "customer_user_id")).externalCode(str(row, row, "external_code")).displayName(str(row, row, "display_name")));
+          }
+          return client.referrals().importReferrers(str(a, p, "program_id"), rows, ro);
+        }
+      case "referrals.block_referrer":
+        return client.referrals().blockReferrer(str(a, p, "referrer_id", "id"), str(a, p, "reason"), ro);
+      case "referrals.unblock_referrer":
+        return client.referrals().unblockReferrer(str(a, p, "referrer_id", "id"), ro);
+      case "referrals.update_referrer":
+        {
+          UpdateReferrerParams.Builder b = UpdateReferrerParams.builder();
+          if (a.containsKey("display_name") || p.containsKey("display_name")) {
+            b.displayName(str(a, p, "display_name"));
+          }
+          if (a.containsKey("external_code") || p.containsKey("external_code")) {
+            b.externalCode(str(a, p, "external_code"));
+          }
+          Object optOut = a.containsKey("leaderboard_opt_out") ? a.get("leaderboard_opt_out") : p.get("leaderboard_opt_out");
+          if (optOut instanceof Boolean) {
+            b.leaderboardOptOut((Boolean) optOut);
+          }
+          if (a.containsKey("attributes") || p.containsKey("attributes")) {
+            Object attrs = a.containsKey("attributes") ? a.get("attributes") : p.get("attributes");
+            b.attributes(attrs == null ? null : map(attrs));
+          }
+          return client.referrals().updateReferrer(str(a, p, "referrer_id", "id"), b.build(), ro);
+        }
+      case "privacy.create_request":
+        {
+          CreatePrivacyRequestParams.Builder b = CreatePrivacyRequestParams.builder().appId(str(a, p, "app_id"));
+          String type = str(a, p, "type");
+          String subjectType = str(a, p, "subject_type");
+          String subjectId = str(a, p, "subject_id");
+          if (type != null) b.type(type);
+          if (subjectType != null) b.subjectType(subjectType);
+          if (subjectId != null) b.subjectId(subjectId);
+          return client.privacy().createRequest(b.build(), ro);
+        }
+      case "privacy.get_request":
+        return client.privacy().getRequest(str(a, p, "id", "request_id"));
+      case "links.archive":
+        return client.links().archive(str(a, p, "id"));
+      case "links.get_by_reference":
+        return client.links().getByReference(str(a, p, "reference", "external_reference"));
+      case "links.pause":
+        return client.links().pause(str(a, p, "id"), ro);
+      case "links.resume":
+        return client.links().resume(str(a, p, "id"), ro);
+      case "people.get":
+        return client.people().get(str(a, p, "person_id", "id"));
+      case "people.search":
+        return items(client.people().search(str(a, p, "q")), a.get("max_items"));
+      case "people.search_page":
+        {
+          Object limit = a.get("limit");
+          return client.people().searchPage(str(a, p, "q"), str(a, p, "cursor"), limit == null ? null : ((Number) limit).intValue());
+        }
+      case "people.set_label":
+        return client.people().setLabel(str(a, p, "person_id", "id"), str(a, p, "label"), ro);
+      case "installs.get_by_customer":
+        return client.installs().getByCustomer(str(a, p, "customer_id", "customer_user_id"), str(a, p, "app_id"));
+      case "installs.get_by_installation":
+        return client.installs().getByInstallation(str(a, p, "installation_id"), str(a, p, "app_id"));
+      case "codes.redeem":
+        {
+          RedeemCodeParams.Builder b = RedeemCodeParams.builder().appId(str(a, p, "app_id"));
+          String externalId = str(a, p, "external_id");
+          String code = str(a, p, "code");
+          String channel = str(a, p, "channel");
+          if (externalId != null) b.externalId(externalId);
+          if (code != null) b.code(code);
+          if (channel != null) b.channel(channel);
+          Object occurred = a.containsKey("occurred_at") ? a.get("occurred_at") : p.get("occurred_at");
+          b.occurredAt(instantArg(occurred));
+          Object md = a.containsKey("metadata") ? a.get("metadata") : p.get("metadata");
+          if (md != null) b.metadata(map(md));
+          b.agentId(str(a, p, "agent_id"));
+          Object subject = a.containsKey("subject") ? a.get("subject") : p.get("subject");
+          if (subject != null) b.subject(str(map(subject), map(subject), "type"), str(map(subject), map(subject), "id"));
+          Object loc = a.containsKey("location") ? a.get("location") : p.get("location");
+          if (loc != null) {
+            Map<String, Object> l = map(loc);
+            b.location(str(l, l, "country"), str(l, l, "region"), str(l, l, "city"), str(l, l, "store_id"));
+          }
+          return client.codes().redeem(b.build(), ro);
+        }
+      case "webhooks.typed":
+        {
+          com.clikgate.model.WebhookEvent ev = Webhooks.verify(bytes(a.get("raw_body")), (String) a.get("header"), (String) a.get("secret"), ((Number) a.get("tolerance")).longValue(), ((Number) a.get("now")).longValue());
+          return webhookAs(ev, str(a, p, "as"));
+        }
+      case "webhooks.event_types":
+        {
+          List<String> all = new ArrayList<>(com.clikgate.model.EventType.ALL);
+          Collections.sort(all);
+          return Collections.singletonMap("value", all);
         }
       default:
         throw new IllegalStateException("runner: unknown call " + call);
@@ -600,5 +901,13 @@ class ConformanceTest {
     System.out.println("\nconformance (java): " + passed + " passed, " + failed + " failed, " + (passed + failed) + " total");
     assertEquals(0, failed, report.toString());
     assertTrue(passed > 0, "no cases ran");
+  }
+
+  private static @org.jspecify.annotations.Nullable Map<String, String> installationWire(@org.jspecify.annotations.Nullable Installation i) {
+    if (i == null) return null;
+    Map<String, String> m = new java.util.LinkedHashMap<>();
+    m.put("app_id", i.getAppId());
+    m.put("installation_id", i.getInstallationId());
+    return m;
   }
 }

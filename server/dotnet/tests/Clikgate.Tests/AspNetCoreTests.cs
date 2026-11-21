@@ -132,6 +132,11 @@ public class AspNetCoreTests
         var client = sp.GetRequiredService<IClikgateClient>();
         Assert.Equal("test", client.Mode);
         Assert.Same(client, sp.GetRequiredService<IClikgateClient>());
+        Assert.NotNull(client.Referrals);
+        Assert.NotNull(client.Privacy);
+        Assert.NotNull(client.People);
+        Assert.NotNull(client.Installs);
+        Assert.NotNull(client.Codes);
         foreach (var hosted in sp.GetServices<IHostedService>())
         {
             await hosted.StopAsync(default);

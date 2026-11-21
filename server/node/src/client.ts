@@ -4,6 +4,7 @@ import { Core, type OnError } from './core.js';
 import { ConfigurationError, localError } from './errors.js';
 import { createIdentityTokenWith, type IdentitySecretSource, type IdentityTokenOptions } from './identity.js';
 import { guardPayload } from './guard.js';
+import { toInstallation, type Installation } from './installation.js';
 import type { RequestOptions } from './http.js';
 import { ApiClient } from './generated/index.js';
 import { GoalQueue, Goals, asClikgateError, buildGoalWire, checkBeforeSend, type GoalOptions } from './goals.js';
@@ -12,6 +13,8 @@ import { consoleLogger, type Logger } from './logger.js';
 import { Payments } from './payments.js';
 import { KnownCustomers } from './known-customers.js';
 import { Clicks, Conversions, Links } from './resources.js';
+import { Referrals } from './referrals.js';
+import { Codes, Installs, People, Privacy } from './lookups.js';
 import { registerShutdown, unregisterShutdown } from './shutdown.js';
 import { fetchTransport, nodeTransport, type FetchLike, type Transport } from './transport.js';
 import type { ServerSdkConfig } from './types.js';
@@ -19,14 +22,22 @@ import { userAgent } from './user-agent.js';
 import { webhooks, type RawBody, type VerifyOptions } from './webhooks.js';
 
 /** Client options (SPEC section 3). Every option is optional. */
-/** `identifyUser()`: at least one of `clickId`, `appId` + `installationId`, `customerId`. */
+/** `identifyUser()`: at least one of `clickId`, an installation (`installation` or `installationId`), `customerId`. */
 export interface IdentifyUserParams {
   /** The Clikgate click ID you kept (`clk_…`). */
   clickId?: string | null;
-  /** An app installation: the app's ID and the SDK's installation ID, together. */
+  /**
+   * The app's installation: the raw `Clikgate-Installation` header your app sent (`<app_id>:<installation_id>`), or
+   * the parsed `Installation` the framework helpers give (`req.clikgate.installation`, `getInstallation(...)`). It
+   * fills `appId` and `installationId`. Missing or invalid values (either form) are ignored, never sent. Not used when
+   * `installationId` is given.
+   */
+  installation?: string | Installation | null;
+  /** The app the installation belongs to. Optional: without it Clikgate finds the app. Only with `installationId`. */
   appId?: string | null;
+  /** The SDK's installation ID, sent by your app. */
   installationId?: string | null;
-  /** Your customer ID. With a click or installation, links it to this customer. */
+  /** Your signed-in user's ID. Never read it from the request. With a click or installation, links it to this customer. */
   customerId?: string | null;
   /** A label your team sees instead of the click ID (1–80 characters, `''` clears it). */
   label?: string | null;
@@ -143,6 +154,16 @@ export class Clikgate {
   readonly clicks: Clicks;
   /** Existing customers from before you added Clikgate: `import()` and `remove()`. */
   readonly knownCustomers: KnownCustomers;
+  /** Referrals: referrers (`getOrCreateReferrer`, `findReferrer`), referrals, overrides, steps and imports. */
+  readonly referrals: Referrals;
+  /** Privacy requests: `createRequest`, `getRequest`. */
+  readonly privacy: Privacy;
+  /** People: `get`, `search`, `setLabel`. */
+  readonly people: People;
+  /** Installs: `getByCustomer`, `getByInstallation`. */
+  readonly installs: Installs;
+  /** Offline and referral codes: `redeem`. */
+  readonly codes: Codes;
   /** Click-ID helpers using this client's `clickIdParam` (or the organisation's from config). */
   readonly clickIds: ClickIds;
   /** Every API-key operation, generated from openapi.json ("advanced"). */
@@ -164,7 +185,7 @@ export class Clikgate {
     const apiKey = options.apiKey ?? process.env.CLIKGATE_API_KEY;
     if (!apiKey) throw new ConfigurationError({ message: 'No API key: pass { apiKey } or set CLIKGATE_API_KEY (cg_live_… or cg_test_…).', code: 'missing_api_key', param: 'apiKey' });
     const m = KEY.exec(apiKey);
-    if (!m) throw new ConfigurationError({ message: `The API key is ${keyType(apiKey)}. Server SDKs need a cg_live_… or cg_test_… API key from Developers → API keys.`, code: 'invalid_api_key', param: 'apiKey' });
+    if (!m) throw new ConfigurationError({ message: `The API key is ${keyType(apiKey)}. Server SDKs need a cg_live_… or cg_test_… API key from Developers › API keys & clients.`, code: 'invalid_api_key', param: 'apiKey' });
     this.mode = m[1] as 'live' | 'test';
 
     const baseUrl = (options.baseUrl ?? process.env.CLIKGATE_BASE_URL ?? 'https://api.clikgate.com').replace(/\/+$/, '');
@@ -206,6 +227,11 @@ export class Clikgate {
     this.links = new Links(this.core);
     this.clicks = new Clicks(this.core);
     this.knownCustomers = new KnownCustomers(this.core);
+    this.referrals = new Referrals(this.core);
+    this.privacy = new Privacy(this.core);
+    this.people = new People(this.core);
+    this.installs = new Installs(this.core);
+    this.codes = new Codes(this.core);
     const explicitParam = options.clickIdParam;
     this.clickIds = new ClickIds(() => explicitParam ?? configCache.peek()?.click_id_param ?? 'cgid');
     this.api = new ApiClient(requester);
@@ -275,35 +301,51 @@ export class Clikgate {
   }
 
   /**
-   * Tell Clikgate who a person is (`POST /v1/people/identify`): a click (`clickId`), an app installation (`appId` +
-   * `installationId`) or your `customerId`, at least one. With a click or installation, `customerId` links it to that
+   * Tell Clikgate who a person is (`POST /v1/people/identify`): a click (`clickId`), an app installation
+   * (`installation`, or `installationId` with an optional `appId`) or your `customerId`, at least one. With a click or installation, `customerId` links it to that
    * customer. `label` is what your team sees instead of the click ID (1–80 characters, `''` clears it; Growth and
    * up). Always verified (your server), so it also satisfies a referral program's `require_identity_token`.
    * In private mode `customerId` is refused locally (the guard) and `label` needs "Allow labels in private mode".
    * `customerSince` is when they became your customer, so existing customers are never counted as
    * referrals or new customers; it is refused in private mode too.
    *
-   * Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
-   * `getInstallationId()` and sends it in its sign-in request; your server calls this with
-   * `{ appId, installationId, customerId, label? }` after sign-in and at every signed-in app open. When the app sends
-   * no installation ID (tracking is off), skip the call. Clikgate accepts installations active in the last 7 days.
+   * Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app sends the
+   * `Clikgate-Installation` header (from the mobile SDK) to your server. After your own sign-in check succeeds, and at
+   * every signed-in app open, pass the header as `installation` with your signed-in user's ID as `customerId` (never a
+   * customer ID read from the request). When the header is missing or invalid (tracking is off), skip the call.
+   * `appId` is optional: Clikgate finds the app. If the installation ID is in several of your apps, the API answers
+   * `409 installation_in_several_apps` (a `ConflictError`, param `app_id`): send `appId` too. Clikgate accepts
+   * installations active in the last 7 days.
    *
    * @example
    * await clikgate.identifyUser({ clickId: order.clickId, customerId: 'user_42', label: 'Ada (VIP)' });
-   * if (body.installationId) await clikgate.identifyUser({ appId: 'app_…', installationId: body.installationId, customerId: user.id });
+   * // after your sign-in check: the header from the app, your user's ID
+   * const installation = req.get('Clikgate-Installation');
+   * if (parseInstallationHeader(installation)) await clikgate.identifyUser({ installation, customerId: req.user.id });
+   * // or the parsed installation from the Express middleware
+   * if (req.clikgate.installation) await clikgate.identifyUser({ installation: req.clikgate.installation, customerId: req.user.id });
    */
   async identifyUser(params: IdentifyUserParams, requestOptions: RequestOptions = {}): Promise<PersonIdentified> {
     const p = (params ?? {}) as IdentifyUserParams;
-    if ((p.appId == null) !== (p.installationId == null)) {
-      throw localError('invalid_request', 'Send appId and installationId together.', p.appId == null ? 'app_id' : 'installation_id');
+    let appId = p.appId;
+    let installationId = p.installationId;
+    if (installationId == null && p.installation != null) {
+      const fromHeader = toInstallation(p.installation);
+      if (fromHeader) {
+        appId = appId ?? fromHeader.appId;
+        installationId = fromHeader.installationId;
+      }
     }
-    if (p.clickId == null && p.installationId == null && p.customerId == null) {
-      throw localError('invalid_request', 'Send clickId, appId + installationId, or customerId.', 'click_id');
+    if (appId != null && installationId == null) {
+      throw localError('invalid_request', 'Send installationId with appId.', 'installation_id');
+    }
+    if (p.clickId == null && installationId == null && p.customerId == null) {
+      throw localError('invalid_request', 'Send clickId, an installation (installation or installationId), or customerId.', 'click_id');
     }
     const body: Record<string, unknown> = {};
     if (p.clickId != null) body.click_id = p.clickId;
-    if (p.appId != null) body.app_id = p.appId;
-    if (p.installationId != null) body.installation_id = p.installationId;
+    if (appId != null) body.app_id = appId;
+    if (installationId != null) body.installation_id = installationId;
     if (p.customerId != null) body.customer_id = p.customerId;
     if (p.label != null) body.label = p.label;
     if (p.customerSince != null) {

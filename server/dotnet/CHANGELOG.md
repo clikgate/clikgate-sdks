@@ -3,6 +3,42 @@
 All notable changes to these packages, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the packages use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and .NET versions are dropped only after their end of support.
 
 
+## [2.1.0] - unreleased
+
+### A typed surface for referrals, webhooks, privacy, people, installs and codes
+
+Additive for callers: nothing is removed or renamed, and nothing changes on the wire. If you implement `IClikgateClient` yourself, it has new members (see **Changed**). The new results are records (equal when their JSON is equal; `Raw` keeps every field), every method takes a `CancellationToken`, and calls go through the same retries, idempotency keys, errors and logging as the rest of the SDK. Customer-owned data stays a `JsonObject` (link `Metadata` and `DeepLinkData`, referrer `Attributes`).
+
+- **Added:** `clikgate.Referrals`: `GetOrCreateReferrerAsync(programId, GetOrCreateReferrerParams)` and the short form `GetOrCreateReferrerAsync(programId, customerId, ct)` → `Referrer` (`Created` is true when the API answered `201`), `GetReferrerAsync`, `FindReferrerAsync(programId, new FindReferrerParams { CustomerId | Code })` → `Referrer?` (null on `404`; exactly one of the two, else `invalid_argument`), `GetAsync` → `Referral`, `ListAsync(ListReferralsParams?)` (`IAsyncEnumerable<Referral>`, lazy) and `ListPageAsync` → `Page<Referral>`, `QualifyAsync` / `DisqualifyAsync(referralId, reason)`, `CompleteStepAsync(referralId, CompleteStepParams)` (`Goal` and `OccurredAt` are required, as the API needs both), `ImportReferrersAsync(programId, rows)` → `IReadOnlyList<Job>` (batches of 1,000, one request and job each), `BlockReferrerAsync`, `UnblockReferrerAsync`, `UpdateReferrerAsync`.
+- **Added:** records `Referrer` (`CustomerId` reads `customer_user_id`, `Stats`, `Attributes`), `Referral` (`Program`, `Referrer`, `Referee`, `StepsCompleted`, `LinkId`, `Reward`), `RewardInfo` / `RewardSide` (`AmountMinor` and `Amount`, an exact `decimal` in normal units using the currency's ISO 4217 decimals), `Job` / `JobResult`, `Page<T>`, and the `WireRecord` base. Timestamps are `DateTimeOffset?`.
+- **Added:** typed webhook accessors on `WebhookEvent`: `AsReferral()`, `AsReferrer()`, `AsGoalEvent()`, `AsInstall()`, `AsPayment()` (→ `PaymentReport`) and `AsConversion()`. Like the `as` operator, each returns null when the event belongs to another family. Also `ApiVersion`, `CreatedAt`, `OrganizationId` and `Livemode`.
+- **Added:** `EventType`: a `const string` for every webhook event type (`EventType.REFERRAL_QUALIFIED`, …) and `EventType.All`, so they work with `==` and in `switch`.
+- **Added:** `clikgate.Privacy`: `CreateRequestAsync(CreatePrivacyRequestParams)` and `GetRequestAsync(id)` → `PrivacyRequest` (`ExportResult`, `ErasedCounts`).
+- **Added:** `LinkCreateParams` and `LinkUpdateParams` records with a property per API field (`Extra` for newer ones; a null in `LinkUpdateParams` clears the field), next to the existing dictionary overloads. `Link` gains a property for every field of the API's link. New `Links.ArchiveAsync(id)`, `GetByReferenceAsync(externalReference)`, `PauseAsync(id)` and `ResumeAsync(id)`, each → `Link`.
+- **Added:** `clikgate.People`: `GetAsync(personId)` → `Person`, `SearchAsync(q)` (lazy) and `SearchPageAsync(q, cursor, limit)` → `Page<PersonSummary>`, `SetLabelAsync(personId, label)` → `Person`. `clikgate.Installs`: `GetByCustomerAsync(customerId, appId?)` and `GetByInstallationAsync(installationId, appId?)` → `Install`. `clikgate.Codes`: `RedeemAsync(RedeemCodeParams)` → `CodeRedemption` (`ExternalId`, `Code`, `Channel`, and the optional `AppId`, `OccurredAt`, `Metadata`, `Subject` (`OfflineSubject`), `AgentId`, `Location` (`OfflineLocation`)).
+- **Added:** `WebhookEvent.AsDeviceChange()` → `DeviceChange?` (`person.device_changed` only: `DeviceChangeId`, `PersonId`, `CustomerId`, `AppId`, `Kind`, `From` / `To` with platform and device model, `FromLastSeenAt`, `ToFirstOpenAt`, `GapDays`). `Referral.History` and `FraudFlags`; every `JobResult` key; `PrivacyExportResult.Installs` / `GoalNameEvents`; `GoalEvent.Livemode` and the goal webhook fields (`ReceivedAs`, `IsFirstCustomer`, `ClickedAt`, `PersonId`, `Backfilled`).
+- **Added:** `GoalEvent.LinkId` and `CampaignId` (`link.id` / `campaign.id` in goal webhooks, `attributed_to` in API answers). `GetOrCreateReferrerParams.Code`, `UpdateReferrerParams.ExternalCode` / `ClearExternalCode` / `LeaderboardOptOut`, `ListReferralsParams.Reason`, `ReferrerStats.RefereeUninstallRate7d`.
+- **Added:** `Conversion.ExternalId`, `AmountMinor`, `Amount`, `Currency`, `ClickId`, `Goal`.
+- **Changed:** `IClikgateClient` gains the members `Referrals`, `Privacy`, `People`, `Installs` and `Codes`, so they come through dependency injection (`Clikgate.AspNetCore`). A class of your own that implements `IClikgateClient` (a test double, for example) must add these five properties to compile.
+- **Docs:** an end-to-end section that uses only typed methods: identity token, `GetClikgateInstallation()`, goals, payments, a webhook with `AsReferral()` and `EventType`, and `Referrals.GetOrCreateReferrerAsync`.
+
+## [2.0.3] - unreleased
+
+### Identify users with the installation header
+
+- **Added:** `IdentifyUserParams.Installation` takes the raw `Clikgate-Installation` header your app sends (`<app_id>:<installation_id>`, from the mobile SDK) and fills `AppId` and `InstallationId` from it, so your server never needs to know which Clikgate app ID belongs to which platform. A missing or invalid header is ignored, never sent and never logged. `InstallationId` given explicitly wins over the header. `IdentifyUserParams.For(installation, customerId)` takes a parsed one.
+- **Changed:** `AppId` is optional with `InstallationId`: Clikgate finds the app. `AppId` without `InstallationId` is still refused locally (`invalid_request`, param `installation_id`). Calls that send both behave as before.
+- **Added:** `Installation.ParseHeader(string?)` → `Installation?` (`AppId`, `InstallationId`; strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, ASCII whitespace trimmed; never throws) and `Installation.Header`.
+- **Added (Clikgate.AspNetCore):** `HttpContext.GetClikgateInstallation()`: null when the header is missing, invalid or sent more than once; never throws.
+- **Docs:** when the installation ID is active in several of your apps, the API answers `409 installation_in_several_apps` (a `ConflictException`, param `app_id`): send `AppId` too. Call `IdentifyUserAsync` only after your own sign-in check, with your signed-in user's ID; never read the customer ID from the request.
+
+## [2.0.2] - unreleased
+
+### Fixed
+
+- **A null account date is accepted.** New overloads `IdentityTokens.Create(customerId, appId, DateTimeOffset? customerSince)` and `ClikgateClient.CreateIdentityToken(customerId, appId, DateTimeOffset?)` make a version 1 token when the date is null, the same as `Create(customerId, appId)`. One call, `CreateIdentityToken(user.Id, null, user.CreatedAt)`, now works for every customer, including those with no stored account date (a nullable `CreatedAt` column).
+- **Changed:** `IClikgateClient.CreateIdentityToken(customerId, appId, customerSince)` now takes a `DateTimeOffset?`. Calls compile unchanged (a `DateTimeOffset` converts); your own implementations or hand-written fakes of `IClikgateClient` change the parameter type. Recompile against 2.0.2.
+
 ## [2.0.1] - unreleased
 
 ### Existing users

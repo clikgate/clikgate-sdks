@@ -18,7 +18,10 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import org.jspecify.annotations.Nullable;
 
-/** Links: create, read, update (with approvals and locks), list and QR codes. {@code params} use the API's field names. */
+/**
+ * Links: create, read, update (with approvals and locks), pause, resume, archive, list and QR codes. Typed
+ * {@link LinkCreateParams} / {@link LinkUpdateParams}, or maps with the API's field names.
+ */
 public final class Links {
   private final Core core;
 
@@ -46,6 +49,22 @@ public final class Links {
    */
   public Link create(Map<String, ?> params) {
     return create(params, RequestOptions.NONE);
+  }
+
+  /**
+   * Create a link from typed parameters.
+   *
+   * <pre>{@code
+   * Link link = clikgate.links().create(LinkCreateParams.builder().destinationUrl("https://example.com/spring").ogTitle("Spring sale").build());
+   * }</pre>
+   */
+  public Link create(LinkCreateParams params) {
+    return create(params.toMap(), RequestOptions.NONE);
+  }
+
+  /** {@link #create(LinkCreateParams)} with per-call options. */
+  public Link create(LinkCreateParams params, RequestOptions options) {
+    return create(params.toMap(), options);
   }
 
   /** {@link #create(Map)} with per-call options. */
@@ -82,6 +101,22 @@ public final class Links {
     return update(id, params, RequestOptions.NONE);
   }
 
+  /**
+   * Update a link from typed parameters (a field set to null is cleared).
+   *
+   * <pre>{@code
+   * LinkUpdateResult r = clikgate.links().update("lnk_01J…", LinkUpdateParams.builder().destinationUrl("https://example.com/summer").build());
+   * }</pre>
+   */
+  public LinkUpdateResult update(String id, LinkUpdateParams params) {
+    return update(id, params.toMap(), RequestOptions.NONE);
+  }
+
+  /** {@link #update(String, LinkUpdateParams)} with per-call options. */
+  public LinkUpdateResult update(String id, LinkUpdateParams params, RequestOptions options) {
+    return update(id, params.toMap(), options);
+  }
+
   /** {@link #update(String, Map)} with per-call options. */
   public LinkUpdateResult update(String id, Map<String, ?> params, RequestOptions options) {
     Requester.Result r = core.requester.request(new ApiRequest("PATCH", path(id)).body(new LinkedHashMap<String, Object>(params)).options(options));
@@ -89,6 +124,71 @@ public final class Links {
       return new LinkUpdateResult(false, null, new LinkChangeRequest(asMap(r.data)));
     }
     return new LinkUpdateResult(true, new Link(asMap(r.data)), null);
+  }
+
+  /**
+   * Fetch a link by your own ID for it ({@code external_reference}).
+   *
+   * <pre>{@code
+   * Link link = clikgate.links().getByReference("seller-881");
+   * }</pre>
+   */
+  public Link getByReference(String reference) {
+    return getByReference(reference, RequestOptions.NONE);
+  }
+
+  /** {@link #getByReference(String)} with per-call options. */
+  public Link getByReference(String reference, RequestOptions options) {
+    String path = "/v1/links/by-reference/" + Requester.encodePathSegment(Requester.requireId(reference, "reference"));
+    return new Link(asMap(core.requester.request(new ApiRequest("GET", path).options(options)).data));
+  }
+
+  /**
+   * Archive a link: it stops redirecting and leaves the list. Returns the archived link.
+   *
+   * <pre>{@code
+   * clikgate.links().archive("lnk_01J…");
+   * }</pre>
+   */
+  public Link archive(String id) {
+    return archive(id, RequestOptions.NONE);
+  }
+
+  /** {@link #archive(String)} with per-call options. */
+  public Link archive(String id, RequestOptions options) {
+    return new Link(asMap(core.requester.request(new ApiRequest("DELETE", path(id)).options(options)).data));
+  }
+
+  /**
+   * Pause a link: it stops redirecting until resumed.
+   *
+   * <pre>{@code
+   * clikgate.links().pause("lnk_01J…");
+   * }</pre>
+   */
+  public Link pause(String id) {
+    return pause(id, RequestOptions.NONE);
+  }
+
+  /** {@link #pause(String)} with per-call options. */
+  public Link pause(String id, RequestOptions options) {
+    return new Link(asMap(core.requester.request(new ApiRequest("POST", path(id) + "/pause").options(options)).data));
+  }
+
+  /**
+   * Resume a paused link.
+   *
+   * <pre>{@code
+   * clikgate.links().resume("lnk_01J…");
+   * }</pre>
+   */
+  public Link resume(String id) {
+    return resume(id, RequestOptions.NONE);
+  }
+
+  /** {@link #resume(String)} with per-call options. */
+  public Link resume(String id, RequestOptions options) {
+    return new Link(asMap(core.requester.request(new ApiRequest("POST", path(id) + "/resume").options(options)).data));
   }
 
   /**

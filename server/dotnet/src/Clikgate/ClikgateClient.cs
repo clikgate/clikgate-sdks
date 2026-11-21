@@ -36,6 +36,21 @@ public interface IClikgateClient : IAsyncDisposable, IDisposable
     /// <summary>Click-ID helpers using this client's parameter.</summary>
     ClickIds ClickIds { get; }
 
+    /// <summary>Referrals: referrers and referrals, typed.</summary>
+    Referrals Referrals { get; }
+
+    /// <summary>Privacy requests.</summary>
+    Privacy Privacy { get; }
+
+    /// <summary>People: read, search, label.</summary>
+    People People { get; }
+
+    /// <summary>App installs.</summary>
+    Installs Installs { get; }
+
+    /// <summary>Offline codes.</summary>
+    Codes Codes { get; }
+
     /// <summary>Every API-key operation, generated from openapi.json ("advanced").</summary>
     Api.ApiClient Api { get; }
 
@@ -48,8 +63,11 @@ public interface IClikgateClient : IAsyncDisposable, IDisposable
     /// <summary>Creates an identity token for the signed-in user (no network call). See https://clikgate.com/docs/identify-users.</summary>
     string CreateIdentityToken(string customerId, string? appId = null);
 
-    /// <summary>Creates a version 2 identity token that also carries when the person became your customer.</summary>
-    string CreateIdentityToken(string customerId, string? appId, DateTimeOffset customerSince);
+    /// <summary>
+    /// Creates a version 2 identity token that also carries when the person became your customer. A null
+    /// <paramref name="customerSince"/> (no stored account date) makes a version 1 token instead.
+    /// </summary>
+    string CreateIdentityToken(string customerId, string? appId, DateTimeOffset? customerSince);
 
     /// <summary>Tells Clikgate who a person is (<c>POST /v1/people/identify</c>).</summary>
     Task<PersonIdentified> IdentifyUserAsync(IdentifyUserParams parameters, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default);
@@ -111,7 +129,7 @@ public sealed class ClikgateClient : IClikgateClient
         var m = KeyPattern.Match(apiKey);
         if (!m.Success)
         {
-            throw new ConfigurationException("The API key is " + KeyType(apiKey!) + ". Server SDKs need a cg_live_… or cg_test_… API key from Developers → API keys.", "invalid_api_key", "ApiKey");
+            throw new ConfigurationException("The API key is " + KeyType(apiKey!) + ". Server SDKs need a cg_live_… or cg_test_… API key from Developers › API keys & clients.", "invalid_api_key", "ApiKey");
         }
         Mode = m.Groups[1].Value;
         var env = Environment.GetEnvironmentVariable("CLIKGATE_BASE_URL");
@@ -166,6 +184,11 @@ public sealed class ClikgateClient : IClikgateClient
         Links = new Links(_core);
         Clicks = new Clicks(_core);
         KnownCustomers = new KnownCustomers(_core);
+        Referrals = new Referrals(_core);
+        Privacy = new Privacy(_core);
+        People = new People(_core);
+        Installs = new Installs(_core);
+        Codes = new Codes(_core);
         var core = _core;
         ClickIds = new ClickIds(() => explicitParam ?? core.PeekConfig()?.ClickIdParam ?? "cgid");
         Api = new Api.ApiClient(requester);
@@ -205,6 +228,21 @@ public sealed class ClikgateClient : IClikgateClient
 
     /// <inheritdoc/>
     public ClickIds ClickIds { get; }
+
+    /// <inheritdoc/>
+    public Referrals Referrals { get; }
+
+    /// <inheritdoc/>
+    public Privacy Privacy { get; }
+
+    /// <inheritdoc/>
+    public People People { get; }
+
+    /// <inheritdoc/>
+    public Installs Installs { get; }
+
+    /// <inheritdoc/>
+    public Codes Codes { get; }
 
     /// <inheritdoc/>
     public Api.ApiClient Api { get; }
@@ -301,41 +339,65 @@ public sealed class ClikgateClient : IClikgateClient
         IdentityTokens.CreateWith(IdentityTokens.ClientPlatform, _identitySecret, _identitySecrets, Environment.GetEnvironmentVariable, customerId, appId, null, null, customerSince.ToUnixTimeSeconds());
 
     /// <summary>
-    /// Tells Clikgate who a person is (<c>POST /v1/people/identify</c>): a click, an app installation (<c>AppId</c> +
-    /// <c>InstallationId</c>) or your <c>CustomerId</c>, at least one. With a click or installation, <c>CustomerId</c>
+    /// <see cref="CreateIdentityToken(string, string?, DateTimeOffset)"/> for a customer whose account date may be
+    /// unknown: a null <paramref name="customerSince"/> makes a version 1 token, the same as
+    /// <see cref="CreateIdentityToken(string, string?)"/>.
+    /// </summary>
+    /// <example><code>clikgate.CreateIdentityToken(user.Id, null, user.CreatedAt) // DateTimeOffset? from your database</code></example>
+    public string CreateIdentityToken(string customerId, string? appId, DateTimeOffset? customerSince) =>
+        customerSince is DateTimeOffset since ? CreateIdentityToken(customerId, appId, since) : CreateIdentityToken(customerId, appId);
+
+    /// <summary>
+    /// Tells Clikgate who a person is (<c>POST /v1/people/identify</c>): a click, an app installation
+    /// (<c>Installation</c>, or <c>InstallationId</c> with an optional <c>AppId</c>) or your <c>CustomerId</c>, at least one. With a click or installation, <c>CustomerId</c>
     /// links it to that customer. <c>Label</c> is what your team sees instead of the click ID (1-80 characters, <c>""</c>
     /// clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
     /// <c>require_identity_token</c>. In private mode <c>CustomerId</c> is refused locally and <c>Label</c> needs
     /// "Allow labels in private mode". <c>CustomerSince</c> is when they became your customer, so existing
     /// customers are never counted as referrals or new customers; it is refused in private mode too.
     /// <para>
-    /// Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
-    /// <c>getInstallationId()</c> and sends it in its sign-in request; your server calls this with <c>AppId</c>,
-    /// <c>InstallationId</c>, <c>CustomerId</c> and optionally <c>Label</c>, after sign-in and at every signed-in app
-    /// open. When the app sends no installation ID (tracking is off), skip the call. Clikgate accepts installations
-    /// active in the last 7 days.
+    /// Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app sends the
+    /// <c>Clikgate-Installation</c> header (from the mobile SDK) to your server. After your own sign-in check
+    /// succeeds, and at every signed-in app open, pass the header as <c>Installation</c> with your signed-in user's ID
+    /// as <c>CustomerId</c> (never a customer ID read from the request). A missing or invalid header is ignored: skip
+    /// the call. <c>InstallationId</c> given explicitly wins over the header. <c>AppId</c> is optional: Clikgate finds
+    /// the app; if the installation ID is in several of your apps, the API answers
+    /// <c>409 installation_in_several_apps</c> (a <c>ConflictException</c>, param <c>app_id</c>): send <c>AppId</c>
+    /// too. Clikgate accepts installations active in the last 7 days.
     /// </para>
     /// </summary>
     /// <example><code>
     /// await clikgate.IdentifyUserAsync(new IdentifyUserParams { ClickId = clickId, CustomerId = "user_42", Label = "Ada (VIP)" });
-    /// if (installationId is not null)
-    ///     await clikgate.IdentifyUserAsync(new IdentifyUserParams { AppId = "app_…", InstallationId = installationId, CustomerId = user.Id });
+    /// // after your sign-in check: the header from the app, your user's ID
+    /// await clikgate.IdentifyUserAsync(new IdentifyUserParams { Installation = Request.Headers["Clikgate-Installation"], CustomerId = user.Id });
     /// </code></example>
     public async Task<PersonIdentified> IdentifyUserAsync(IdentifyUserParams parameters, RequestOptions? requestOptions = null, CancellationToken cancellationToken = default)
     {
         var p = parameters ?? throw new ArgumentNullException(nameof(parameters));
-        if ((p.AppId is null) != (p.InstallationId is null))
+        var appId = p.AppId;
+        var installationId = p.InstallationId;
+        if (installationId is null && p.Installation is not null)
         {
-            throw Errors.Local("invalid_request", "Send AppId and InstallationId together.", p.AppId is null ? "app_id" : "installation_id");
+            // The raw Clikgate-Installation header: ignored (never sent) when missing or invalid
+            var fromHeader = Installation.ParseHeader(p.Installation);
+            if (fromHeader is not null)
+            {
+                appId ??= fromHeader.AppId;
+                installationId = fromHeader.InstallationId;
+            }
         }
-        if (p.ClickId is null && p.InstallationId is null && p.CustomerId is null)
+        if (appId is not null && installationId is null)
         {
-            throw Errors.Local("invalid_request", "Send ClickId, AppId + InstallationId, or CustomerId.", "click_id");
+            throw Errors.Local("invalid_request", "Send InstallationId with AppId.", "installation_id");
+        }
+        if (p.ClickId is null && installationId is null && p.CustomerId is null)
+        {
+            throw Errors.Local("invalid_request", "Send ClickId, an installation (Installation or InstallationId), or CustomerId.", "click_id");
         }
         var body = new JsonObject();
         if (p.ClickId is not null) body["click_id"] = p.ClickId;
-        if (p.AppId is not null) body["app_id"] = p.AppId;
-        if (p.InstallationId is not null) body["installation_id"] = p.InstallationId;
+        if (appId is not null) body["app_id"] = appId;
+        if (installationId is not null) body["installation_id"] = installationId;
         if (p.CustomerId is not null) body["customer_id"] = p.CustomerId;
         if (p.Label is not null) body["label"] = p.Label;
         if (p.CustomerSince is { } since)

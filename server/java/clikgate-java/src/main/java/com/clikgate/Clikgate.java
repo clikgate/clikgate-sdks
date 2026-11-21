@@ -57,6 +57,11 @@ public final class Clikgate implements AutoCloseable {
   private final Links links;
   private final Clicks clicks;
   private final KnownCustomers knownCustomers;
+  private final Referrals referrals;
+  private final Privacy privacy;
+  private final People people;
+  private final Installs installs;
+  private final Codes codes;
   private final ClickIds clickIds;
   private final ApiClient api;
   private final Clock clock;
@@ -72,7 +77,7 @@ public final class Clikgate implements AutoCloseable {
     }
     Matcher m = KEY.matcher(apiKey);
     if (!m.matches()) {
-      throw new ConfigurationException("The API key is " + keyType(apiKey) + ". Server SDKs need a cg_live_… or cg_test_… API key from Developers → API keys.", "invalid_api_key", null, null, "apiKey", null, null);
+      throw new ConfigurationException("The API key is " + keyType(apiKey) + ". Server SDKs need a cg_live_… or cg_test_… API key from Developers › API keys & clients.", "invalid_api_key", null, null, "apiKey", null, null);
     }
     this.mode = m.group(1);
     this.identitySecret = b.identitySecret;
@@ -139,6 +144,11 @@ public final class Clikgate implements AutoCloseable {
     this.links = new Links(core);
     this.clicks = new Clicks(core);
     this.knownCustomers = new KnownCustomers(core);
+    this.referrals = new Referrals(core);
+    this.privacy = new Privacy(core);
+    this.people = new People(core);
+    this.installs = new Installs(core);
+    this.codes = new Codes(core);
     Core c = core;
     this.clickIds =
         new ClickIds(
@@ -202,6 +212,35 @@ public final class Clikgate implements AutoCloseable {
   /** Existing customers from before you added Clikgate: {@code importCustomers} and {@code remove}. */
   public KnownCustomers knownCustomers() {
     return knownCustomers;
+  }
+
+  /**
+   * Referrals: {@code getOrCreateReferrer}, {@code getReferrer}, {@code findReferrer}, {@code get}, {@code list},
+   * {@code qualify}, {@code disqualify}, {@code completeStep}, {@code importReferrers}, {@code blockReferrer},
+   * {@code unblockReferrer} and {@code updateReferrer}.
+   */
+  public Referrals referrals() {
+    return referrals;
+  }
+
+  /** Privacy requests: {@code createRequest} and {@code getRequest}. */
+  public Privacy privacy() {
+    return privacy;
+  }
+
+  /** People: {@code get}, {@code search} and {@code setLabel}. */
+  public People people() {
+    return people;
+  }
+
+  /** App installs: {@code getByCustomer} and {@code getByInstallation}. */
+  public Installs installs() {
+    return installs;
+  }
+
+  /** Offline codes: {@code redeem}. */
+  public Codes codes() {
+    return codes;
   }
 
   /** Click-ID helpers using this client's {@code clickIdParam} (or the organisation's, from config). */
@@ -281,37 +320,42 @@ public final class Clikgate implements AutoCloseable {
 
   /**
    * A version 2 identity token that also carries when the person became your customer, so Clikgate can
-   * tell an existing customer from a new one. {@code appId} may be null.
+   * tell an existing customer from a new one. {@code appId} may be null. A null {@code customerSince} (no stored
+   * account date) makes a version 1 token, the same as {@link #createIdentityToken(String, String)}.
    *
    * <pre>{@code
    * response.put("clikgateIdentityToken", clikgate.createIdentityToken(user.getId(), null, user.getCreatedAt()));
    * }</pre>
    */
-  public String createIdentityToken(String customerId, @Nullable String appId, Instant customerSince) {
+  public String createIdentityToken(String customerId, @Nullable String appId, @Nullable Instant customerSince) {
+    if (customerSince == null) return createIdentityToken(customerId, appId);
     return IdentityTokens.createWith(
         IdentityTokens.onAndroid(), identitySecret, identitySecrets, System::getenv, customerId, appId, null, null, customerSince.getEpochSecond());
   }
 
   /**
-   * Tell Clikgate who a person is ({@code POST /v1/people/identify}): a click, an app installation ({@code appId} +
-   * {@code installationId}) or your {@code customerId}, at least one. With a click or installation, {@code customerId}
+   * Tell Clikgate who a person is ({@code POST /v1/people/identify}): a click, an app installation
+   * ({@code installation}, or {@code installationId} with an optional {@code appId}) or your {@code customerId}, at
+   * least one. With a click or installation, {@code customerId}
    * links it to that customer. {@code label} is what your team sees instead of the click ID (1-80 characters,
    * {@code ""} clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
    * {@code require_identity_token}. In private mode {@code customerId} is refused locally and {@code label} needs
    * "Allow labels in private mode". {@code customerSince} is when they became your customer, so existing
    * customers are never counted as referrals or new customers; it is refused in private mode too.
    *
-   * <p>Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
-   * {@code getInstallationId()} and sends it in its sign-in request; your server calls this with {@code appId},
-   * {@code installationId}, {@code customerId} and optionally {@code label}, after sign-in and at every signed-in app
-   * open. When the app sends no installation ID (tracking is off), skip the call. Clikgate accepts installations active
+   * <p>Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app sends the
+   * {@code Clikgate-Installation} header (from the mobile SDK) to your server. After your own sign-in check succeeds,
+   * and at every signed-in app open, pass the header as {@code installation} with your signed-in user's ID as
+   * {@code customerId} (never a customer ID read from the request). A missing or invalid header is ignored: skip the
+   * call. {@code installationId} given explicitly wins over the header. {@code appId} is optional: Clikgate finds the
+   * app; if the installation ID is in several of your apps, the API answers {@code 409 installation_in_several_apps}
+   * (a {@code ConflictException}, param {@code app_id}): send {@code appId} too. Clikgate accepts installations active
    * in the last 7 days.
    *
    * <pre>{@code
    * clikgate.identifyUser(IdentifyUserParams.builder().clickId(clickId).customerId("user_42").label("Ada (VIP)").build());
-   * if (installationId != null) {
-   *   clikgate.identifyUser(IdentifyUserParams.builder().appId("app_…").installationId(installationId).customerId(user.getId()).build());
-   * }
+   * // after your sign-in check: the header from the app, your user's ID
+   * clikgate.identifyUser(IdentifyUserParams.builder().installation(request.getHeader("Clikgate-Installation")).customerId(user.getId()).build());
    * }</pre>
    */
   public PersonIdentified identifyUser(IdentifyUserParams params) {
@@ -321,16 +365,26 @@ public final class Clikgate implements AutoCloseable {
   /** {@link #identifyUser(IdentifyUserParams)} with per-call options. */
   @SuppressWarnings("unchecked")
   public PersonIdentified identifyUser(IdentifyUserParams params, RequestOptions options) {
-    if ((params.appId == null) != (params.installationId == null)) {
-      throw ErrorMapper.local("invalid_request", "Send appId and installationId together.", params.appId == null ? "app_id" : "installation_id");
+    String appId = params.appId;
+    String installationId = params.installationId;
+    if (installationId == null && params.installation != null) {
+      // The raw Clikgate-Installation header: ignored (never sent) when missing or invalid
+      Installation fromHeader = Installation.parseHeader(params.installation);
+      if (fromHeader != null) {
+        if (appId == null) appId = fromHeader.getAppId();
+        installationId = fromHeader.getInstallationId();
+      }
     }
-    if (params.clickId == null && params.installationId == null && params.customerId == null) {
-      throw ErrorMapper.local("invalid_request", "Send clickId, appId + installationId, or customerId.", "click_id");
+    if (appId != null && installationId == null) {
+      throw ErrorMapper.local("invalid_request", "Send installationId with appId.", "installation_id");
+    }
+    if (params.clickId == null && installationId == null && params.customerId == null) {
+      throw ErrorMapper.local("invalid_request", "Send clickId, an installation (installation or installationId), or customerId.", "click_id");
     }
     Map<String, Object> body = new LinkedHashMap<>();
     if (params.clickId != null) body.put("click_id", params.clickId);
-    if (params.appId != null) body.put("app_id", params.appId);
-    if (params.installationId != null) body.put("installation_id", params.installationId);
+    if (appId != null) body.put("app_id", appId);
+    if (installationId != null) body.put("installation_id", installationId);
     if (params.customerId != null) body.put("customer_id", params.customerId);
     if (params.label != null) body.put("label", params.label);
     if (params.customerSince != null) {

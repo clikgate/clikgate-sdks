@@ -8,6 +8,7 @@ from ._ads_hashing import check_hashed_fields
 from ._core import AsyncCore, Core
 from ._guard import guard_payload
 from ._http import ApiRequest, RawResponse, RequestOptions, encode_path_segment, require_id
+from ._models import LinkCreateParams, LinkUpdateParams
 from ._money import format_value
 from ._types import Click, Conversion, GoalEvent, Link, LinkChangeRequest, LinkPage, LinkUpdateResult, QrCode
 
@@ -31,6 +32,18 @@ def _update_result(status: int, data: Any) -> LinkUpdateResult:
     link = cast(Link, data)
     warnings = link.get("warnings") if isinstance(link, dict) else None
     return {"applied": True, "link": link, "change_request": None, "warnings": list(warnings) if isinstance(warnings, list) else []}
+
+
+def _merge(params: Optional[Mapping[str, Any]], kwargs: Mapping[str, Any]) -> Dict[str, Any]:
+    return {**(dict(params) if params else {}), **kwargs}
+
+
+def _simple(method: str, path: str) -> ApiRequest:
+    return ApiRequest(method, path)
+
+
+def _by_reference(reference: str) -> str:
+    return f"/v1/links/by-reference/{encode_path_segment(require_id(reference, 'reference'))}"
 
 
 def _qr_request(link_id: str, query: Mapping[str, Any], options: Optional[RequestOptions]) -> ApiRequest:
@@ -90,15 +103,19 @@ class Links:
     def __init__(self, core: Core) -> None:
         self._core = core
 
-    def create(self, *, request_options: Optional[RequestOptions] = None, **params: Any) -> Link:
+    def create(self, params: Optional[LinkCreateParams] = None, *, request_options: Optional[RequestOptions] = None, **fields: Any) -> Link:
         """Create a link. Its ``warnings`` include ``no_preview`` when there is no preview title and image.
 
         Example::
 
-            link = clikgate.links.create(destination_url="https://example.com/spring", og_title="Spring sale")
+            link = clikgate.links.create({"destination_url": "https://example.com/spring", "og_title": "Spring sale"})
             print(link["short_url"], link.get("warnings"))
+
+        ``params`` is a typed :class:`LinkCreateParams`; keyword arguments (the API's field names) also work.
         """
-        _s, data, _h = self._core.requester.request(ApiRequest("POST", "/v1/links", body=params).with_options(request_options))
+        _s, data, _h = self._core.requester.request(
+            ApiRequest("POST", "/v1/links", body=_merge(params, fields)).with_options(request_options)
+        )
         return cast(Link, data)
 
     def get(self, link_id: str, *, request_options: Optional[RequestOptions] = None) -> Link:
@@ -111,7 +128,9 @@ class Links:
         _s, data, _h = self._core.requester.request(ApiRequest("GET", _link_path(link_id)).with_options(request_options))
         return cast(Link, data)
 
-    def update(self, link_id: str, *, request_options: Optional[RequestOptions] = None, **params: Any) -> LinkUpdateResult:
+    def update(
+        self, link_id: str, params: Optional[LinkUpdateParams] = None, *, request_options: Optional[RequestOptions] = None, **fields: Any
+    ) -> LinkUpdateResult:
         """Update a link. ``None`` clears a field.
 
         With two-person approval on, a destination change answers ``202``: the result is
@@ -123,7 +142,9 @@ class Links:
             if not result["applied"]:
                 print("waiting for approval:", result["change_request"]["id"])
         """
-        status, data, _h = self._core.requester.request(ApiRequest("PATCH", _link_path(link_id), body=params).with_options(request_options))
+        status, data, _h = self._core.requester.request(
+            ApiRequest("PATCH", _link_path(link_id), body=_merge(params, fields)).with_options(request_options)
+        )
         return _update_result(status, data)
 
     def list_page(self, *, request_options: Optional[RequestOptions] = None, **params: Any) -> LinkPage:
@@ -151,6 +172,46 @@ class Links:
             if not page.get("has_more") or not page.get("next_cursor"):
                 return
             cursor = page["next_cursor"]
+
+    def archive(self, link_id: str, *, request_options: Optional[RequestOptions] = None) -> Link:
+        """Archive a link (``DELETE /v1/links/{id}``): it stops redirecting. Returns the archived link.
+
+        Example::
+
+            link = clikgate.links.archive("lnk_01J…")
+        """
+        _s, data, _h = self._core.requester.request(_simple("DELETE", _link_path(link_id)).with_options(request_options))
+        return cast(Link, data)
+
+    def get_by_reference(self, reference: str, *, request_options: Optional[RequestOptions] = None) -> Link:
+        """Fetch a link by your own external reference (``external_reference``).
+
+        Example::
+
+            link = clikgate.links.get_by_reference("order-1001")
+        """
+        _s, data, _h = self._core.requester.request(_simple("GET", _by_reference(reference)).with_options(request_options))
+        return cast(Link, data)
+
+    def pause(self, link_id: str, *, request_options: Optional[RequestOptions] = None) -> Link:
+        """Pause a link: visitors see the paused page until you resume it.
+
+        Example::
+
+            link = clikgate.links.pause("lnk_01J…")
+        """
+        _s, data, _h = self._core.requester.request(_simple("POST", _link_path(link_id, "/pause")).with_options(request_options))
+        return cast(Link, data)
+
+    def resume(self, link_id: str, *, request_options: Optional[RequestOptions] = None) -> Link:
+        """Resume a paused link.
+
+        Example::
+
+            link = clikgate.links.resume("lnk_01J…")
+        """
+        _s, data, _h = self._core.requester.request(_simple("POST", _link_path(link_id, "/resume")).with_options(request_options))
+        return cast(Link, data)
 
     def qr(
         self,
@@ -234,14 +295,18 @@ class AsyncLinks:
     def __init__(self, core: AsyncCore) -> None:
         self._core = core
 
-    async def create(self, *, request_options: Optional[RequestOptions] = None, **params: Any) -> Link:
+    async def create(
+        self, params: Optional[LinkCreateParams] = None, *, request_options: Optional[RequestOptions] = None, **fields: Any
+    ) -> Link:
         """Create a link.
 
         Example::
 
             link = await clikgate.links.create(destination_url="https://example.com/spring")
         """
-        _s, data, _h = await self._core.requester.request(ApiRequest("POST", "/v1/links", body=params).with_options(request_options))
+        _s, data, _h = await self._core.requester.request(
+            ApiRequest("POST", "/v1/links", body=_merge(params, fields)).with_options(request_options)
+        )
         return cast(Link, data)
 
     async def get(self, link_id: str, *, request_options: Optional[RequestOptions] = None) -> Link:
@@ -254,7 +319,9 @@ class AsyncLinks:
         _s, data, _h = await self._core.requester.request(ApiRequest("GET", _link_path(link_id)).with_options(request_options))
         return cast(Link, data)
 
-    async def update(self, link_id: str, *, request_options: Optional[RequestOptions] = None, **params: Any) -> LinkUpdateResult:
+    async def update(
+        self, link_id: str, params: Optional[LinkUpdateParams] = None, *, request_options: Optional[RequestOptions] = None, **fields: Any
+    ) -> LinkUpdateResult:
         """Update a link (``202`` → ``applied: False`` with ``change_request``; locked → LinkLockedError).
 
         Example::
@@ -262,7 +329,7 @@ class AsyncLinks:
             result = await clikgate.links.update("lnk_01J…", destination_url="https://example.com/summer")
         """
         status, data, _h = await self._core.requester.request(
-            ApiRequest("PATCH", _link_path(link_id), body=params).with_options(request_options)
+            ApiRequest("PATCH", _link_path(link_id), body=_merge(params, fields)).with_options(request_options)
         )
         return _update_result(status, data)
 
@@ -292,6 +359,46 @@ class AsyncLinks:
             if not page.get("has_more") or not page.get("next_cursor"):
                 return
             cursor = page["next_cursor"]
+
+    async def archive(self, link_id: str, *, request_options: Optional[RequestOptions] = None) -> Link:
+        """Archive a link (``DELETE /v1/links/{id}``): it stops redirecting. Returns the archived link.
+
+        Example::
+
+            link = await clikgate.links.archive("lnk_01J…")
+        """
+        _s, data, _h = await self._core.requester.request(_simple("DELETE", _link_path(link_id)).with_options(request_options))
+        return cast(Link, data)
+
+    async def get_by_reference(self, reference: str, *, request_options: Optional[RequestOptions] = None) -> Link:
+        """Fetch a link by your own external reference (``external_reference``).
+
+        Example::
+
+            link = await clikgate.links.get_by_reference("order-1001")
+        """
+        _s, data, _h = await self._core.requester.request(_simple("GET", _by_reference(reference)).with_options(request_options))
+        return cast(Link, data)
+
+    async def pause(self, link_id: str, *, request_options: Optional[RequestOptions] = None) -> Link:
+        """Pause a link: visitors see the paused page until you resume it.
+
+        Example::
+
+            link = await clikgate.links.pause("lnk_01J…")
+        """
+        _s, data, _h = await self._core.requester.request(_simple("POST", _link_path(link_id, "/pause")).with_options(request_options))
+        return cast(Link, data)
+
+    async def resume(self, link_id: str, *, request_options: Optional[RequestOptions] = None) -> Link:
+        """Resume a paused link.
+
+        Example::
+
+            link = await clikgate.links.resume("lnk_01J…")
+        """
+        _s, data, _h = await self._core.requester.request(_simple("POST", _link_path(link_id, "/resume")).with_options(request_options))
+        return cast(Link, data)
 
     async def qr(
         self,

@@ -2,6 +2,22 @@
 
 All notable changes to this package. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package uses [semantic versioning](https://semver.org/).
 
+## [2.1.0] - unreleased
+
+### Typed models
+
+- **Fixed:** `Clikgate::identifyUser(['installation' => $request->clikgateInstallation(), ...])` works: the parsed installation is accepted as well as the raw header.
+- **Added:** `Clikgate::referrals()`, `Clikgate::privacy()`, `Clikgate::people()`, `Clikgate::installs()` and `Clikgate::codes()`, the new resources of `clikgate/clikgate-php` 2.1.0, which return typed models (`$referrer->customerId`, `$referral->reward?->referrer?->amount`).
+- **Changed:** `Clikgate::verifyWebhook()` returns a `Clikgate\Model\WebhookEvent` with `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()`, `asConversion()`, `asDeviceChange()`, and `$event->type` (compare it with the `EventType` string constants); array access (`$event['type']`) keeps working.
+- **Changed:** link methods (`Clikgate::links()`) return `Link`, `LinkUpdateResult` and `Page` objects, not arrays. Array access (`$link['short_url']`) keeps working, but `is_array()` on a link result is now `false`, so code that checks it breaks: call `->toArray()` to get the array.
+- Requires `clikgate/clikgate-php` 2.1.0.
+
+## [2.0.3] - unreleased
+
+### Identify users with the installation header
+
+- **Added:** `$request->clikgateInstallation()`: the app's `Clikgate-Installation` header as a `Clikgate\Installation` (`->appId`, `->installationId`), or `null` when it is missing or invalid. Spread `$installation->toArray()` into `Clikgate::identifyUser()`, after your own sign-in check, with your signed-in user's ID (never a customer ID read from the request). `Clikgate::identifyUser()` also takes the raw header as `installation`, and `appId` is optional. Requires `clikgate/clikgate-php` 2.0.3.
+
 ## [2.0.1] - unreleased
 
 ### Existing users

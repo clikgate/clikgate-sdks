@@ -33,6 +33,15 @@ export {
   type KeepResult,
 } from './click-ids.js';
 export { webhooks, type VerifyOptions, type RawBody } from './webhooks.js';
+export {
+  parseInstallationHeader,
+  installationFromRequest,
+  INSTALLATION_HEADER,
+  INSTALLATION_HEADER_MAX_LENGTH,
+  INSTALLATION_PATTERN,
+  type Installation,
+  type HeadersLike,
+} from './installation.js';
 export { canonicalCustomerId, customerIdWarning, CUSTOMER_ID_MAX_LENGTH, type CustomerIdWarning } from './customer-id.js';
 export { KNOWN_CUSTOMERS_BATCH, type KnownCustomers, type KnownCustomer, type KnownCustomerRefusal, type KnownCustomersImportResult } from './known-customers.js';
 export { createIdentityToken, IDENTITY_SECRET_ENV, IDENTITY_SECRETS_ENV, type IdentityTokenOptions } from './identity.js';
@@ -45,6 +54,45 @@ export type { Logger, WarningCode } from './logger.js';
 export type { Clock, RequestOptions } from './http.js';
 export type { FetchLike } from './transport.js';
 export type { QrOptions, LinkIterator, Conversions, Links, Clicks } from './resources.js';
+export { REFERRER_IMPORT_BATCH } from './referrals.js';
+export type {
+  Referrals,
+  ReferrerCreateParams,
+  ReferrerLookup,
+  ReferralListParams,
+  CompleteStepParams,
+  ReferrerImportRow,
+  ReferrerUpdateParams,
+} from './referrals.js';
+export type { Privacy, PrivacyRequestParams, People, PeopleSearchOptions, Installs, Codes, CodeRedeemParams } from './lookups.js';
+export type { PageIterator } from './pager.js';
+export { EventType, type EventTypeValue } from './event-types.js';
+export { currencyExponent, minorToAmount } from './currency.js';
+export type {
+  Referrer,
+  ReferrerResult,
+  ReferrerStats,
+  Referral,
+  ReferralStep,
+  RewardInfo,
+  RewardSide,
+  Job,
+  JobResult,
+  PrivacyRequest,
+  Person,
+  PersonSummary,
+  PersonSearchPage,
+  Install,
+  PaymentReport,
+  ConversionObject,
+  CodeRedemption,
+  WebhookGoalEvent,
+  DeviceChange,
+  DeviceChangeSide,
+  ReferralStateChange,
+  LinkCreateParams,
+  LinkUpdateParams,
+} from './models.js';
 export type { Goals } from './goals.js';
 export {
   buildFromPaystack,
@@ -74,6 +122,10 @@ export type {
   ServerSdkConfig,
   ConfigGoal,
   WebhookEvent,
+  WebhookEventAccessors,
+  WebhookEventData,
+  WebhookEventOf,
+  TypedWebhookEvent,
   QrCode,
 } from './types.js';
 export {

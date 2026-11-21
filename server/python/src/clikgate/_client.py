@@ -28,9 +28,12 @@ from ._guard import guard_payload
 from ._http import ApiRequest, AsyncRequester, Clock, Requester, RequestOptions, Settings
 from ._identity import CustomerSince
 from ._identity import _create as _create_identity_token
+from ._installation import Installation, to_installation
 from ._known_customers import AsyncKnownCustomers, KnownCustomers
+from ._lookups import AsyncCodes, AsyncInstalls, AsyncPeople, AsyncPrivacy, Codes, Installs, People, Privacy
 from ._money import MoneyInput
 from ._payments import AsyncPayments, Payments
+from ._referrals import AsyncReferrals, Referrals
 from ._resources import AsyncClicks, AsyncConversions, AsyncLinks, Clicks, Conversions, Links
 from ._types import ServerSdkConfig, WebhookEvent
 from ._user_agent import user_agent
@@ -113,7 +116,7 @@ def _resolve(
     if m is None:
         raise ConfigurationError(
             f"The API key is {_key_type(key if isinstance(key, str) else '')}. "
-            "Server SDKs need a cg_live_… or cg_test_… API key from Developers → API keys.",
+            "Server SDKs need a cg_live_… or cg_test_… API key from Developers \u203a API keys & clients.",
             code="invalid_api_key",
             param="api_key",
         )
@@ -283,11 +286,20 @@ def _identify_body(
     label: Optional[str],
     customer_since: Union[str, date, datetime, int, None] = None,
     customer_since_replace: Optional[bool] = None,
+    installation: Union[str, Installation, None] = None,
 ) -> Dict[str, Any]:
-    if (app_id is None) != (installation_id is None):
-        raise local_error("invalid_request", "Send app_id and installation_id together.", "app_id" if app_id is None else "installation_id")
+    if installation_id is None and installation is not None:
+        # The raw Clikgate-Installation header or a parsed Installation: ignored (never sent) when missing or invalid
+        from_header = to_installation(installation)
+        if from_header is not None:
+            app_id = app_id if app_id is not None else from_header.app_id
+            installation_id = from_header.installation_id
+    if app_id is not None and installation_id is None:
+        raise local_error("invalid_request", "Send installation_id with app_id.", "installation_id")
     if click_id is None and installation_id is None and customer_id is None:
-        raise local_error("invalid_request", "Send click_id, app_id + installation_id, or customer_id.", "click_id")
+        raise local_error(
+            "invalid_request", "Send click_id, an installation (installation or installation_id), or customer_id.", "click_id"
+        )
     body: Dict[str, Any] = {
         "click_id": click_id,
         "app_id": app_id,
@@ -402,6 +414,16 @@ class Clikgate:
         self.clicks = Clicks(self._core)
         #: Existing customers from before you added Clikgate: ``import_customers`` and ``remove``.
         self.known_customers = KnownCustomers(self._core)
+        #: Referrals: referrers (``get_or_create_referrer``, ``find_referrer``), referrals, overrides, steps and imports.
+        self.referrals = Referrals(self._core)
+        #: Privacy requests: ``create_request``, ``get_request``.
+        self.privacy = Privacy(self._core)
+        #: People: ``get``, ``search``, ``set_label``.
+        self.people = People(self._core)
+        #: Installs: ``get_by_customer``, ``get_by_installation``.
+        self.installs = Installs(self._core)
+        #: Offline and referral codes: ``redeem``.
+        self.codes = Codes(self._core)
         explicit = r.click_id_param
         #: Click-ID helpers using this client's ``click_id_param`` (or the organisation's, from config).
         self.click_ids = ClickIds(lambda: explicit or (config.peek() or {}).get("click_id_param") or "cgid")
@@ -531,6 +553,7 @@ class Clikgate:
         self,
         *,
         click_id: Optional[str] = None,
+        installation: Union[str, Installation, None] = None,
         app_id: Optional[str] = None,
         installation_id: Optional[str] = None,
         customer_id: Optional[str] = None,
@@ -539,29 +562,37 @@ class Clikgate:
         customer_since_replace: Optional[bool] = None,
         request_options: Optional[RequestOptions] = None,
     ) -> PersonIdentified:
-        """Tell Clikgate who a person is (``POST /v1/people/identify``): a click, an app installation (``app_id`` +
-        ``installation_id``) or your ``customer_id``, at least one. With a click or installation, ``customer_id``
-        links it to that customer. ``label`` is what your team sees instead of the click ID (1-80 characters, ``""``
-        clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
+        """Tell Clikgate who a person is (``POST /v1/people/identify``): a click, an app installation (``installation``,
+        or ``installation_id`` with an optional ``app_id``) or your ``customer_id``, at least one. With a click or
+        installation, ``customer_id`` links it to that customer. ``label`` is what your team sees instead of the click
+        ID (1-80 characters, ``""`` clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
         ``require_identity_token``. In private mode ``customer_id`` is refused locally and ``label`` needs "Allow
         labels in private mode". ``customer_since`` is when they became your customer (``"YYYY-MM-DD"``,
         an ISO 8601 date-time, a ``date``, ``datetime`` or Unix seconds; needs ``customer_id``), so existing customers
         are never counted as referrals or new customers; Clikgate keeps the earliest date unless
         ``customer_since_replace=True``. Refused in private mode.
 
-        Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
-        ``getInstallationId()`` and sends it in its sign-in request; your server calls this with ``app_id``,
-        ``installation_id``, ``customer_id`` and optionally ``label``, after sign-in and at every signed-in app open.
-        When the app sends no installation ID (tracking is off), skip the call. Clikgate accepts installations active
-        in the last 7 days.
+        Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app sends the
+        ``Clikgate-Installation`` header (from the mobile SDK) to your server. After your own sign-in check succeeds,
+        and at every signed-in app open, pass the header (or the parsed ``Installation`` from the framework helpers:
+        ``request.clikgate_installation``, ``g.clikgate_installation``, ``Depends(installation)``) as ``installation`` with
+        your signed-in user's ID as
+        ``customer_id`` (never a customer ID read from the request). A missing or invalid header is ignored: skip the
+        call. ``installation_id`` given explicitly wins over the header. ``app_id`` is optional: Clikgate finds the
+        app; if the installation ID is in several of your apps, the API answers ``409 installation_in_several_apps``
+        (a ``ConflictError``, param ``app_id``): send ``app_id`` too. Clikgate accepts installations active in the
+        last 7 days.
 
         Example::
 
             clikgate.identify_user(click_id=order.click_id, customer_id="user_42", label="Ada (VIP)")
-            if installation_id:
-                clikgate.identify_user(app_id="app_…", installation_id=installation_id, customer_id=str(user.id))
+            # after your sign-in check: the header from the app, your user's ID
+            header = request.headers.get("Clikgate-Installation")
+            clikgate.identify_user(installation=header, customer_id=str(user.id))
+            # or the parsed installation from the Django middleware
+            clikgate.identify_user(installation=request.clikgate_installation, customer_id=str(user.id))
         """
-        body = _identify_body(click_id, app_id, installation_id, customer_id, label, customer_since, customer_since_replace)
+        body = _identify_body(click_id, app_id, installation_id, customer_id, label, customer_since, customer_since_replace, installation)
         if self._core.guard_state().guard:
             guard_payload("identify", body)
         _s, data, _h = self._core.requester.request(ApiRequest("POST", "/v1/people/identify", body=body).with_options(request_options))
@@ -700,6 +731,12 @@ class AsyncClikgate:
         self.clicks = AsyncClicks(self._core)
         #: Existing customers from before you added Clikgate: ``import_customers`` and ``remove``.
         self.known_customers = AsyncKnownCustomers(self._core)
+        #: Referrals (async). See :class:`Clikgate`.
+        self.referrals = AsyncReferrals(self._core)
+        self.privacy = AsyncPrivacy(self._core)
+        self.people = AsyncPeople(self._core)
+        self.installs = AsyncInstalls(self._core)
+        self.codes = AsyncCodes(self._core)
         explicit = r.click_id_param
         self.click_ids = ClickIds(lambda: explicit or (config.peek() or {}).get("click_id_param") or "cgid")
         self.api = AsyncApiClient(requester)
@@ -824,6 +861,7 @@ class AsyncClikgate:
         self,
         *,
         click_id: Optional[str] = None,
+        installation: Union[str, Installation, None] = None,
         app_id: Optional[str] = None,
         installation_id: Optional[str] = None,
         customer_id: Optional[str] = None,
@@ -832,29 +870,35 @@ class AsyncClikgate:
         customer_since_replace: Optional[bool] = None,
         request_options: Optional[RequestOptions] = None,
     ) -> PersonIdentified:
-        """Tell Clikgate who a person is (``POST /v1/people/identify``): a click, an app installation (``app_id`` +
-        ``installation_id``) or your ``customer_id``, at least one. With a click or installation, ``customer_id``
-        links it to that customer. ``label`` is what your team sees instead of the click ID (1-80 characters, ``""``
-        clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
+        """Tell Clikgate who a person is (``POST /v1/people/identify``): a click, an app installation (``installation``,
+        or ``installation_id`` with an optional ``app_id``) or your ``customer_id``, at least one. With a click or
+        installation, ``customer_id`` links it to that customer. ``label`` is what your team sees instead of the click
+        ID (1-80 characters, ``""`` clears it; Growth and up). Always verified (your server), so it also satisfies a referral program's
         ``require_identity_token``. In private mode ``customer_id`` is refused locally and ``label`` needs "Allow
         labels in private mode". ``customer_since`` is when they became your customer (``"YYYY-MM-DD"``,
         an ISO 8601 date-time, a ``date``, ``datetime`` or Unix seconds; needs ``customer_id``), so existing customers
         are never counted as referrals or new customers; Clikgate keeps the earliest date unless
         ``customer_since_replace=True``. Refused in private mode.
 
-        Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
-        ``getInstallationId()`` and sends it in its sign-in request; your server calls this with ``app_id``,
-        ``installation_id``, ``customer_id`` and optionally ``label``, after sign-in and at every signed-in app open.
-        When the app sends no installation ID (tracking is off), skip the call. Clikgate accepts installations active
-        in the last 7 days.
+        Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app sends the
+        ``Clikgate-Installation`` header (from the mobile SDK) to your server. After your own sign-in check succeeds,
+        and at every signed-in app open, pass the header (or the parsed ``Installation`` from the framework helpers:
+        ``request.clikgate_installation``, ``g.clikgate_installation``, ``Depends(installation)``) as ``installation`` with
+        your signed-in user's ID as
+        ``customer_id`` (never a customer ID read from the request). A missing or invalid header is ignored: skip the
+        call. ``installation_id`` given explicitly wins over the header. ``app_id`` is optional: Clikgate finds the
+        app; if the installation ID is in several of your apps, the API answers ``409 installation_in_several_apps``
+        (a ``ConflictError``, param ``app_id``): send ``app_id`` too. Clikgate accepts installations active in the
+        last 7 days.
 
         Example::
 
             await clikgate.identify_user(click_id=order.click_id, customer_id="user_42", label="Ada (VIP)")
-            if installation_id:
-                await clikgate.identify_user(app_id="app_…", installation_id=installation_id, customer_id=str(user.id))
+            # after your sign-in check: the header from the app, your user's ID
+            header = request.headers.get("Clikgate-Installation")
+            await clikgate.identify_user(installation=header, customer_id=str(user.id))
         """
-        body = _identify_body(click_id, app_id, installation_id, customer_id, label, customer_since, customer_since_replace)
+        body = _identify_body(click_id, app_id, installation_id, customer_id, label, customer_since, customer_since_replace, installation)
         if (await self._core.guard_state()).guard:
             guard_payload("identify", body)
         _s, data, _h = await self._core.requester.request(

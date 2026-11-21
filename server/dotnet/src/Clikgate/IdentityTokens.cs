@@ -74,6 +74,14 @@ public static class IdentityTokens
     public static string Create(string customerId, string? appId, DateTimeOffset customerSince) =>
         CreateWith(OnClientPlatform.Value, null, null, Environment.GetEnvironmentVariable, customerId, appId, null, null, customerSince.ToUnixTimeSeconds());
 
+    /// <summary>
+    /// <see cref="Create(string, string?, DateTimeOffset)"/> for a customer whose account date may be unknown: a null
+    /// <paramref name="customerSince"/> makes a version 1 token, the same as <see cref="Create(string, string?)"/>, so one
+    /// call works for every customer.
+    /// </summary>
+    public static string Create(string customerId, string? appId, DateTimeOffset? customerSince) =>
+        customerSince is DateTimeOffset since ? Create(customerId, appId, since) : Create(customerId, appId);
+
     /// <summary>A version 2 token signed with an explicit secret, issue time and account date (Unix seconds).</summary>
     public static string Create(string customerId, string secret, long issuedAtSeconds, long customerSinceSeconds) =>
         CreateWith(OnClientPlatform.Value, null, null, Environment.GetEnvironmentVariable, customerId, null, secret, issuedAtSeconds, customerSinceSeconds);
@@ -184,7 +192,7 @@ public static class IdentityTokens
             throw new ConfigurationException("Several apps' identity secrets are set (" + SecretsEnv + "): pass the appId to choose one.", "missing_identity_secret", "appId");
         }
         var message = appId is null
-            ? "No identity secret: set " + SecretEnv + " on your server (Apps > your app > Identity secret)."
+            ? "No identity secret: set " + SecretEnv + " on your server (Developers › SDKs › your app › Set up identity › Identity secret)."
             : "No identity secret for this app: add it to " + SecretsEnv + " or set " + SecretEnv + ".";
         throw new ConfigurationException(message, "missing_identity_secret", "secret");
     }

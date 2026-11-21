@@ -1,4 +1,7 @@
 import type { GoalKind, GoalStatus, Provider } from './enums.js';
+import type { LinkInfoResponse } from './generated/index.js';
+import type { EventTypeValue } from './event-types.js';
+import type { ConversionObject, DeviceChange, Install, PaymentReport, Referral, Referrer, WebhookGoalEvent } from './models.js';
 
 /** Wire objects returned by the hand-written resources. Keys are as the API sends them (snake_case). */
 
@@ -88,8 +91,8 @@ export interface LinkWarning {
   param?: string | null;
 }
 
-/** A link (`/v1/links`). Only the most used fields are typed; the rest are kept. */
-export interface Link {
+/** A link (`/v1/links`): every field of the API's link, plus any newer field (kept as is). */
+export interface Link extends Omit<LinkInfoResponse, 'object' | 'warnings' | 'metadata' | 'domain_badge' | 'locked'> {
   object: 'link';
   id: string;
   short_url: string;
@@ -190,19 +193,79 @@ export interface ServerSdkConfig {
   [key: string]: unknown;
 }
 
-/** A webhook event. */
-export interface WebhookEvent<T = Record<string, unknown>> {
+/** Typed accessors of a verified webhook event (SPEC 29). Each gives `null` for an event of another family. */
+export interface WebhookEventAccessors {
+  /** `referral.*`: the referral, with reward amounts. */
+  asReferral(): Referral | null;
+  /** `referrer.*`: the referrer. */
+  asReferrer(): Referrer | null;
+  /** `goal.completed` / `goal.reversed`: the goal event as webhooks show it. */
+  asGoalEvent(): WebhookGoalEvent | null;
+  /** `install.*`: the install. */
+  asInstall(): Install | null;
+  /** `payment.*`: the payment report. */
+  asPayment(): PaymentReport | null;
+  /** `conversion.*`: the conversion. */
+  asConversion(): ConversionObject | null;
+  /** `person.device_changed`: the device change. */
+  asDeviceChange(): DeviceChange | null;
+  /** The same event, typed as the union discriminated by `type`. */
+  typed(): TypedWebhookEvent;
+}
+
+/** A webhook event's `data`. */
+export interface WebhookEventData<T> {
+  object: T;
+  previous_attributes?: Record<string, unknown> | null;
+  [key: string]: unknown;
+}
+
+/** A webhook event. `data` is the raw payload; the `as…()` accessors give typed objects. */
+export interface WebhookEvent<T = Record<string, unknown>> extends WebhookEventAccessors {
   id: string;
   object: 'event';
-  /** e.g. `goal.completed`, `link.destination_changed`, `subscription.updated`. */
+  /** e.g. `referral.qualified`, `goal.completed`, `link.destination_changed`. Compare with `EventType`. */
   type: string;
   api_version: string;
   created_at: string;
   organization_id: string;
   livemode: boolean;
-  data: { object: T; previous_attributes?: Record<string, unknown> | null; [key: string]: unknown };
+  data: WebhookEventData<T>;
   [key: string]: unknown;
 }
+
+/** One member of {@link TypedWebhookEvent}. */
+export interface WebhookEventOf<Type extends string, T> extends WebhookEventAccessors {
+  id: string;
+  object: 'event';
+  type: Type;
+  api_version: string;
+  created_at: string;
+  organization_id: string;
+  livemode: boolean;
+  data: WebhookEventData<T>;
+  [key: string]: unknown;
+}
+
+type Family<P extends string> = Extract<EventTypeValue, `${P}.${string}`>;
+type Typed = Family<'referral'> | Family<'referrer'> | Family<'goal'> | Family<'install'> | Family<'payment'> | Family<'conversion'> | 'person.device_changed';
+
+/**
+ * Every webhook event this SDK release knows, discriminated by `type` (`event.typed()`):
+ *
+ * @example
+ * const e = event.typed();
+ * if (e.type === EventType.ReferralQualified) console.log(e.data.object.referrer.customer_user_id);
+ */
+export type TypedWebhookEvent =
+  | WebhookEventOf<Family<'referral'>, Referral>
+  | WebhookEventOf<Family<'referrer'>, Referrer>
+  | WebhookEventOf<Family<'goal'>, WebhookGoalEvent>
+  | WebhookEventOf<Family<'install'>, Install>
+  | WebhookEventOf<Family<'payment'>, PaymentReport>
+  | WebhookEventOf<Family<'conversion'>, ConversionObject>
+  | WebhookEventOf<'person.device_changed', DeviceChange>
+  | WebhookEventOf<Exclude<EventTypeValue, Typed>, Record<string, unknown>>;
 
 /** QR code bytes. */
 export interface QrCode {

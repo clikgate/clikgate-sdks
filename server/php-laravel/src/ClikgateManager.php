@@ -7,14 +7,20 @@ namespace Clikgate\Laravel;
 use Clikgate\ClickIds;
 use Clikgate\Clicks;
 use Clikgate\Clikgate as Client;
+use Clikgate\Codes;
 use Clikgate\Conversions;
 use Clikgate\Exception\ConfigurationException;
 use Clikgate\Generated\ApiClient;
 use Clikgate\Goals;
+use Clikgate\Installs;
 use Clikgate\KnownCustomers;
 use Clikgate\Laravel\Jobs\SendGoal;
 use Clikgate\Links;
+use Clikgate\Model\WebhookEvent;
 use Clikgate\Payments;
+use Clikgate\People;
+use Clikgate\Privacy;
+use Clikgate\Referrals;
 use Clikgate\Webhooks;
 use Illuminate\Contracts\Foundation\Application;
 
@@ -106,6 +112,42 @@ final class ClikgateManager
         return $this->client()->knownCustomers;
     }
 
+    /**
+     * Referrals: referrers, referrals, overrides, steps and imports.
+     *
+     * ```php
+     * $referrer = Clikgate::referrals()->getOrCreateReferrer('rpg_…', ['customerId' => (string) $user->id]);
+     * ```
+     */
+    public function referrals(): Referrals
+    {
+        return $this->client()->referrals;
+    }
+
+    /** Privacy requests: `createRequest()`, `getRequest()`. */
+    public function privacy(): Privacy
+    {
+        return $this->client()->privacy;
+    }
+
+    /** People: `get()`, `search()`, `setLabel()`. */
+    public function people(): People
+    {
+        return $this->client()->people;
+    }
+
+    /** Installs: `getByCustomer()`, `getByInstallation()`. */
+    public function installs(): Installs
+    {
+        return $this->client()->installs;
+    }
+
+    /** Offline and referral codes: `redeem()`. */
+    public function codes(): Codes
+    {
+        return $this->client()->codes;
+    }
+
     public function clickIds(): ClickIds
     {
         return $this->client()->clickIds;
@@ -156,21 +198,23 @@ final class ClikgateManager
 
     /**
      * Tell Clikgate who a person is (see {@see Client::identifyUser()}). Path B of
-     * https://clikgate.com/docs/identify-users needs no identity secret or token: the app sends its installation ID
-     * (`getInstallationId()`) with the sign-in request, and you call this after sign-in and at every signed-in app
-     * open. Skip it when the app sends no installation ID (tracking is off).
+     * https://clikgate.com/docs/identify-users needs no identity secret or token: the app sends the mobile SDK's
+     * `Clikgate-Installation` header with its sign-in request and signed-in requests. After your own sign-in check
+     * succeeds, and at every signed-in app open, pass `$request->clikgateInstallation()` (the parsed header, or
+     * the raw header string) as `installation` with your signed-in user's ID (never a customer ID read from the
+     * request). It is `null` when the header is missing or invalid (tracking is off): skip the call.
      *
      * ```php
-     * if ($request->filled('installation_id')) {
-     *     Clikgate::identifyUser(['appId' => 'app_…', 'installationId' => $request->string('installation_id')->toString(), 'customerId' => (string) $user->id]);
+     * if (null !== $installation = $request->clikgateInstallation()) {
+     *     Clikgate::identifyUser(['installation' => $installation, 'customerId' => (string) $user->id]);
      * }
      * ```
      *
      * `customerSince` is when they became your customer; Clikgate keeps the earliest date unless
      * `customerSinceReplace` is true.
      *
-     * @param array{clickId?: ?string, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string, customerSince?: string|\DateTimeInterface|int|null, customerSinceReplace?: ?bool} $params
-     * @param array<string, mixed>                                                                                                                                                                       $requestOptions
+     * @param array{clickId?: ?string, installation?: string|\Clikgate\Installation|null, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string, customerSince?: string|\DateTimeInterface|int|null, customerSinceReplace?: ?bool} $params
+     * @param array<string, mixed> $requestOptions
      *
      * @return array<string, mixed>
      */
@@ -184,11 +228,10 @@ final class ClikgateManager
      *
      * ```php
      * $event = Clikgate::verifyWebhook($request->getContent(), $request->header('Clikgate-Signature'), config('services.clikgate.webhook_secret'));
+     * $referral = $event->asReferral();   // null for other event types; $event['type'] keeps working
      * ```
-     *
-     * @return array<string, mixed>
      */
-    public function verifyWebhook(string $rawBody, ?string $signatureHeader, string $secret, int $tolerance = 300): array
+    public function verifyWebhook(string $rawBody, ?string $signatureHeader, string $secret, int $tolerance = 300): WebhookEvent
     {
         return Webhooks::verify($rawBody, $signatureHeader, $secret, $tolerance);
     }

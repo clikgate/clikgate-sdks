@@ -3,6 +3,31 @@
 All notable changes to this package. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package uses [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and PHP versions are dropped only after their end of life.
 
 
+## [2.1.0] - unreleased
+
+### Typed models for referrals, webhooks, privacy, people, installs and codes
+
+Nothing was removed or renamed and nothing changes on the wire, but link methods now return objects instead of arrays (see **Changed**).
+
+- **Fixed:** `identifyUser(['installation' => ...])` also takes an `Installation` (from `Installation::fromRequest()`, the PSR-15 attribute or Laravel's `$request->clikgateInstallation()`). Before, passing it was silently ignored. The same strict check applies; `Installation::from()` accepts either form.
+- **Added:** `$clikgate->referrals`: `getOrCreateReferrer()` (`->created` is true when the referrer is new), `getReferrer()`, `findReferrer()` (null when there is none), `get()`, `list()` (lazy) and `listPage()`, `qualify()`, `disqualify()`, `completeStep()` (`occurredAt` required), `importReferrers()` (batches of 1000, one job per batch), `blockReferrer()`, `unblockReferrer()` and `updateReferrer()`.
+- **Added:** typed models in `Clikgate\Model` (`Referrer`, `Referral`, `RewardInfo`, `Job`, `PrivacyRequest`, `Person`, `PersonSummary`, `Install`, `CodeRedemption`, `Link`, …) with readonly camelCase properties (`$referrer->customerId`, `$referral->reward`, `$referral->linkId`). Reward sides add `amount`, the amount in normal units as an exact decimal string (`'500.00'`), next to `amountMinor`.
+- **Added:** `Webhooks::verify()` returns a `Clikgate\Model\WebhookEvent` with `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()`, `asConversion()` and `asDeviceChange()` (`person.device_changed`) (null for an event of another family). `Clikgate\Enum\EventType` holds every webhook event type as a string constant (`EventType::ReferralQualified === $event->type`). `$event['type']` and `$event['data']` keep working.
+- **Added:** `$clikgate->privacy` (`createRequest()`, `getRequest()`), `$clikgate->people` (`get()`, `search()`, `searchPage()`, `setLabel()`), `$clikgate->installs` (`getByCustomer()`, `getByInstallation()`) and `$clikgate->codes` (`redeem()`, with `subject`, `agentId` and `location`).
+- **Added:** `links->archive()`, `getByReference()`, `pause()` and `resume()`.
+- **Changed:** link methods return `Link`, `LinkUpdateResult` and `Page` objects with every field of the API's link, not arrays. They implement `ArrayAccess`, `JsonSerializable` and `toArray()`, so `$link['short_url']` and `$result['change_request']['id']` keep working. `is_array()` on a link result is now `false`, so code that checks it breaks: call `->toArray()` to get the array.
+- **Added:** `Clikgate\Currency::minorToAmount()` and `::exponent()`.
+
+## [2.0.3] - unreleased
+
+### Identify users with the installation header
+
+- **Added:** `identifyUser(['installation' => …])` takes the raw `Clikgate-Installation` header your app sends (`<app_id>:<installation_id>`, from the mobile SDK) and fills `appId` and `installationId` from it, so your server never needs to know which Clikgate app ID belongs to which platform. A missing or invalid header is ignored, never sent and never logged. `installationId` given explicitly wins over the header.
+- **Changed:** `appId` is optional with `installationId`: Clikgate finds the app. `appId` without `installationId` is still refused locally (`invalid_request`, param `installation_id`). Calls that send both behave as before.
+- **Added:** `Installation::parseHeader($value)` → `?Installation` (`->appId`, `->installationId`, `->toArray()`; strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, trimmed; never throws), `Installation::fromRequest($request)` and `Installation::HEADER`.
+- **Added:** the PSR-15 middleware sets the request attribute `clikgate.installation` (`ClikgateMiddleware::INSTALLATION_ATTRIBUTE`).
+- **Docs:** when the installation ID is active in several of your apps, the API answers `409 installation_in_several_apps` (a `ConflictException`, param `app_id`): send `appId` too. Call `identifyUser` only after your own sign-in check, with your signed-in user's ID; never read the customer ID from the request.
+
 ## [2.0.1] - unreleased
 
 ### Existing users

@@ -2,12 +2,16 @@ package com.clikgate.spring;
 
 import com.clikgate.ClickIds;
 import com.clikgate.Clikgate;
+import com.clikgate.Installation;
 import com.clikgate.OnError;
 import com.clikgate.PrivateMode;
 import com.clikgate.SendMode;
 import com.clikgate.servlet.jakarta.ClikgateFilter;
+import com.clikgate.servlet.jakarta.ClikgateInstallations;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Locale;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -114,7 +118,7 @@ public class ClikgateAutoConfiguration {
     }
   }
 
-  /** {@code @ClikgateClickId String clickId} in Spring MVC handlers. */
+  /** {@code @ClikgateClickId String clickId} and {@code @ClikgateInstallation Installation installation} in Spring MVC handlers. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
   @ConditionalOnClass(WebMvcConfigurer.class)
@@ -122,6 +126,7 @@ public class ClikgateAutoConfiguration {
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
       resolvers.add(new ClickIdArgumentResolver());
+      resolvers.add(new InstallationArgumentResolver());
     }
   }
 
@@ -135,6 +140,26 @@ public class ClikgateAutoConfiguration {
     @Override
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mav, NativeWebRequest request, WebDataBinderFactory binder) {
       return request.getAttribute(ClikgateFilter.ATTRIBUTE, RequestAttributes.SCOPE_REQUEST);
+    }
+  }
+
+  /**
+   * Resolves {@link ClikgateInstallation} parameters from the {@code Clikgate-Installation} header: null when it is
+   * missing or invalid, never an error.
+   */
+  static final class InstallationArgumentResolver implements HandlerMethodArgumentResolver {
+    @Override
+    public boolean supportsParameter(MethodParameter parameter) {
+      return parameter.hasParameterAnnotation(ClikgateInstallation.class) && Installation.class.equals(parameter.getParameterType());
+    }
+
+    @Override
+    public @Nullable Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mav, NativeWebRequest request, WebDataBinderFactory binder) {
+      try {
+        return ClikgateInstallations.from(request.getNativeRequest(HttpServletRequest.class));
+      } catch (RuntimeException e) {
+        return null;
+      }
     }
   }
 }

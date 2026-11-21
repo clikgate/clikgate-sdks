@@ -1,4 +1,5 @@
-"""Starlette / FastAPI add-on (SPEC section 17): ``app.add_middleware(ClikgateMiddleware)`` and ``Depends(click_id)``.
+"""Starlette / FastAPI add-on (SPEC section 17): ``app.add_middleware(ClikgateMiddleware)``, ``Depends(click_id)`` and
+``Depends(installation)`` (the app's ``Clikgate-Installation`` header).
 
 A pure ASGI middleware: it stores the click ID in ``request.state.clikgate_click_id`` and adds the
 first-party ``_cg_<param>`` cookie to the response when the ID came in the query string.
@@ -35,8 +36,9 @@ from starlette.responses import Response
 
 from ._addon import capture, helpers_for, warm_config
 from ._click_ids import KeepRoute, kept_marker_header
+from ._installation import Installation, installation_from_request
 
-__all__ = ["ClikgateMiddleware", "click_id", "keep_endpoint"]
+__all__ = ["ClikgateMiddleware", "click_id", "installation", "keep_endpoint"]
 
 Scope = MutableMapping[str, Any]
 Message = MutableMapping[str, Any]
@@ -106,6 +108,21 @@ def click_id(request: Request) -> Optional[str]:
         value = state[_STATE_KEY]
         return value if isinstance(value, str) else None
     return helpers_for(None).from_request(request)
+
+
+def installation(request: Request) -> Optional[Installation]:
+    """FastAPI dependency: the app's ``Clikgate-Installation`` header as an ``Installation``, or ``None`` when it is
+    missing or invalid (never an error). Works with or without the middleware.
+
+    Example::
+
+        @app.post("/login")
+        async def login(body: Login, inst: Optional[Installation] = Depends(installation)):
+            user = await sign_in(body)                     # your own sign-in check first
+            if inst:
+                await clikgate.identify_user(installation=inst, customer_id=user.id)
+    """
+    return installation_from_request(request)
 
 
 def keep_endpoint(

@@ -22,6 +22,10 @@ public class WireObject
     /// <summary>One boolean field.</summary>
     protected bool? Bool(string key) => Json.Bool(Raw[key]);
 
+    /// <summary>One RFC 3339 timestamp field, or null.</summary>
+    protected DateTimeOffset? Time(string key) =>
+        String(key) is string s && DateTimeOffset.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var t) ? t : null;
+
     /// <inheritdoc/>
     public override string ToString() => Raw.ToJsonString();
 }
@@ -89,6 +93,33 @@ public sealed class GoalEvent(JsonObject? raw) : WireObject(raw)
 
     /// <summary><c>link_id</c>, <c>campaign_id</c>, <c>clicked_at</c>, or null when unattributed.</summary>
     public JsonObject? AttributedTo => Raw["attributed_to"] as JsonObject;
+
+    /// <summary>True in live mode.</summary>
+    public bool? Livemode => Bool("livemode");
+
+    /// <summary>When the event happened.</summary>
+    public string? OccurredAt => String("occurred_at");
+
+    /// <summary>Goal webhooks: the alias the event arrived as; null when sent as the goal's key.</summary>
+    public string? ReceivedAs => String("received_as");
+
+    /// <summary>Goal webhooks: true when this event made a new customer, else false or null.</summary>
+    public bool? IsFirstCustomer => Bool("is_first_customer");
+
+    /// <summary>Goal webhooks: when the attributed click happened, or null.</summary>
+    public string? ClickedAt => String("clicked_at");
+
+    /// <summary><c>goal.completed</c>: the event's person (<c>person.id</c>), or null.</summary>
+    public string? PersonId => Raw["person"] is JsonObject p ? Json.Str(p["id"]) : null;
+
+    /// <summary><c>goal.completed</c>: true for an event counted from the last 30 days when the goal was set up.</summary>
+    public bool Backfilled => Bool("backfilled") ?? false;
+
+    /// <summary>The link the event is attributed to: <c>link.id</c> in goal webhooks, <c>attributed_to.link_id</c> in API answers; null when unattributed.</summary>
+    public string? LinkId => (Raw["link"] as JsonObject)?["id"] is JsonNode n ? Json.Str(n) : Json.Str(AttributedTo?["link_id"]);
+
+    /// <summary>The campaign the event is attributed to: <c>campaign.id</c> in goal webhooks, <c>attributed_to.campaign_id</c> in API answers; null when none.</summary>
+    public string? CampaignId => (Raw["campaign"] as JsonObject)?["id"] is JsonNode n ? Json.Str(n) : Json.Str(AttributedTo?["campaign_id"]);
 }
 
 /// <summary>One item of a batch result.</summary>
@@ -149,6 +180,103 @@ public sealed class Link(JsonObject? raw) : WireObject(raw)
 
     /// <summary>Non-blocking warnings (<c>code</c>, <c>message</c>, <c>param</c>), e.g. <c>no_preview</c>.</summary>
     public IReadOnlyList<JsonObject> Warnings => (Raw["warnings"] as JsonArray ?? []).OfType<JsonObject>().ToList();
+
+    /// <summary>The domain, e.g. <c>ciz.to</c>.</summary>
+    public string? Domain => String("domain");
+    /// <summary>The domain group.</summary>
+    public string? DomainGroupId => String("domain_group_id");
+    /// <summary>The path after the domain.</summary>
+    public string? Slug => String("slug");
+    /// <summary>Where people go when the destination is not available, else null.</summary>
+    public string? FallbackUrl => String("fallback_url");
+    /// <summary>The click-ID query parameter added to the destination.</summary>
+    public string? ClickIdParam => String("click_id_param");
+    /// <summary>The UTM template, else null.</summary>
+    public string? UtmTemplate => String("utm_template");
+    /// <summary>The campaign, else null.</summary>
+    public string? CampaignId => String("campaign_id");
+    /// <summary>The goal this link is meant to lead to, else null.</summary>
+    public string? EndGoalKey => String("end_goal_key");
+    /// <summary>The title, else null.</summary>
+    public string? Title => String("title");
+    /// <summary>The preview title.</summary>
+    public string? OgTitle => String("og_title");
+    /// <summary>The preview description.</summary>
+    public string? OgDescription => String("og_description");
+    /// <summary>The preview image.</summary>
+    public string? OgImageUrl => String("og_image_url");
+    /// <summary>Why the link is paused, else null.</summary>
+    public string? PausedReason => String("paused_reason");
+    /// <summary><c>standard</c> or <c>whatsapp</c>.</summary>
+    public string? Kind => String("kind");
+    /// <summary>The in-app path the app opens, else null.</summary>
+    public string? DeepLinkPath => String("deep_link_path");
+    /// <summary><c>app_or_store</c>, <c>app_or_web</c> or <c>web_only</c>.</summary>
+    public string? AppBehavior => String("app_behavior");
+    /// <summary><c>auto</c>, <c>always</c> or <c>never</c>.</summary>
+    public string? IosInterstitial => String("ios_interstitial");
+    /// <summary>Set on a referrer's link.</summary>
+    public string? ReferralProgramId => String("referral_program_id");
+    /// <summary>Set on a referrer's link.</summary>
+    public string? ReferrerId => String("referrer_id");
+    /// <summary>The WhatsApp channel, else null.</summary>
+    public string? WhatsappChannelId => String("whatsapp_channel_id");
+    /// <summary>The prefilled WhatsApp message, else null.</summary>
+    public string? WhatsappMessage => String("whatsapp_message");
+    /// <summary>The code people can type instead of clicking, else null.</summary>
+    public string? OfflineCode => String("offline_code");
+    /// <summary>Who locked the link, else null.</summary>
+    public string? LockedBy => String("locked_by");
+    /// <summary><c>auto</c> or <c>off</c>.</summary>
+    public string? OpenInApp => String("open_in_app");
+    /// <summary><c>inherit</c>, <c>on</c> or <c>off</c>.</summary>
+    public string? InAppBrowserPage => String("in_app_browser_page");
+    /// <summary>Where the link is meant to be shared (<c>whatsapp</c>, <c>instagram</c>, …), else null.</summary>
+    public string? MadeFor => String("made_for");
+    /// <summary>A suggested improvement (e.g. <c>make_whatsapp_link</c>), else null.</summary>
+    public string? Suggestion => String("suggestion");
+    /// <summary>The link on each active domain of its group (<c>domain</c>, <c>url</c>, <c>role</c>).</summary>
+    public IReadOnlyList<JsonObject> Urls => (Raw["urls"] as JsonArray ?? []).OfType<JsonObject>().ToList();
+
+    /// <summary>Days a click can be credited for a goal.</summary>
+    public int? AttributionWindowDays => Json.Int(Raw["attribution_window_days"]);
+
+    /// <summary>Tags.</summary>
+    public IReadOnlyList<string> Tags => (Raw["tags"] as JsonArray ?? []).Select(Json.Str).OfType<string>().ToList();
+
+    /// <summary>When the link stops working, else null.</summary>
+    public DateTimeOffset? ExpiresAt => Time("expires_at");
+
+    /// <summary>The apps this link opens.</summary>
+    public IReadOnlyList<string> AppIds => (Raw["app_ids"] as JsonArray ?? []).Select(Json.Str).OfType<string>().ToList();
+
+    /// <summary>Your own data the app receives with the deep link (<c>deep_link_data</c>); empty when none.</summary>
+    public JsonObject DeepLinkData => Raw["deep_link_data"] as JsonObject ?? new JsonObject();
+
+    /// <summary>True on a free domain link kept on a paid domain.</summary>
+    public bool LegacyFreeOnPaidDomain => Bool("legacy_free_on_paid_domain") ?? false;
+
+    /// <summary>True while the link waits for a review (it doesn't redirect).</summary>
+    public bool UnderReview => Bool("under_review") ?? false;
+
+    /// <summary>When the link was locked, else null.</summary>
+    public DateTimeOffset? LockedAt => Time("locked_at");
+
+    /// <summary>The app page this link opens in place of a web page (<c>app_key</c>, <c>app_name</c>, <c>page_type</c>, <c>status</c>), else null.</summary>
+    public JsonObject? OpenInAppTarget => Raw["open_in_app_target"] as JsonObject;
+
+    /// <summary>One URL per sharing channel (<c>whatsapp</c>, <c>instagram</c>, …); empty when none.</summary>
+    public IReadOnlyDictionary<string, string> ShareUrls =>
+        (Raw["share_urls"] as JsonObject ?? new JsonObject()).Where(kv => Json.Str(kv.Value) is not null).ToDictionary(kv => kv.Key, kv => Json.Str(kv.Value)!, StringComparer.Ordinal);
+
+    /// <summary>Created.</summary>
+    public DateTimeOffset? CreatedAt => Time("created_at");
+
+    /// <summary>Last changed.</summary>
+    public DateTimeOffset? UpdatedAt => Time("updated_at");
+
+    /// <summary>True in live mode.</summary>
+    public bool? Livemode => Bool("livemode");
 }
 
 /// <summary>A destination change waiting for a second person (the <c>202</c> answer of <c>Links.UpdateAsync</c>).</summary>
@@ -230,6 +358,27 @@ public sealed class Conversion(JsonObject? raw) : WireObject(raw)
     /// <summary><c>conversion</c>, or <c>goal_event</c> when the conversion was for a Payment goal.</summary>
     public string? Object => String("object");
 
+    /// <summary>Your ID for the conversion (<c>external_id</c>).</summary>
+    public string? ExternalId => String("external_id");
+
+    /// <summary><c>purchase</c>, <c>signup</c>, …</summary>
+    public string? Type => String("type");
+
+    /// <summary>The amount in the currency's minor units, or null.</summary>
+    public long? AmountMinor => Raw["amount_minor"] is JsonValue v && v.TryGetValue(out long l) ? l : null;
+
+    /// <summary><see cref="AmountMinor"/> in normal units (exact, ISO 4217 decimals), or null.</summary>
+    public decimal? Amount => Currencies.ToNormalUnits(AmountMinor, Currency);
+
+    /// <summary>ISO 4217.</summary>
+    public string? Currency => String("currency");
+
+    /// <summary>The click.</summary>
+    public string? ClickId => String("click_id");
+
+    /// <summary>The goal, when the conversion was recorded for one.</summary>
+    public string? Goal => String("goal");
+
     /// <summary>Whether the API answered with the goal event (a Payment goal): read it with <see cref="AsGoalEvent"/>.</summary>
     public bool IsGoalEvent => Object == "goal_event";
 
@@ -253,17 +402,62 @@ public sealed class ServerSdkConfig(JsonObject? raw) : WireObject(raw)
     public string? MinimumVersion(string sdk) => Raw["minimum_sdk_versions"] is JsonObject o ? Json.Str(o[sdk]) : null;
 }
 
-/// <summary>A webhook event.</summary>
+/// <summary>
+/// A webhook event. Read <c>data.object</c> typed with <see cref="AsReferral"/>, <see cref="AsReferrer"/>,
+/// <see cref="AsGoalEvent"/>, <see cref="AsInstall"/>, <see cref="AsPayment"/>, <see cref="AsConversion"/> or <see cref="AsDeviceChange"/>: each returns
+/// null when the event's type belongs to another family (or <c>data.object</c> isn't an object), like the <c>as</c> operator.
+/// </summary>
+/// <example><code>
+/// var ev = Webhooks.Verify(body, signature, secret);
+/// if (ev.Type == EventType.REFERRAL_QUALIFIED &amp;&amp; ev.AsReferral() is { } referral) { /* … */ }
+/// </code></example>
 public sealed class WebhookEvent(JsonObject? raw) : WireObject(raw)
 {
     /// <summary>The event ID (dedupe on it: delivery is at-least-once).</summary>
     public string? Id => String("id");
 
-    /// <summary>e.g. <c>goal.completed</c>, <c>link.destination_changed</c>, <c>subscription.updated</c>.</summary>
+    /// <summary>The event type, e.g. <see cref="EventType.REFERRAL_QUALIFIED"/>.</summary>
     public string? Type => String("type");
+
+    /// <summary>The API version the payload is shaped for.</summary>
+    public string? ApiVersion => String("api_version");
+
+    /// <summary>When the event happened.</summary>
+    public DateTimeOffset? CreatedAt => String("created_at") is string s && DateTimeOffset.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var t) ? t : null;
+
+    /// <summary>The organisation.</summary>
+    public string? OrganizationId => String("organization_id");
+
+    /// <summary>True for live-mode events.</summary>
+    public bool? Livemode => Bool("livemode");
 
     /// <summary><c>object</c> plus the event's extra keys.</summary>
     public JsonObject? Data => Raw["data"] as JsonObject;
+
+    /// <summary>The referral of a <c>referral.*</c> event; null for another type.</summary>
+    public Referral? AsReferral() => Typed("referral.", o => new Referral(o));
+
+    /// <summary>The referrer of a <c>referrer.*</c> event; null for another type.</summary>
+    public Referrer? AsReferrer() => Typed("referrer.", o => new Referrer(o));
+
+    /// <summary>The goal event of <c>goal.completed</c> or <c>goal.reversed</c> (<c>Data["reversal"]</c> has the reversal); null for another type.</summary>
+    public GoalEvent? AsGoalEvent() => Typed("goal.", o => new GoalEvent(o));
+
+    /// <summary>The install of an <c>install.*</c> event; null for another type.</summary>
+    public Install? AsInstall() => Typed("install.", o => new Install(o));
+
+    /// <summary>The payment report of a <c>payment.*</c> event; null for another type.</summary>
+    public PaymentReport? AsPayment() => Typed("payment.", o => new PaymentReport(o));
+
+    /// <summary>The conversion of a <c>conversion.*</c> event; null for another type.</summary>
+    public Conversion? AsConversion() => Typed("conversion.", o => new Conversion(o));
+
+    /// <summary>The device change of a <c>person.device_changed</c> event; null for another type.</summary>
+    public DeviceChange? AsDeviceChange() => Type == EventType.PERSON_DEVICE_CHANGED ? Typed("person.device_changed", o => new DeviceChange(o)) : null;
+
+    private T? Typed<T>(string prefix, Func<JsonObject, T> make)
+        where T : class =>
+        Type is string type && type.StartsWith(prefix, StringComparison.Ordinal) && Data?["object"] is JsonObject o ? make(o) : null;
 }
 
 /// <summary>Binary bytes and their content type (QR codes, file downloads).</summary>
@@ -279,16 +473,34 @@ public sealed class BinaryResponse(string contentType, byte[] data)
 /// <summary>The parameters of <see cref="ClikgateClient.IdentifyUserAsync"/>: at least one of <c>ClickId</c>, <c>AppId</c> + <c>InstallationId</c>, <c>CustomerId</c>.</summary>
 public sealed class IdentifyUserParams
 {
+    /// <summary>The parameters for an installation parsed with <see cref="Clikgate.Installation.ParseHeader"/>.</summary>
+    /// <example><code>await clikgate.IdentifyUserAsync(IdentifyUserParams.For(installation, user.Id));</code></example>
+    public static IdentifyUserParams For(global::Clikgate.Installation installation, string? customerId = null)
+    {
+        if (installation is null) throw new ArgumentNullException(nameof(installation));
+        return new() { AppId = installation.AppId, InstallationId = installation.InstallationId, CustomerId = customerId };
+    }
+
     /// <summary>The Clikgate click ID you kept (<c>clk_…</c>).</summary>
     public string? ClickId { get; set; }
 
-    /// <summary>An app installation: the app's ID, with <see cref="InstallationId"/>.</summary>
+    /// <summary>
+    /// The raw <c>Clikgate-Installation</c> header your app sent (<c>&lt;app_id&gt;:&lt;installation_id&gt;</c>). It fills
+    /// <see cref="AppId"/> and <see cref="InstallationId"/>. Missing or invalid values are ignored, never sent. Not used
+    /// when <see cref="InstallationId"/> is given.
+    /// </summary>
+    public string? Installation { get; set; }
+
+    /// <summary>The app the installation belongs to. Optional: without it Clikgate finds the app. Only with <see cref="InstallationId"/>.</summary>
     public string? AppId { get; set; }
 
-    /// <summary>The SDK's installation ID, with <see cref="AppId"/>.</summary>
+    /// <summary>The SDK's installation ID, sent by your app.</summary>
     public string? InstallationId { get; set; }
 
-    /// <summary>Your customer ID. With a click or installation, links it to this customer. Refused in private mode.</summary>
+    /// <summary>
+    /// Your signed-in user's ID (never a value read from the request). With a click or installation, links it to this
+    /// customer. Refused in private mode.
+    /// </summary>
     public string? CustomerId { get; set; }
 
     /// <summary>A label your team sees instead of the click ID (1-80 characters, <c>""</c> clears it; Growth and up).</summary>

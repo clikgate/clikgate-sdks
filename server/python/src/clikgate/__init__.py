@@ -27,6 +27,7 @@ from ._click_ids import (
 )
 from ._client import AsyncClikgate, Clikgate, PersonIdentified
 from ._core import ErrorContext, OnError
+from ._currency import currency_exponent, minor_to_amount
 from ._customer_id import CUSTOMER_ID_MAX_LENGTH, canonical_customer_id, customer_id_warning
 from ._enums import GoalKind, GoalStatus, Provider
 from ._errors import (
@@ -47,12 +48,49 @@ from ._errors import (
     SignatureVerificationError,
     TimeoutError,
 )
+from ._event_types import EventType
 from ._goals import AsyncGoals, GoalBatchEvent, Goals
 from ._http import Clock, RequestOptions
 from ._identity import IDENTITY_SECRET_ENV, IDENTITY_SECRETS_ENV, CustomerSince, create_identity_token
+from ._installation import (
+    INSTALLATION_HEADER,
+    INSTALLATION_HEADER_MAX_LENGTH,
+    INSTALLATION_PATTERN,
+    Installation,
+    installation_from_request,
+    parse_installation_header,
+)
 from ._known_customers import KNOWN_CUSTOMERS_BATCH, AsyncKnownCustomers, KnownCustomers, KnownCustomersImportResult
+from ._lookups import AsyncCodes, AsyncInstalls, AsyncPeople, AsyncPrivacy, Codes, Installs, People, Privacy
+from ._models import (
+    CodeRedemption,
+    ConversionObject,
+    DeviceChange,
+    DeviceChangeSide,
+    Install,
+    Job,
+    JobResult,
+    LinkCreateParams,
+    LinkUpdateParams,
+    PaymentReport,
+    Person,
+    PersonSearchPage,
+    PersonSummary,
+    PrivacyRequest,
+    Referral,
+    ReferralPage,
+    ReferralStep,
+    Referrer,
+    ReferrerImportRow,
+    ReferrerResult,
+    ReferrerStats,
+    RewardInfo,
+    RewardSide,
+    WebhookGoalEvent,
+)
 from ._money import MoneyInput, format_value
 from ._payments import AsyncPayments, Payments, build_from_flutterwave, build_from_monnify, build_from_paystack, build_from_stripe
+from ._referrals import REFERRER_IMPORT_BATCH, AsyncReferrals, Referrals
 from ._resources import AsyncClicks, AsyncConversions, AsyncLinks, Clicks, Conversions, Links
 from ._types import (
     Click,
@@ -67,6 +105,7 @@ from ._types import (
     LinkChangeRequest,
     LinkPage,
     LinkUpdateResult,
+    LinkUrl,
     LinkWarning,
     PaymentConfirmation,
     PaymentConfirmationBody,
@@ -75,6 +114,7 @@ from ._types import (
     WebhookEvent,
 )
 from ._version import VERSION
+from ._webhook_event import TypedWebhookEvent
 from .webhooks import RawBody
 
 __version__ = VERSION
@@ -92,7 +132,53 @@ WARNING_CODES = (
 )
 
 __all__ = [
+    "AsyncCodes",
+    "AsyncInstalls",
+    "AsyncPeople",
+    "AsyncPrivacy",
+    "AsyncReferrals",
+    "Codes",
+    "Installs",
+    "People",
+    "Privacy",
+    "Referrals",
+    "REFERRER_IMPORT_BATCH",
+    "CodeRedemption",
+    "ConversionObject",
+    "DeviceChange",
+    "DeviceChangeSide",
+    "Install",
+    "Job",
+    "JobResult",
+    "LinkCreateParams",
+    "LinkUpdateParams",
+    "LinkUrl",
+    "PaymentReport",
+    "Person",
+    "PersonSearchPage",
+    "PersonSummary",
+    "PrivacyRequest",
+    "Referral",
+    "ReferralPage",
+    "ReferralStep",
+    "Referrer",
+    "ReferrerImportRow",
+    "ReferrerResult",
+    "ReferrerStats",
+    "RewardInfo",
+    "RewardSide",
+    "WebhookGoalEvent",
+    "EventType",
+    "TypedWebhookEvent",
+    "currency_exponent",
+    "minor_to_amount",
     "PersonIdentified",
+    "INSTALLATION_HEADER",
+    "INSTALLATION_HEADER_MAX_LENGTH",
+    "INSTALLATION_PATTERN",
+    "Installation",
+    "installation_from_request",
+    "parse_installation_header",
     "CUSTOMER_ID_MAX_LENGTH",
     "KNOWN_CUSTOMERS_BATCH",
     "AsyncKnownCustomers",

@@ -3,6 +3,43 @@
 All notable changes to these artifacts, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the artifacts use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Java versions are dropped only after their end of life.
 
 
+## [2.1.0] - unreleased
+
+### A typed surface for referrals, webhooks, privacy, people, installs and codes
+
+Purely additive: nothing is removed or renamed, and nothing changes on the wire. Every new method returns an immutable model with getters (no `Map` results, no casts) and goes through the same retries, idempotency keys, errors and logging as the rest of the SDK. Customer-owned data stays a map (link `metadata` and `deep_link_data`, referrer `attributes`).
+
+- **Added:** `clikgate.referrals()`: `getOrCreateReferrer(programId, GetOrCreateReferrerParams)` and the short form `getOrCreateReferrer(programId, customerId)` → `Referrer` (`isCreated()` is true when the API answered `201`), `getReferrer`, `findReferrer(programId, FindReferrerParams.byCustomerId(…) | byCode(…))` → `Referrer` or `null` on `404`, `get` → `Referral`, `list(ListReferralsParams)` (lazy `Iterable<Referral>`) and `listPage` → `Page<Referral>`, `qualify` / `disqualify(referralId, reason)`, `completeStep(referralId, CompleteStepParams)` (`goal` and `occurredAt` are required, as the API needs both), `importReferrers(programId, List<ReferrerImport>)` → `List<Job>` (batches of 1,000, one request and job each), `blockReferrer`, `unblockReferrer`, `updateReferrer(referrerId, UpdateReferrerParams)`.
+- **Added:** models `Referrer` (`getCustomerId()` reads `customer_user_id`, `getStats()` → `ReferrerStats`, `getAttributes()`), `Referral` (`getProgram()`, `getReferrer()`, `getReferee()`, `getStepsCompleted()`, `getLinkId()`, `getReward()` → `RewardInfo`), `RewardInfo.Side` (`getAmountMinor()` and `getAmount()`, an exact `BigDecimal` in normal units using the currency's ISO 4217 decimals), `Job` (`getResults()` → `Job.Result`) and the generic `Page<T>`. Timestamps are `Instant`.
+- **Added:** typed webhook accessors on `WebhookEvent`: `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()` (→ `PaymentReport`) and `asConversion()`. Each is `@Nullable` and returns null when the event belongs to another family or `data.object` isn't an object, as in the other Clikgate SDKs. Also `getApiVersion()`, `getCreatedAt()` and `getOrganizationId()`.
+- **Added:** `EventType`: a `String` constant for every webhook event type (`EventType.REFERRAL_QUALIFIED`, …) and `EventType.ALL`, so they work with `equals` and in a `switch`.
+- **Added:** `clikgate.privacy()`: `createRequest(CreatePrivacyRequestParams)` and `getRequest(id)` → `PrivacyRequest` (`getExportResult()`, `getErasedCounts()`).
+- **Added:** `LinkCreateParams` and `LinkUpdateParams` builders with a method per API field (`extra(field, value)` for newer ones; a null in `LinkUpdateParams` clears the field), next to the existing `Map` overloads. `Link` gains a getter for every field of the API's link. New `links().archive(id)`, `getByReference(externalReference)`, `pause(id)` and `resume(id)`, each → `Link`.
+- **Added:** `clikgate.people()`: `get(personId)` → `Person`, `search(q)` (lazy) and `searchPage(q, cursor, limit)` → `Page<PersonSummary>`, `setLabel(personId, label)` → `Person`. `clikgate.installs()`: `getByCustomer(customerId[, appId])` and `getByInstallation(installationId[, appId])` → `Install`. `clikgate.codes()`: `redeem(RedeemCodeParams)` → `CodeRedemption` (`externalId`, `code`, `channel`, and the optional `appId`, `occurredAt`, `metadata`, `subject(type, id)`, `agentId`, `location(country, region, city, storeId)`).
+- **Added:** `WebhookEvent.asDeviceChange()` → `@Nullable DeviceChange` (`person.device_changed` only, else null: `getDeviceChangeId()`, `getPersonId()`, `getCustomerId()`, `getAppId()`, `getKind()`, `getFrom()` / `getTo()` with platform and device model, `getFromLastSeenAt()`, `getToFirstOpenAt()`, `getGapDays()`). `Referral.getHistory()` and `getFraudFlags()`; every `Job.Result` key; `PrivacyRequest.ExportResult.getInstalls()` / `getGoalNameEvents()`; goal webhook fields on `GoalEvent` (`getReceivedAs()`, `getIsFirstCustomer()`, `getClickedAt()`, `getPersonId()`, `isBackfilled()`).
+- **Added:** `GoalEvent.getLinkId()` and `getCampaignId()` (`link.id` / `campaign.id` in goal webhooks, `attributed_to` in API answers). `GetOrCreateReferrerParams.Builder.code(…)`, `UpdateReferrerParams.Builder.externalCode(…)` and `leaderboardOptOut(…)`, `ListReferralsParams.Builder.reason(…)`, `ReferrerStats.getRefereeUninstallRate7d()`.
+- **Added:** `Conversion.getExternalId()`, `getAmountMinor()`, `getAmount()`, `getCurrency()`, `getClickId()`, `getGoal()`.
+- **Fixed:** `IdentifyUserParams.Builder.installation(Installation)` follows the same rules as the raw header: an explicit `appId` or `installationId` wins whatever the call order, and a later `appId(null)` no longer clears the installation's app.
+- **Added (starter):** every new resource is on the `Clikgate` bean.
+- **Docs:** an end-to-end section that uses only typed methods: identity token, the installation header, goals, payments, a webhook with `asReferral()` and `EventType`, and `getOrCreateReferrer`.
+
+## [2.0.3] - unreleased
+
+### Identify users with the installation header
+
+- **Added:** `IdentifyUserParams.Builder.installation(String)` takes the raw `Clikgate-Installation` header your app sends (`<app_id>:<installation_id>`, from the mobile SDK) and fills `appId` and `installationId` from it, so your server never needs to know which Clikgate app ID belongs to which platform. A missing or invalid header is ignored, never sent and never logged. `installationId` given explicitly wins over the header. `installation(Installation)` takes a parsed one.
+- **Changed:** `appId` is optional with `installationId`: Clikgate finds the app. `appId` without `installationId` is still refused locally (`invalid_request`, param `installation_id`). Calls that send both behave as before.
+- **Added:** `Installation.parseHeader(String)` → `Installation` (`getAppId()`, `getInstallationId()`) or `null` (strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, ASCII whitespace trimmed; never throws) and `Installation.HEADER`.
+- **Added:** `ClikgateInstallations.from(HttpServletRequest)` in `clikgate-servlet-jakarta` and `clikgate-servlet-javax` (Spring Boot 2/3, Jakarta EE, Java EE): null when the header is missing, invalid or sent more than once.
+- **Added (starter):** `@ClikgateInstallation Installation installation` handler parameters, resolved from the header; null when missing or invalid, never a failed request.
+- **Docs:** when the installation ID is active in several of your apps, the API answers `409 installation_in_several_apps` (a `ConflictException`, param `app_id`): send `appId` too. Call `identifyUser` only after your own sign-in check, with your signed-in user's ID; never read the customer ID from the request.
+
+## [2.0.2] - unreleased
+
+### Fixed
+
+- **A null account date no longer throws.** `IdentityTokens.create(customerId, appId, customerSince)` and `clikgate.createIdentityToken(customerId, appId, customerSince)` accept a null `Instant`: the token is then version 1, the same as `create(customerId, appId)`. One call, `createIdentityToken(user.getId(), null, user.getCreatedAt())`, now works for every customer, including those with no stored account date. Before, a null date threw `NullPointerException`.
+
 ## [2.0.1] - unreleased
 
 ### Existing users

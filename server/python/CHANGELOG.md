@@ -3,6 +3,30 @@
 All notable changes to this package. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package uses [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Python versions are dropped only after their end of life.
 
 
+## [2.1.0] - unreleased
+
+### Typed referrals, webhook events, privacy, people, installs and codes
+
+Additive: nothing is removed or renamed, and nothing changes on the wire.
+
+- **Fixed:** `identify_user(installation=...)` also takes the parsed `Installation` the framework helpers return (`request.clikgate_installation`, `g.clikgate_installation`, `Depends(installation)`). Before, passing it was silently ignored. The same strict check applies.
+- **Added:** `clikgate.referrals`: `get_or_create_referrer` (with `created`), `get_referrer`, `find_referrer` (`None` when there is none), `get`, `list` / `list_page`, `qualify`, `disqualify`, `complete_step` (`occurred_at` required), `import_referrers` (batches of 1000, one job per batch), `block_referrer`, `unblock_referrer` and `update_referrer`. Results are typed dicts (`Referrer`, `Referral`, `RewardInfo`, `Job`).
+- **Added:** reward sides carry `amount`, the decimal string in normal units next to `amount_minor` (`50000` NGN is `"500.00"`), plus `currency_exponent()` and `minor_to_amount()`.
+- **Added:** typed webhook events. `webhooks.verify` returns a `WebhookEvent`, still a `dict`, with attributes (`event.type`, `event.id`, …) and `as_referral()`, `as_referrer()`, `as_goal_event()`, `as_install()`, `as_payment()`, `as_conversion()`, `as_device_change()` (each `None` for other event types), `typed()` (the `TypedWebhookEvent` union) and the `EventType` enum of every event type.
+- **Added:** `clikgate.privacy.create_request` / `get_request`, `clikgate.people.get` / `search` / `search_page` / `set_label`, `clikgate.installs.get_by_customer` / `get_by_installation` and `clikgate.codes.redeem` (with `subject`, `agent_id` and `location`), with typed results.
+- **Added:** `links.archive`, `links.pause`, `links.resume` and `links.get_by_reference`. `links.create` / `links.update` also take a typed `LinkCreateParams` / `LinkUpdateParams` as the first argument (keyword arguments still work), and the `Link` type lists every field of the API's link.
+- Everything is on `AsyncClikgate` too.
+
+## [2.0.3] - unreleased
+
+### Identify users with the installation header
+
+- **Added:** `identify_user(installation=...)` takes the raw `Clikgate-Installation` header your app sends (`<app_id>:<installation_id>`, from the mobile SDK) and fills `app_id` and `installation_id` from it, so your server never needs to know which Clikgate app ID belongs to which platform. A missing or invalid header is ignored, never sent and never logged. `installation_id` given explicitly wins over the header. Sync and async.
+- **Changed:** `app_id` is optional with `installation_id`: Clikgate finds the app. `app_id` without `installation_id` is still refused locally (`invalid_request`, param `installation_id`). Calls that send both behave as before.
+- **Added:** `parse_installation_header(value)` → `Installation(app_id, installation_id)` or `None` (strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, trimmed; never raises), `installation_from_request(request)` and `INSTALLATION_HEADER`.
+- **Added:** `request.clikgate_installation` from the Django middleware, `g.clikgate_installation` from the Flask extension, and the `installation` dependency for FastAPI / Starlette (`Depends(installation)`).
+- **Docs:** when the installation ID is active in several of your apps, the API answers `409 installation_in_several_apps` (a `ConflictError`, param `app_id`): send `app_id` too. Call `identify_user` only after your own sign-in check, with your signed-in user's ID; never read the customer ID from the request.
+
 ## [2.0.1] - unreleased
 
 ### Existing users

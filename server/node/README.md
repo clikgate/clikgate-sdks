@@ -50,11 +50,61 @@ The email is trimmed and lowercased. The phone must include its country code (`+
 
 In private mode, hash on your own server: Clikgate never hashes for you there.
 
+## End to end
+
+One Express app that uses only the typed methods: the identity token, the installation header, goals, payments, a
+webhook and a referrer.
+
+```ts
+import express from 'express';
+import { Clikgate, EventType, Provider, createIdentityToken, webhooks } from '@clikgate/node';
+import { clikgateMiddleware } from '@clikgate/node/express';
+
+const clikgate = new Clikgate();                      // CLIKGATE_API_KEY
+const PROGRAM_ID = 'rpg_01J…';                        // your referral program
+const app = express();
+
+// Webhooks need the raw body: register this before express.json()
+app.post('/webhooks/clikgate', express.raw({ type: 'application/json' }), async (req, res) => {
+  const event = webhooks.verify(req.body, req.get('Clikgate-Signature'), process.env.CLIKGATE_WEBHOOK_SECRET!);
+  const referral = event.asReferral();                // null for other event types
+  if (referral && event.type === EventType.ReferralQualified) {
+    const reward = referral.reward_snapshot?.referrer; // amount_minor 50000 → amount "500.00"
+    await creditWallet(referral.referrer.customerId, reward?.amount, reward?.currency);
+  }
+  res.sendStatus(200);                                // deliveries are at-least-once: dedupe on event.id
+});
+
+app.use(express.json(), clikgateMiddleware(clikgate));
+
+app.post('/login', async (req, res) => {
+  const user = await signIn(req.body);                // your own sign-in check first
+  // Path B: the app's Clikgate-Installation header; the customer ID is always your signed-in user
+  if (req.clikgate.installation) await clikgate.identifyUser({ installation: req.clikgate.installation, customerId: user.id });
+  // Path A: an identity token the app passes to the mobile SDK
+  const referrer = await clikgate.referrals.getOrCreateReferrer(PROGRAM_ID, { customerId: user.id, displayName: user.firstName });
+  res.json({ user, clikgateIdentityToken: createIdentityToken(user.id), referralCode: referrer.code, referralUrl: referrer.url });
+});
+
+app.post('/accounts', async (req, res) => {
+  const account = await openAccount(req.body);
+  clikgate.goal('account_opened', { clickId: req.clikgate.clickId, reference: account.id });   // never throws
+  res.json(account);
+});
+
+app.post('/orders/:ref/verify', async (req, res) => {
+  const verified = await paystack.verify(req.params.ref);   // your own verification with the gateway
+  await clikgate.payments.fromPaystack(verified, { goal: 'order_paid' });
+  // or: await clikgate.goals.send('order_paid', { reference: req.params.ref, provider: Provider.Paystack, value: '7500', currency: 'NGN' });
+  res.sendStatus(204);
+});
+```
+
 ## Identify your users
 
 Two ways to tell Clikgate which of your users is using the app. Full guide: https://clikgate.com/docs/identify-users. The customer ID is your own user ID from your database, never an email, phone number or ID number. Anonymous users don't need either path.
 
-**Path A (default): identity token.** Create the identity secret in Apps › your app › Identity secret and store it as `CLIKGATE_IDENTITY_SECRET` on your server only. `createIdentityToken(customerId, { appId? })` (also `clikgate.createIdentityToken()`, with the `identitySecret` / `identitySecrets` options) signs a token with no network call; return it in the responses the app already calls, and the app passes it to the mobile SDK's `identifyUser()`. Tokens last 30 days by default and are never force-refreshed. Throws `ClikgateServerOnlyError` in a browser or React Native.
+**Path A (default): identity token.** Create the identity secret in Developers › SDKs › your app › Set up identity › Identity secret and store it as `CLIKGATE_IDENTITY_SECRET` on your server only. `createIdentityToken(customerId, { appId? })` (also `clikgate.createIdentityToken()`, with the `identitySecret` / `identitySecrets` options) signs a token with no network call; return it in the responses the app already calls, and the app passes it to the mobile SDK's `identifyUser()`. Tokens last 30 days by default and are never force-refreshed. Throws `ClikgateServerOnlyError` in a browser or React Native.
 
 ```ts
 import { createIdentityToken } from '@clikgate/node';
@@ -63,11 +113,26 @@ res.json({ user, clikgateIdentityToken: createIdentityToken(user.id) });   // re
 createIdentityToken(user.id, { appId: 'app_…' });                          // several apps: CLIKGATE_IDENTITY_SECRETS
 ```
 
-**Path B: installation ID, no secret or token.** The app reads `getInstallationId()` and includes it in its sign-in request; your server calls `identifyUser` with the app ID, installation ID and customer ID, after sign-in and at every signed-in app open. Clikgate accepts installations active in the last 7 days.
+**Path B: the installation header, no secret or token.** The mobile SDK gives your app a `Clikgate-Installation` header (`<app_id>:<installation_id>`, not a secret), which the app sends to your server with its sign-in request and signed-in requests. After your own sign-in check succeeds, and at every signed-in app open, pass it to `identifyUser` with your signed-in user's ID. Your server never needs to know which Clikgate app ID belongs to which platform. Clikgate accepts installations active in the last 7 days.
+
+- **The customer ID always comes from your own authenticated user.** The header only names the app installation. Call `identifyUser` only after your sign-in check succeeds, and never read the customer ID from the request.
+- **A missing or invalid header is ignored** (`null`, never an error or a log line): skip the call. Parsing is strict: `app_…`, one colon, a lowercase UUID, at most 128 characters, trimmed.
+- **`appId` is optional.** With only an installation ID, Clikgate finds the app. If the same installation ID is active in several of your apps (iOS apps sharing a Keychain access group can share one), the API answers `409 installation_in_several_apps`, a `ConflictError` with param `app_id`: send `appId` too.
 
 ```ts
-// The app sends Clikgate.getInstallationId() with its sign-in request (null when tracking is off: skip)
-if (body.installationId) await clikgate.identifyUser({ appId: 'app_…', installationId: body.installationId, customerId: user.id });
+import { clikgateMiddleware } from '@clikgate/node/express';
+app.use(clikgateMiddleware(clikgate));                // also reads the Clikgate-Installation header
+app.post('/login', async (req, res) => {
+  const user = await signIn(req.body);                // your own sign-in check first
+  if (req.clikgate.installation) {
+    await clikgate.identifyUser({ installation: req.clikgate.installation, customerId: user.id });   // the parsed installation
+  }
+});
+
+// Without the middleware: pass the raw header value (ignored when missing or invalid)
+await clikgate.identifyUser({ installation: req.get('Clikgate-Installation'), customerId: user.id });
+// Or parse it yourself: { appId, installationId } or null
+const installation = parseInstallationHeader(req.get('Clikgate-Installation'));
 ```
 
 ## Customers from before Clikgate
@@ -76,7 +141,7 @@ Tell Clikgate who was already your customer before you added it, so they are nev
 
 ```ts
 res.json({ user, clikgateIdentityToken: createIdentityToken(user.id, { customerSince: user.createdAt }) }); // version 2
-await clikgate.identifyUser({ appId: 'app_…', installationId, customerId: user.id, customerSince: user.createdAt });
+await clikgate.identifyUser({ installation: req.get('Clikgate-Installation'), customerId: user.id, customerSince: user.createdAt });
 const result = await clikgate.knownCustomers.import([{ customerId: 'u_10482', customerSince: '2024-03-02' }]); // batches of 10,000
 console.log(result.accepted, result.refused_by_reason); // refused rows are counted by reason, never returned
 ```
@@ -110,6 +175,7 @@ clikgate.goal('account_opened', { clickId: application.clickId, reference: appli
 - **Fastify:** `await app.register(clikgatePlugin, { client: clikgate })` from `@clikgate/node/fastify`, then read `request.clikgate.clickId`.
 - **Next.js 16+:** in `proxy.ts`, `export { clikgateProxy as proxy } from '@clikgate/node/next'`. Then read it with `getClickId(await cookies())`.
 - **Without a framework:** `clikgate.clickIds.fromRequest(req)` and `clikgate.clickIds.persist(res, clickId)`.
+- **The app's installation** (`Clikgate-Installation` header, for `identifyUser`): Express `req.clikgate.installation`, Fastify `request.clikgate.installation`, Next.js `getInstallation(await headers())` from `@clikgate/node/next`, and without a framework `installationFromRequest(req)` or `parseInstallationHeader(value)`. Each is `{ appId, installationId }` or `null`, and can be passed to `identifyUser` as `installation`, like the raw header.
 - **From payment payloads** (Paystack, Flutterwave, Shopify, WooCommerce): `clikgate.clickIds.fromPaymentMetadata(payload)`.
 
 ## Keep the click ID longer (Safari)
@@ -218,6 +284,13 @@ app.post('/webhooks/clikgate', express.raw({ type: 'application/json' }), (req, 
 });
 ```
 
+- Typed accessors read `event.data.object`: `asReferral()` (`referral.*`), `asReferrer()` (`referrer.*`),
+  `asGoalEvent()` (`goal.completed`, `goal.reversed`), `asInstall()` (`install.*`), `asPayment()` (`payment.*`) and
+  `asConversion()` (`conversion.*`) and `asDeviceChange()` (`person.device_changed`). Each returns `null` for an event of another family, so the same handler can take
+  every event. `event.data` stays the raw payload.
+- `EventType` holds every event type as a string (`EventType.ReferralQualified === 'referral.qualified'`); `event.type`
+  stays a plain string, so a type added later is never an error. `event.typed()` gives the same event as a union
+  narrowed by `type`.
 - Use `webhooks.verifyAny(body, header, [newSecret, oldSecret])` while you rotate your own secrets.
 - Next.js route handlers: pass `await request.text()` as the body.
 
@@ -251,6 +324,42 @@ const ada = await clikgate.api.analytics.analyticsSummary({ from: '2026-10-01T00
 
 - With a `cg_test_` key, links use `dev.ciz.to`. Their destination may be one of Clikgate's test pages: `clikgate-test:inspect`, `clikgate-test:checkout`, `clikgate-test:app-open` or `clikgate-test:store`.
 - A locked link throws `LinkLockedError`.
+- `links.create` and `links.update` take `LinkCreateParams` / `LinkUpdateParams` (the API's fields, typed); plain
+  objects still work. `Link` has every field of the API's link.
+- `links.archive(id)`, `links.pause(id)`, `links.resume(id)` and `links.getByReference('order-1001')` return the link.
+
+## Referrals
+
+```ts
+const referrer = await clikgate.referrals.getOrCreateReferrer(programId, { customerId: user.id, displayName: user.firstName });
+referrer.code; referrer.url; referrer.created;          // created: true when it was just made
+const existing = await clikgate.referrals.findReferrer(programId, { code: 'ADA42' });   // null when there is none
+
+for await (const referral of clikgate.referrals.list({ programId, status: 'qualified' })) {
+  console.log(referral.referee.customerId, referral.reward_snapshot?.referrer?.amount);
+}
+await clikgate.referrals.completeStep(referralId, { goal: 'first_order', occurredAt: order.paidAt, value: '1500.50', currency: 'NGN' });
+await clikgate.referrals.qualify(referralId, { reason: 'Checked by support' });         // or disqualify
+const jobs = await clikgate.referrals.importReferrers(programId, [{ customerId: 'user-42', externalCode: 'ADA-OLD' }]);
+await clikgate.referrals.blockReferrer(referrer.id, { reason: 'Fake installs' });       // unblockReferrer, updateReferrer
+```
+
+- Results are typed (`Referrer`, `Referral`, `RewardInfo`, `Job`) with the API's keys. The SDK adds `customerId` next
+  to `customer_user_id` on referrers and on a referral's `referrer` and `referee`.
+- Reward sides keep `amount_minor` (minor units) and gain `amount`, the same value in normal units as a decimal string
+  with the currency's digits (`50000` NGN is `"500.00"`, `1500` JPY is `"1500"`). Clikgate never pays rewards.
+- `importReferrers` sends 1000 rows per request and returns one job per request.
+
+## Privacy, people, installs and codes
+
+```ts
+await clikgate.privacy.createRequest({ type: 'erasure', subjectType: 'customer_user', subjectId: user.id });
+const person = await clikgate.people.get('per_01J…');
+for await (const p of clikgate.people.search('Ada')) console.log(p.id, p.label);       // the text is sent in the body
+await clikgate.people.setLabel(person.id, 'Ada (VIP)');
+const install = await clikgate.installs.getByCustomer(user.id, { appId: 'app_01J…' });  // or getByInstallation
+const redemption = await clikgate.codes.redeem({ externalId: 'POS-991', code: 'ADA42', channel: 'pos', agentId: 'agent-9' });
+```
 
 ## Errors
 

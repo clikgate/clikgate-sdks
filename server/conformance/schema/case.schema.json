@@ -68,7 +68,15 @@
             "conversions.create", "conversions.reverse", "links.create", "links.get", "links.update", "links.list", "links.list_page", "links.qr",
             "clicks.get", "webhooks.verify", "webhooks.verify_any", "click_ids.is_valid", "click_ids.from_request", "click_ids.cookie_header",
             "click_ids.persist", "click_ids.keep", "click_ids.context", "click_ids.from_payment_metadata", "money.format",
-            "payments.confirm", "payments.from", "payments.build", "identify_user", "hash_for_ads"
+            "payments.confirm", "payments.from", "payments.build", "identify_user", "hash_for_ads",
+            "installations.parse_header", "installations.from_request",
+            "referrals.get_or_create_referrer", "referrals.get_referrer", "referrals.find_referrer", "referrals.get", "referrals.list", "referrals.list_page",
+            "referrals.qualify", "referrals.disqualify", "referrals.complete_step", "referrals.import_referrers", "referrals.block_referrer",
+            "referrals.unblock_referrer", "referrals.update_referrer", "privacy.create_request", "privacy.get_request",
+            "links.archive", "links.get_by_reference", "links.pause", "links.resume",
+            "people.get", "people.search", "people.search_page", "people.set_label",
+            "installs.get_by_customer", "installs.get_by_installation", "codes.redeem",
+            "webhooks.typed", "webhooks.event_types"
           ]
         },
         "args": { "type": "object" },

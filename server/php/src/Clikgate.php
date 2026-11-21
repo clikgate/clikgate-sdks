@@ -66,6 +66,16 @@ final class Clikgate
     public readonly Clicks $clicks;
     /** Existing customers from before you added Clikgate: `import()` and `remove()`. */
     public readonly KnownCustomers $knownCustomers;
+    /** Referrals: referrers (`getOrCreateReferrer()`, `findReferrer()`), referrals, overrides, steps and imports. */
+    public readonly Referrals $referrals;
+    /** Privacy requests: `createRequest()`, `getRequest()`. */
+    public readonly Privacy $privacy;
+    /** People: `get()`, `search()`, `setLabel()`. */
+    public readonly People $people;
+    /** Installs: `getByCustomer()`, `getByInstallation()`. */
+    public readonly Installs $installs;
+    /** Offline and referral codes: `redeem()`. */
+    public readonly Codes $codes;
     /** Click-ID helpers using this client's `clickIdParam` (or the organisation's, from config). */
     public readonly ClickIds $clickIds;
     /** Every API-key operation, generated from openapi.json ("advanced"). */
@@ -95,7 +105,7 @@ final class Clikgate
             throw new ConfigurationException("No API key: pass ['apiKey' => …] or set CLIKGATE_API_KEY (cg_live_… or cg_test_…).", 'missing_api_key', param: 'apiKey');
         }
         if (1 !== preg_match('/^cg_(live|test)_[A-Za-z0-9_]+$/D', $apiKey, $m)) {
-            throw new ConfigurationException(\sprintf('The API key is %s. Server SDKs need a cg_live_… or cg_test_… API key from Developers → API keys.', self::keyType($apiKey)), 'invalid_api_key', param: 'apiKey');
+            throw new ConfigurationException(\sprintf('The API key is %s. Server SDKs need a cg_live_… or cg_test_… API key from Developers › API keys & clients.', self::keyType($apiKey)), 'invalid_api_key', param: 'apiKey');
         }
         $this->mode = $m[1];
         $baseUrl = $options['baseUrl'] ?? (getenv('CLIKGATE_BASE_URL') ?: 'https://api.clikgate.com');
@@ -159,6 +169,11 @@ final class Clikgate
         $this->links = new Links($this->core);
         $this->clicks = new Clicks($this->core);
         $this->knownCustomers = new KnownCustomers($this->core);
+        $this->referrals = new Referrals($this->core);
+        $this->privacy = new Privacy($this->core);
+        $this->people = new People($this->core);
+        $this->installs = new Installs($this->core);
+        $this->codes = new Codes($this->core);
         $core = $this->core;
         $this->clickIds = new ClickIds(static function () use ($clickIdParam, $core): string {
             $fromConfig = $core->peekConfig()['click_id_param'] ?? null;
@@ -250,8 +265,8 @@ final class Clikgate
     }
 
     /**
-     * Tell Clikgate who a person is (`POST /v1/people/identify`): a click (`clickId`), an app installation (`appId` +
-     * `installationId`) or your `customerId`, at least one. With a click or installation, `customerId` links it to
+     * Tell Clikgate who a person is (`POST /v1/people/identify`): a click (`clickId`), an app installation
+     * (`installation`, or `installationId` with an optional `appId`) or your `customerId`, at least one. With a click or installation, `customerId` links it to
      * that customer. `label` is what your team sees instead of the click ID (1-80 characters, `''` clears it; Growth
      * and up). Always verified (your server), so it also satisfies a referral program's `require_identity_token`.
      * In private mode `customerId` is refused locally and `label` needs "Allow labels in private mode".
@@ -259,20 +274,24 @@ final class Clikgate
      * `customerId`) is when they became your customer, so existing customers are never counted as referrals or new
      * customers; Clikgate keeps the earliest date unless `customerSinceReplace` is true. Refused in private mode.
      *
-     * Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app reads
-     * `getInstallationId()` and sends it in its sign-in request; your server calls this with `appId`,
-     * `installationId`, `customerId` and optionally `label`, after sign-in and at every signed-in app open. When the
-     * app sends no installation ID (tracking is off), skip the call. Clikgate accepts installations active in the
-     * last 7 days.
+     * Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app sends the
+     * `Clikgate-Installation` header (from the mobile SDK) to your server. After your own sign-in check succeeds, and
+     * at every signed-in app open, pass the header (or the parsed `Installation` from `Installation::fromRequest()`,
+     * the PSR-15 `clikgate.installation` attribute or Laravel's `$request->clikgateInstallation()`) as `installation`
+     * with your signed-in user's ID as `customerId` (never a customer ID read from the request). A missing or invalid header is ignored: skip the call.
+     * `installationId` given explicitly wins over the header. `appId` is optional: Clikgate finds the app; if the
+     * installation ID is in several of your apps, the API answers `409 installation_in_several_apps` (a
+     * `ConflictException`, param `app_id`): send `appId` too. Clikgate accepts installations active in the last 7 days.
      *
      * ```php
      * $clikgate->identifyUser(['clickId' => $order->clickId, 'customerId' => 'user_42', 'label' => 'Ada (VIP)']);
-     * if ($installationId !== null) {
-     *     $clikgate->identifyUser(['appId' => 'app_…', 'installationId' => $installationId, 'customerId' => (string) $user->id]);
-     * }
+     * // after your sign-in check: the header from the app, your user's ID
+     * $clikgate->identifyUser(['installation' => $request->getHeaderLine('Clikgate-Installation'), 'customerId' => (string) $user->id]);
+     * // or the parsed installation (Laravel)
+     * $clikgate->identifyUser(['installation' => $request->clikgateInstallation(), 'customerId' => (string) $user->id]);
      * ```
      *
-     * @param array{clickId?: ?string, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string, customerSince?: string|\DateTimeInterface|int|null, customerSinceReplace?: ?bool} $params
+     * @param array{clickId?: ?string, installation?: string|Installation|null, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string, customerSince?: string|\DateTimeInterface|int|null, customerSinceReplace?: ?bool} $params
      * @param array<string, mixed> $requestOptions
      *
      * @return array<string, mixed> `{object: "person_identified", person_id, label_ignored, customer_since_ignored, customer_id_warning}`
@@ -281,11 +300,19 @@ final class Clikgate
     {
         $appId = $params['appId'] ?? null;
         $installationId = $params['installationId'] ?? null;
-        if ((null === $appId) !== (null === $installationId)) {
-            throw ErrorMapper::local('invalid_request', 'Send appId and installationId together.', null === $appId ? 'app_id' : 'installation_id');
+        if (null === $installationId && null !== ($params['installation'] ?? null)) {
+            // The raw Clikgate-Installation header or an Installation: ignored (never sent) when missing or invalid
+            $fromHeader = Installation::from($params['installation']);
+            if (null !== $fromHeader) {
+                $appId ??= $fromHeader->appId;
+                $installationId = $fromHeader->installationId;
+            }
+        }
+        if (null !== $appId && null === $installationId) {
+            throw ErrorMapper::local('invalid_request', 'Send installationId with appId.', 'installation_id');
         }
         if (null === ($params['clickId'] ?? null) && null === $installationId && null === ($params['customerId'] ?? null)) {
-            throw ErrorMapper::local('invalid_request', 'Send clickId, appId + installationId, or customerId.', 'click_id');
+            throw ErrorMapper::local('invalid_request', 'Send clickId, an installation (installation or installationId), or customerId.', 'click_id');
         }
         $body = array_filter([
             'click_id' => $params['clickId'] ?? null,

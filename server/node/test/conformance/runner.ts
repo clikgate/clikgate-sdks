@@ -7,7 +7,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline';
-import { Clikgate, ClikgateError, formatValue, hashForAds, type ClikgateOptions, type ErrorContext, type GoalOptions, type PaymentConfirmParams, type PaymentHelperOptions } from '../../src/index.js';
+import { Clikgate, ClikgateError, EventType, formatValue, type ReferrerLookup, type ReferralListParams, hashForAds, installationFromRequest, parseInstallationHeader, type Installation, type ClikgateOptions, type ErrorContext, type GoalOptions, type PaymentConfirmParams, type PaymentHelperOptions } from '../../src/index.js';
 
 type Json = null | boolean | number | string | Json[] | { [k: string]: Json };
 interface RunnerCase {
@@ -65,7 +65,33 @@ function decode(v: Json): unknown {
   return v;
 }
 
+/** `installation` is the raw header (a string) or a parsed installation (`{app_id, installation_id}`). */
+function installationArg(v: unknown): string | Installation | undefined {
+  if (v && typeof v === 'object') {
+    const o = v as Record<string, unknown>;
+    return { appId: o.app_id as string, installationId: o.installation_id as string };
+  }
+  return v as string | undefined;
+}
+
+function referralParams(p: unknown): ReferralListParams {
+  const q = (p ?? {}) as Record<string, unknown>;
+  return {
+    programId: q.program_id as string | undefined,
+    referrerId: q.referrer_id as string | undefined,
+    refereeCustomerId: q.referee_customer_id as string | undefined,
+    status: q.status as string | undefined,
+    from: q.from as Date | string | undefined,
+    to: q.to as Date | string | undefined,
+    limit: q.limit as number | undefined,
+  };
+}
+
 const CAMEL: Record<string, string> = { click_id: 'clickId', is_first: 'isFirst', occurred_at: 'occurredAt', kept_by: 'keptBy', browser_engine: 'browserEngine', hashed_email: 'hashedEmail', hashed_phone_e164: 'hashedPhoneE164', hashed_phone_digits: 'hashedPhoneDigits' };
+function installationWire(i: Installation | null): Record<string, string> | null {
+  return i ? { app_id: i.appId, installation_id: i.installationId } : null;
+}
+
 function goalOptions(args: Record<string, unknown>): GoalOptions {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(args)) {
@@ -246,6 +272,108 @@ async function runCase(c: RunnerCase): Promise<Record<string, unknown>> {
         case 'webhooks.verify_any':
           result = client.webhooks.verifyAny(a.raw_body as string, a.header as string, a.secrets as string[], { tolerance: a.tolerance as number, now: a.now as number });
           break;
+        case 'referrals.get_or_create_referrer':
+          result = await client.referrals.getOrCreateReferrer(a.program_id as string, { customerId: a.customer_id as string, displayName: a.display_name as string | undefined, externalCode: a.external_code as string | undefined }, reqOpts);
+          break;
+        case 'referrals.get_referrer':
+          result = await client.referrals.getReferrer(a.id as string);
+          break;
+        case 'referrals.find_referrer':
+          result = await client.referrals.findReferrer(a.program_id as string, { customerId: a.customer_id, code: a.code } as ReferrerLookup);
+          break;
+        case 'referrals.get':
+          result = await client.referrals.get(a.id as string);
+          break;
+        case 'referrals.list':
+          result = { items: await client.referrals.list(referralParams(a.params)).toArray((a.max_items as number | undefined) ?? undefined) };
+          break;
+        case 'referrals.list_page':
+          result = await client.referrals.listPage(referralParams(a.params));
+          break;
+        case 'referrals.qualify':
+          result = await client.referrals.qualify(a.id as string, { reason: a.reason as string }, reqOpts);
+          break;
+        case 'referrals.disqualify':
+          result = await client.referrals.disqualify(a.id as string, { reason: a.reason as string }, reqOpts);
+          break;
+        case 'referrals.complete_step':
+          result = await client.referrals.completeStep(a.id as string, { goal: a.goal as string, occurredAt: a.occurred_at as Date | string, value: a.value as string | undefined, currency: a.currency as string | undefined }, reqOpts);
+          break;
+        case 'referrals.import_referrers':
+          result = await client.referrals.importReferrers(
+            a.program_id as string,
+            (a.rows as Array<Record<string, string | undefined>>).map((r) => ({ customerId: r.customer_id as string, externalCode: r.external_code, displayName: r.display_name })),
+            reqOpts,
+          );
+          break;
+        case 'referrals.block_referrer':
+          result = await client.referrals.blockReferrer(a.id as string, { reason: a.reason as string | undefined }, reqOpts);
+          break;
+        case 'referrals.unblock_referrer':
+          result = await client.referrals.unblockReferrer(a.id as string, reqOpts);
+          break;
+        case 'referrals.update_referrer':
+          result = await client.referrals.updateReferrer(a.id as string, { displayName: a.display_name as string | undefined, attributes: a.attributes as Record<string, unknown> | undefined }, reqOpts);
+          break;
+        case 'privacy.create_request':
+          result = await client.privacy.createRequest({ type: a.type as string, subjectType: a.subject_type as string, subjectId: a.subject_id as string, appId: a.app_id as string | undefined }, reqOpts);
+          break;
+        case 'privacy.get_request':
+          result = await client.privacy.getRequest(a.id as string);
+          break;
+        case 'links.archive':
+          result = await client.links.archive(a.id as string);
+          break;
+        case 'links.get_by_reference':
+          result = await client.links.getByReference(a.reference as string);
+          break;
+        case 'links.pause':
+          result = await client.links.pause(a.id as string, reqOpts);
+          break;
+        case 'links.resume':
+          result = await client.links.resume(a.id as string, reqOpts);
+          break;
+        case 'people.get':
+          result = await client.people.get(a.id as string);
+          break;
+        case 'people.set_label':
+          result = await client.people.setLabel(a.id as string, a.label as string | null, reqOpts);
+          break;
+        case 'people.search':
+          result = { items: await client.people.search(a.q as string).toArray((a.max_items as number | undefined) ?? undefined) };
+          break;
+        case 'people.search_page':
+          result = await client.people.searchPage(a.q as string, { cursor: a.cursor as string | undefined, limit: a.limit as number | undefined });
+          break;
+        case 'installs.get_by_customer':
+          result = await client.installs.getByCustomer(a.customer_id as string, { appId: a.app_id as string | undefined });
+          break;
+        case 'installs.get_by_installation':
+          result = await client.installs.getByInstallation(a.installation_id as string, { appId: a.app_id as string | undefined });
+          break;
+        case 'codes.redeem':
+          result = await client.codes.redeem(
+            { externalId: a.external_id as string, code: a.code as string, channel: a.channel as string, appId: a.app_id as string | undefined, occurredAt: a.occurred_at as Date | undefined, metadata: a.metadata as Record<string, unknown> | undefined, subject: a.subject as { type: string } | undefined, agentId: a.agent_id as string | undefined, location: a.location as Record<string, string> | undefined },
+            reqOpts,
+          );
+          break;
+        case 'webhooks.typed': {
+          const event = client.webhooks.verify(a.raw_body as string, a.header as string, a.secret as string, { tolerance: a.tolerance as number, now: a.now as number });
+          const as: Record<string, () => unknown> = {
+            referral: () => event.asReferral(),
+            referrer: () => event.asReferrer(),
+            goal_event: () => event.asGoalEvent(),
+            install: () => event.asInstall(),
+            payment: () => event.asPayment(),
+            conversion: () => event.asConversion(),
+            device_change: () => event.asDeviceChange(),
+          };
+          result = (as[a.as as string] ?? (() => { throw new Error(`unknown accessor ${String(a.as)}`); }))();
+          break;
+        }
+        case 'webhooks.event_types':
+          result = { value: Object.values(EventType).sort() };
+          break;
         case 'click_ids.is_valid':
           result = { value: client.clickIds.isValid(a.id) };
           break;
@@ -285,6 +413,14 @@ async function runCase(c: RunnerCase): Promise<Record<string, unknown>> {
           result = out;
           break;
         }
+        case 'installations.parse_header':
+          result = { value: installationWire(parseInstallationHeader(a.value)) };
+          break;
+        case 'installations.from_request': {
+          const r = a.request as { url: string; headers: Record<string, string> };
+          result = { value: installationWire(installationFromRequest({ headers: r.headers })) };
+          break;
+        }
         case 'click_ids.from_payment_metadata':
           result = { value: client.clickIds.fromPaymentMetadata(a.payload) };
           break;
@@ -299,6 +435,7 @@ async function runCase(c: RunnerCase): Promise<Record<string, unknown>> {
           result = await client.identifyUser(
             {
               clickId: a.click_id as string | undefined,
+              installation: installationArg(a.installation),
               appId: a.app_id as string | undefined,
               installationId: a.installation_id as string | undefined,
               customerId: a.customer_id as string | undefined,

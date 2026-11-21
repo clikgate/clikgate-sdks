@@ -6,6 +6,7 @@ namespace Clikgate\Laravel;
 
 use Clikgate\ClickIds;
 use Clikgate\Clikgate as Client;
+use Clikgate\Installation;
 use Clikgate\Laravel\Http\Controllers\KeepClickId;
 use Clikgate\Laravel\Http\Middleware\CaptureClickId;
 use Illuminate\Contracts\Foundation\Application;
@@ -16,7 +17,7 @@ use Illuminate\Support\ServiceProvider;
 
 /**
  * Auto-discovered. Registers the client (a singleton), the `clikgate` middleware alias, the `Clikgate` facade
- * the `$request->clikgateClickId()` macro and the `Route::clikgateKeep('/cg/keep')` route macro.
+ * the `$request->clikgateClickId()` and `$request->clikgateInstallation()` macros and the `Route::clikgateKeep('/cg/keep')` route macro.
  */
 final class ClikgateServiceProvider extends ServiceProvider
 {
@@ -55,6 +56,11 @@ final class ClikgateServiceProvider extends ServiceProvider
             }
 
             return app(Client::class)->clickIds->fromRequest($this);
+        });
+        // The app's Clikgate-Installation header (for identifyUser, after your own sign-in check): null when missing or invalid
+        Request::macro('clikgateInstallation', function (): ?Installation {
+            /** @var Request $this */
+            return Installation::fromRequest($this);
         });
     }
 

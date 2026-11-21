@@ -1,6 +1,6 @@
 # Goals: the end of the funnel
 
-A **goal** is an outcome the business cares about: `account_opened`, `loan_disbursed`, `order_paid`, `first_trip`. The funnel starts with a click on a Clikgate link and ends with the organisation's **end goal**. Goals are defined in the dashboard (Settings › Goals). Every organisation has `purchase` and `signup`.
+A **goal** is an outcome the business cares about: `account_opened`, `loan_disbursed`, `order_paid`, `first_trip`. The funnel starts with a click on a Clikgate link and ends with the organisation's **end goal**. Goals are defined in the dashboard (Grow › Goals). Every organisation has `purchase` and `signup`.
 
 ## Where to send a goal from
 
@@ -30,7 +30,7 @@ Then send it as `click_id` when the goal happens.
 ## Rules
 
 - **Name (key):** snake_case, 2–40 characters (`^[a-z][a-z0-9_]{1,39}$`); other names are refused with a clear error. A name that isn't a goal yet is stored, not counted (`received`, `not_counted_yet`); so is an event for an archived goal (`received`, `goal_archived`) until the team chooses "Count again". Reuse the exact name the dashboard shows: a near-duplicate (`purchase_done` for `purchase`) shows up as a separate name.
-- **Unknown names, strict mode:** "Allow unknown goal names" (Settings › Goals) is on by default. When the team turns it off, live calls whose name has no goal or alias behind it are refused at once and nothing is stored (only a daily count per name):
+- **Unknown names, strict mode:** "Allow unknown goal names" (Grow › Goals) is on by default. When the team turns it off, live calls whose name has no goal or alias behind it are refused at once and nothing is stored (only a daily count per name):
   - HTTP: `422 {"error": {"type": "invalid_request", "code": "unknown_goal", "param": "goal", "status": "refused", "reason": "unknown_goal", "counted": false, "goal_kind": null, …}}`; an archived goal's name answers `422` with `goal_archived`.
   - App SDKs: `GoalStatus.REFUSED` (`.refused` on iOS) with `reason` `unknown_goal`. Web script: `{status: "refused", reason: "unknown_goal"}`. Server SDKs: `goals.send` raises the invalid-request error (`InvalidRequestError` in Node and Python, `InvalidRequestException` in PHP, Java and .NET) with code `unknown_goal`; background `goal()` passes it to the error handler as dropped; in a batch only that item fails.
   - Final everywhere: no retry, no offline re-queue. Debug builds log ``Goal `{name}` isn't set up in Clikgate`` (the name only).
@@ -71,7 +71,7 @@ App goals are queued, batched and retried, and attributed to the latest Clikgate
 
 ## Defining goals from code (optional)
 
-Goals are usually created in the dashboard (Settings › Goals). A backend that manages them itself uses the goals API with an API key that has the `org:manage` scope (owners and admins); reading needs `analytics:read` or `conversions:read`:
+Goals are usually created in the dashboard (Grow › Goals). A backend that manages them itself uses the goals API with an API key that has the `org:manage` scope (owners and admins); reading needs `analytics:read` or `conversions:read`:
 
 | Call | Node: the client's `api.goals` | Notes |
 |---|---|---|
@@ -111,7 +111,7 @@ Write goal code that works in both modes: send only the allowed fields.
   | **A: identity token (default)** | the server adds one field to the responses the app already calls (sign-in, "current user" / "me"); the app passes it as `identityToken` | always, unless the team prefers B: no extra server call |
   | **B: installation ID** | the app reads `getInstallationId()` and sends it in its sign-in request; the server calls `identifyUser({ appId, installationId, customerId, label? })` | the team doesn't want an identity secret |
 
-  - **Path A setup:** the user creates the identity secret in Apps › the app › Identity secret and stores it as `CLIKGATE_IDENTITY_SECRET` on the server only (never in the app or the repository; add `CLIKGATE_IDENTITY_SECRET=` with no value to `.env.example`). Node: `createIdentityToken(user.id)` from `@clikgate/node`, no network call; several apps: `createIdentityToken(user.id, { appId })` with `CLIKGATE_IDENTITY_SECRETS` (a JSON object of app IDs to secrets). Other languages: [server-sdks.md](server-sdks.md). Tokens last 30 days by default; the app passes the newest one it has and nothing needs a scheduled refresh.
+  - **Path A setup:** the user creates the identity secret in Developers › SDKs › the app › Set up identity › Identity secret and stores it as `CLIKGATE_IDENTITY_SECRET` on the server only (never in the app or the repository; add `CLIKGATE_IDENTITY_SECRET=` with no value to `.env.example`). Node: `createIdentityToken(user.id)` from `@clikgate/node`, no network call; several apps: `createIdentityToken(user.id, { appId })` with `CLIKGATE_IDENTITY_SECRETS` (a JSON object of app IDs to secrets). Other languages: [server-sdks.md](server-sdks.md). Tokens last 30 days by default; the app passes the newest one it has and nothing needs a scheduled refresh.
   - **Path B setup:** `getInstallationId()` is `null` when tracking is off (opt-out, consent denied, deep-link-only mode): send nothing and skip `identifyUser` on the server. Call it at every signed-in app open, not only at sign-in.
   - Debug builds log the reason when a token doesn't verify: `expired`, `bad_signature`, `secret_rotated`, `no_secret_set` or `not_yet_valid` (the server clock is ahead).
 - `isFirst` on `goal()` is sent from apps and websites but only the server's `isFirst` counts a new customer, so send it from the server when there is one.

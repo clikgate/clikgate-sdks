@@ -147,6 +147,9 @@ internal static class Program
 
     private static Dictionary<string, object?> Map(object? o) => o as Dictionary<string, object?> ?? [];
 
+    private static Dictionary<string, object?>? InstallationWire(Installation? i) =>
+        i is null ? null : new Dictionary<string, object?> { ["app_id"] = i.AppId, ["installation_id"] = i.InstallationId };
+
     private static string? Str(Dictionary<string, object?> a, string k) => a.TryGetValue(k, out var v) ? v as string : null;
 
     private static MoneyValue? Money(object? v) => v switch
@@ -243,11 +246,225 @@ internal static class Program
     private static JsonNode? Canonical(object? r) => r switch
     {
         null => null,
+        Referrer rc => WithCreated(rc),
+        Referral rl => ReferralWire(rl),
+        Page<Referral> pr => PageWire(pr.Raw, pr.Data),
         WireObject w => w.Raw.DeepClone(),
+        WireRecord w => w.Raw.DeepClone(),
+        IEnumerable<WireRecord> list => new JsonArray(list.Select(Canonical).ToArray()),
         LinkUpdateResult u => u.ToJson(),
         JsonNode n => n,
         _ => Json.ToNode(r),
     };
+
+    private static JsonObject WithCreated(Referrer r)
+    {
+        var o = (JsonObject)r.Raw.DeepClone();
+        o["created"] = r.Created;
+        return o;
+    }
+
+    /// <summary>The referral as wire JSON, each reward side with its typed <c>amount</c> (normal units) added.</summary>
+    private static JsonObject ReferralWire(Referral r)
+    {
+        var o = (JsonObject)r.Raw.DeepClone();
+        if (r.Reward is { } reward && o["reward_snapshot"] is JsonObject rw)
+        {
+            if (reward.Referrer?.Amount is decimal a && rw["referrer"] is JsonObject ro)
+            {
+                ro["amount"] = a.ToString(CultureInfo.InvariantCulture);
+            }
+            if (reward.Referee?.Amount is decimal b && rw["referee"] is JsonObject re)
+            {
+                re["amount"] = b.ToString(CultureInfo.InvariantCulture);
+            }
+        }
+        return o;
+    }
+
+    private static JsonObject PageWire(JsonObject raw, IEnumerable<object> data)
+    {
+        var o = (JsonObject)raw.DeepClone();
+        o["data"] = new JsonArray(data.Select(Canonical).ToArray());
+        return o;
+    }
+
+    private static string? Arg(Dictionary<string, object?> a, Dictionary<string, object?> p, params string[] keys)
+    {
+        foreach (var k in keys)
+        {
+            var v = a.TryGetValue(k, out var x) ? x : p.TryGetValue(k, out var y) ? y : null;
+            if (v is not null)
+            {
+                return Convert.ToString(v, CultureInfo.InvariantCulture);
+            }
+        }
+        return null;
+    }
+
+    private static object? Raw(Dictionary<string, object?> a, Dictionary<string, object?> p, string key) => a.TryGetValue(key, out var x) ? x : p.TryGetValue(key, out var y) ? y : null;
+
+    private static bool Has(Dictionary<string, object?> a, Dictionary<string, object?> p, string key) => a.ContainsKey(key) || p.ContainsKey(key);
+
+    private static DateTimeOffset? Time(object? v) => v switch
+    {
+        DateTimeOffset d => d,
+        string s => DateTimeOffset.Parse(s, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal),
+        _ => null,
+    };
+
+    private static async Task<Dictionary<string, object?>> ItemsAsync<T>(IAsyncEnumerable<T> items, object? max)
+        where T : WireRecord
+    {
+        var list = new List<JsonNode?>();
+        await foreach (var x in items.ConfigureAwait(false))
+        {
+            list.Add(Canonical(x));
+            if (max is long m && list.Count >= m)
+            {
+                break;
+            }
+        }
+        return new Dictionary<string, object?> { ["items"] = new JsonArray(list.ToArray()) };
+    }
+
+    private static ListReferralsParams ReferralQuery(Dictionary<string, object?> a, Dictionary<string, object?> p) => new()
+    {
+        ProgramId = Arg(a, p, "program_id"),
+        ReferrerId = Arg(a, p, "referrer_id"),
+        RefereeCustomerId = Arg(a, p, "referee_customer_id", "referee_customer_user_id"),
+        Status = Arg(a, p, "status"),
+        Reason = Arg(a, p, "reason"),
+        From = Time(Raw(a, p, "from")),
+        To = Time(Raw(a, p, "to")),
+        Limit = Raw(a, p, "limit") is long l ? (int)l : null,
+        StartingAfter = Arg(a, p, "starting_after"),
+        EndingBefore = Arg(a, p, "ending_before"),
+    };
+
+    private static object? As(WebhookEvent ev, string? accessor) => accessor switch
+    {
+        null => ev,
+        "referral" => ev.AsReferral(),
+        "referrer" => ev.AsReferrer(),
+        "goal_event" => ev.AsGoalEvent(),
+        "install" => ev.AsInstall(),
+        "payment" => ev.AsPayment(),
+        "conversion" => ev.AsConversion(),
+        "device_change" => ev.AsDeviceChange(),
+        _ => throw new InvalidOperationException("runner: unknown accessor " + accessor),
+    };
+
+    private static async Task<object?> TypedStepAsync(ClikgateClient client, string call, Dictionary<string, object?> a, Dictionary<string, object?> p, RequestOptions? ro)
+    {
+        switch (call)
+        {
+            case "referrals.get_or_create_referrer":
+                return await client.Referrals.GetOrCreateReferrerAsync(Arg(a, p, "program_id")!, new GetOrCreateReferrerParams
+                {
+                    CustomerId = Arg(a, p, "customer_id", "customer_user_id") ?? string.Empty,
+                    DisplayName = Arg(a, p, "display_name"),
+                    ExternalCode = Arg(a, p, "external_code"),
+                    Code = Arg(a, p, "code"),
+                }, ro).ConfigureAwait(false);
+            case "referrals.get_referrer":
+                return await client.Referrals.GetReferrerAsync(Arg(a, p, "referrer_id", "id")!).ConfigureAwait(false);
+            case "referrals.find_referrer":
+                return await client.Referrals.FindReferrerAsync(Arg(a, p, "program_id")!, new FindReferrerParams { Code = Arg(a, p, "code"), CustomerId = Arg(a, p, "customer_id", "customer_user_id") }).ConfigureAwait(false);
+            case "referrals.get":
+                return await client.Referrals.GetAsync(Arg(a, p, "referral_id", "id")!).ConfigureAwait(false);
+            case "referrals.list":
+                return await ItemsAsync(client.Referrals.ListAsync(ReferralQuery(a, p)), a.TryGetValue("max_items", out var mx) ? mx : null).ConfigureAwait(false);
+            case "referrals.list_page":
+                return await client.Referrals.ListPageAsync(ReferralQuery(a, p)).ConfigureAwait(false);
+            case "referrals.qualify":
+                return await client.Referrals.QualifyAsync(Arg(a, p, "referral_id", "id")!, Arg(a, p, "reason") ?? string.Empty, ro).ConfigureAwait(false);
+            case "referrals.disqualify":
+                return await client.Referrals.DisqualifyAsync(Arg(a, p, "referral_id", "id")!, Arg(a, p, "reason") ?? string.Empty, ro).ConfigureAwait(false);
+            case "referrals.complete_step":
+                return await client.Referrals.CompleteStepAsync(Arg(a, p, "referral_id", "id")!, new CompleteStepParams
+                {
+                    Goal = Arg(a, p, "goal") ?? string.Empty,
+                    OccurredAt = Time(Raw(a, p, "occurred_at")),
+                    Value = Money(Raw(a, p, "value")),
+                    Currency = Arg(a, p, "currency"),
+                }, ro).ConfigureAwait(false);
+            case "referrals.import_referrers":
+                {
+                    var rows = ((Raw(a, p, "rows") as List<object?>) ?? []).Select(Map).Select(r => new ReferrerImport
+                    {
+                        CustomerId = Arg(r, r, "customer_id", "customer_user_id") ?? string.Empty,
+                        ExternalCode = Arg(r, r, "external_code"),
+                        DisplayName = Arg(r, r, "display_name"),
+                    }).ToList();
+                    return await client.Referrals.ImportReferrersAsync(Arg(a, p, "program_id")!, rows, ro).ConfigureAwait(false);
+                }
+            case "referrals.block_referrer":
+                return await client.Referrals.BlockReferrerAsync(Arg(a, p, "referrer_id", "id")!, Arg(a, p, "reason"), ro).ConfigureAwait(false);
+            case "referrals.unblock_referrer":
+                return await client.Referrals.UnblockReferrerAsync(Arg(a, p, "referrer_id", "id")!, ro).ConfigureAwait(false);
+            case "referrals.update_referrer":
+                return await client.Referrals.UpdateReferrerAsync(Arg(a, p, "referrer_id", "id")!, new UpdateReferrerParams
+                {
+                    DisplayName = Arg(a, p, "display_name"),
+                    ClearDisplayName = Has(a, p, "display_name") && Raw(a, p, "display_name") is null,
+                    ExternalCode = Arg(a, p, "external_code"),
+                    ClearExternalCode = Has(a, p, "external_code") && Raw(a, p, "external_code") is null,
+                    LeaderboardOptOut = Raw(a, p, "leaderboard_opt_out") as bool?,
+                    Attributes = Raw(a, p, "attributes") as Dictionary<string, object?>,
+                    ClearAttributes = Has(a, p, "attributes") && Raw(a, p, "attributes") is null,
+                }, ro).ConfigureAwait(false);
+            case "privacy.create_request":
+                return await client.Privacy.CreateRequestAsync(new CreatePrivacyRequestParams
+                {
+                    Type = Arg(a, p, "type") ?? string.Empty,
+                    SubjectType = Arg(a, p, "subject_type") ?? string.Empty,
+                    SubjectId = Arg(a, p, "subject_id") ?? string.Empty,
+                    AppId = Arg(a, p, "app_id"),
+                }, ro).ConfigureAwait(false);
+            case "privacy.get_request":
+                return await client.Privacy.GetRequestAsync(Arg(a, p, "id", "request_id")!).ConfigureAwait(false);
+            case "links.archive":
+                return await client.Links.ArchiveAsync(Arg(a, p, "id")!).ConfigureAwait(false);
+            case "links.get_by_reference":
+                return await client.Links.GetByReferenceAsync(Arg(a, p, "reference", "external_reference")!).ConfigureAwait(false);
+            case "links.pause":
+                return await client.Links.PauseAsync(Arg(a, p, "id")!, ro).ConfigureAwait(false);
+            case "links.resume":
+                return await client.Links.ResumeAsync(Arg(a, p, "id")!, ro).ConfigureAwait(false);
+            case "people.get":
+                return await client.People.GetAsync(Arg(a, p, "person_id", "id")!).ConfigureAwait(false);
+            case "people.search":
+                return await ItemsAsync(client.People.SearchAsync(Arg(a, p, "q") ?? string.Empty), a.TryGetValue("max_items", out var pm) ? pm : null).ConfigureAwait(false);
+            case "people.search_page":
+                return await client.People.SearchPageAsync(Arg(a, p, "q") ?? string.Empty, Arg(a, p, "cursor"), Raw(a, p, "limit") is long sl ? (int)sl : null).ConfigureAwait(false);
+            case "people.set_label":
+                return await client.People.SetLabelAsync(Arg(a, p, "person_id", "id")!, Arg(a, p, "label") ?? string.Empty, ro).ConfigureAwait(false);
+            case "installs.get_by_customer":
+                return await client.Installs.GetByCustomerAsync(Arg(a, p, "customer_id", "customer_user_id")!, Arg(a, p, "app_id")).ConfigureAwait(false);
+            case "installs.get_by_installation":
+                return await client.Installs.GetByInstallationAsync(Arg(a, p, "installation_id")!, Arg(a, p, "app_id")).ConfigureAwait(false);
+            case "codes.redeem":
+                return await client.Codes.RedeemAsync(new RedeemCodeParams
+                {
+                    ExternalId = Arg(a, p, "external_id") ?? string.Empty,
+                    Code = Arg(a, p, "code") ?? string.Empty,
+                    Channel = Arg(a, p, "channel") ?? string.Empty,
+                    AppId = Arg(a, p, "app_id"),
+                    OccurredAt = Time(Raw(a, p, "occurred_at")),
+                    Metadata = Raw(a, p, "metadata") as Dictionary<string, object?>,
+                    AgentId = Arg(a, p, "agent_id"),
+                    Subject = Raw(a, p, "subject") is Dictionary<string, object?> sj ? new OfflineSubject { Type = Arg(sj, sj, "type") ?? string.Empty, Id = Arg(sj, sj, "id") } : null,
+                    Location = Raw(a, p, "location") is Dictionary<string, object?> lc ? new OfflineLocation { Country = Arg(lc, lc, "country"), Region = Arg(lc, lc, "region"), City = Arg(lc, lc, "city"), StoreId = Arg(lc, lc, "store_id") } : null,
+                }, ro).ConfigureAwait(false);
+            case "webhooks.typed":
+                return As(Webhooks.Verify(Bytes(a["raw_body"]), Str(a, "header"), Str(a, "secret")!, (long)a["tolerance"]!, (long)a["now"]!), Str(a, "as"));
+            case "webhooks.event_types":
+                return new Dictionary<string, object?> { ["value"] = EventType.All.OrderBy(x => x, StringComparer.Ordinal).ToList() };
+            default:
+                throw new InvalidOperationException("runner: unknown call " + call);
+        }
+    }
 
     private static async Task<object?> StepAsync(ClikgateClient client, string call, Dictionary<string, object?> a, FakeClock clock, JsonObject? rawArgs)
     {
@@ -281,11 +498,11 @@ internal static class Program
             case "conversions.reverse":
                 return await client.Conversions.ReverseAsync(Str(a, "id")!, p).ConfigureAwait(false);
             case "links.create":
-                return await client.Links.CreateAsync(p, ro).ConfigureAwait(false);
+                return a.ContainsKey("typed") ? await client.Links.CreateAsync(new LinkCreateParams { Extra = p }, ro).ConfigureAwait(false) : await client.Links.CreateAsync(p, ro).ConfigureAwait(false);
             case "links.get":
                 return await client.Links.GetAsync(Str(a, "id")!).ConfigureAwait(false);
             case "links.update":
-                return await client.Links.UpdateAsync(Str(a, "id")!, p, ro).ConfigureAwait(false);
+                return a.ContainsKey("typed") ? await client.Links.UpdateAsync(Str(a, "id")!, new LinkUpdateParams { Extra = p }, ro).ConfigureAwait(false) : await client.Links.UpdateAsync(Str(a, "id")!, p, ro).ConfigureAwait(false);
             case "links.list":
                 {
                     var items = new JsonArray();
@@ -311,9 +528,20 @@ internal static class Program
             case "clicks.get":
                 return await client.Clicks.GetAsync(Str(a, "id")!).ConfigureAwait(false);
             case "webhooks.verify":
-                return Webhooks.Verify(Bytes(a["raw_body"]), Str(a, "header"), Str(a, "secret")!, (long)a["tolerance"]!, (long)a["now"]!);
+                return As(Webhooks.Verify(Bytes(a["raw_body"]), Str(a, "header"), Str(a, "secret")!, (long)a["tolerance"]!, (long)a["now"]!), Str(a, "as"));
             case "webhooks.verify_any":
                 return Webhooks.VerifyAny(Bytes(a["raw_body"]), Str(a, "header"), ((List<object?>)a["secrets"]!).Cast<string>().ToList(), (long)a["tolerance"]!, (long)a["now"]!);
+            case "installations.parse_header":
+                return new Dictionary<string, object?> { ["value"] = InstallationWire(Installation.ParseHeader(Str(a, "value"))) };
+            case "installations.from_request":
+                {
+                    var r = Map(a["request"]);
+                    var values = Map(r.TryGetValue("headers", out var ih) ? ih : null)
+                        .Where(kv => string.Equals(kv.Key, Installation.Header, StringComparison.OrdinalIgnoreCase))
+                        .Select(kv => kv.Value as string)
+                        .ToList();
+                    return new Dictionary<string, object?> { ["value"] = InstallationWire(values.Count == 1 ? Installation.ParseHeader(values[0]) : null) };
+                }
             case "click_ids.is_valid":
                 return new Dictionary<string, object?> { ["value"] = ClickIds.IsValid(a.TryGetValue("id", out var iv) ? iv : null) };
             case "click_ids.from_request":
@@ -405,14 +633,21 @@ internal static class Program
                     },
                 };
             case "identify_user":
-                return await client.IdentifyUserAsync(new IdentifyUserParams
                 {
-                    ClickId = Str(a, "click_id"),
-                    AppId = Str(a, "app_id"),
-                    InstallationId = Str(a, "installation_id"),
-                    CustomerId = Str(a, "customer_id"),
-                    Label = Str(a, "label"),
-                }, ro).ConfigureAwait(false);
+                    // the parsed form {app_id, installation_id} becomes the language's Installation, as the framework helpers give it
+                    var parsed = a.TryGetValue("installation", out var inst) && inst is Dictionary<string, object?> pi
+                        ? Installation.ParseHeader($"{Str(pi, "app_id")}:{Str(pi, "installation_id")}")
+                        : null;
+                    var identify = parsed is null
+                        ? new IdentifyUserParams { Installation = Str(a, "installation") }
+                        : IdentifyUserParams.For(parsed);
+                    identify.ClickId = Str(a, "click_id");
+                    identify.AppId = Str(a, "app_id") ?? identify.AppId;
+                    identify.InstallationId = Str(a, "installation_id") ?? identify.InstallationId;
+                    identify.CustomerId = Str(a, "customer_id");
+                    identify.Label = Str(a, "label");
+                    return await client.IdentifyUserAsync(identify, ro).ConfigureAwait(false);
+                }
             case "payments.confirm":
                 return await client.Payments.ConfirmAsync(ConfirmParams(a), ro).ConfigureAwait(false);
             case "payments.from":
@@ -454,7 +689,7 @@ internal static class Program
                     };
                 }
             default:
-                throw new InvalidOperationException("runner: unknown call " + call);
+                return await TypedStepAsync(client, call, a, p, ro).ConfigureAwait(false);
         }
     }
 

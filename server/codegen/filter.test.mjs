@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { declaresAudiences, filterSpec, neverPublishedOperations } from './filter.mjs';
+import { declaresAudiences, downconvert, filterSpec, neverPublishedOperations } from './filter.mjs';
 import { backendSpec, vendoredSpec } from './source.mjs';
 import { applyChange22 } from './removed.mjs';
 
@@ -144,4 +144,9 @@ test('app-event routes are removed and GoalStatus gains received, idempotently',
   const again = applyChange22(spec);
   assert.deepEqual(again.notes, []);
   assert.deepEqual(Object.keys(again.spec.paths), Object.keys(spec.paths));
+});
+
+test('a 3.1 `type: null` field (always null) becomes a nullable any-type in 3.0', () => {
+  assert.deepEqual(downconvert({ type: 'null', title: 'Previous Attributes' }), { title: 'Previous Attributes', nullable: true });
+  assert.deepEqual(downconvert({ properties: { p: { type: 'null' } } }), { properties: { p: { nullable: true } } });
 });

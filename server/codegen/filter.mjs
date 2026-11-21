@@ -88,6 +88,11 @@ export function downconvert(schema) {
     s.maximum = s.exclusiveMaximum;
     s.exclusiveMaximum = true;
   }
+  if (s.type === 'null') {
+    // A field that is always null (3.1 `type: null`): 3.0 has no null type, so it becomes a nullable any-type
+    const { type, ...rest } = s;
+    s = { ...rest, nullable: true };
+  }
   if (Array.isArray(s.type)) {
     const types = s.type.filter((t) => t !== 'null');
     if (types.length !== s.type.length) s.nullable = true;

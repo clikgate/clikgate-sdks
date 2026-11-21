@@ -85,7 +85,8 @@ def _resolve_secret(
             param="app_id",
         )
     message = (
-        f"No identity secret: set {IDENTITY_SECRET_ENV} on your server (Apps > your app > Identity secret)."
+        f"No identity secret: set {IDENTITY_SECRET_ENV} on your server"
+        " (Developers \u203a SDKs \u203a your app \u203a Set up identity \u203a Identity secret)."
         if app_id is None
         else f"No identity secret for this app: add it to {IDENTITY_SECRETS_ENV} or set {IDENTITY_SECRET_ENV}."
     )

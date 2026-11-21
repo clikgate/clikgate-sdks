@@ -1,6 +1,7 @@
 """Flask add-on: ``Clikgate(app)`` (SPEC section 17).
 
-It sets ``g.clikgate_click_id`` before each request, keeps a click ID that arrives in the query string in
+It sets ``g.clikgate_click_id`` and ``g.clikgate_installation`` (the app's ``Clikgate-Installation`` header, or
+``None`` when it is missing or invalid) before each request, keeps a click ID that arrives in the query string in
 the first-party ``_cg_<param>`` cookie, and exposes the client as ``app.extensions["clikgate"].client``.
 
 Example::
@@ -35,6 +36,7 @@ from ._addon import capture, helpers_for, warm_config
 from ._click_ids import ClickIds, KeepRoute, click_ids
 from ._client import Clikgate as _Client
 from ._errors import ConfigurationError
+from ._installation import installation_from_request
 
 __all__ = ["Clikgate", "keep_view"]
 
@@ -89,6 +91,7 @@ class Clikgate:
         def _clikgate_before() -> None:
             click_id, from_query = capture(self._helpers(), request)
             g.clikgate_click_id = click_id
+            g.clikgate_installation = installation_from_request(request)
             g._clikgate_from_query = from_query
 
         @app.after_request
