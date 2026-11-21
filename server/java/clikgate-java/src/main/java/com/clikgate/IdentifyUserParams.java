@@ -67,12 +67,14 @@ public final class IdentifyUserParams {
       return this;
     }
 
-    /** An app installation parsed with {@link Installation#parseHeader(String)} (null is ignored). */
+    /**
+     * The parsed installation the framework helpers give ({@link Installation#parseHeader(String)}, the servlet
+     * filter or the Spring Boot starter). It works like the raw header: it fills {@code appId} and
+     * {@code installationId}, an explicit {@link #installationId(String)} or {@link #appId(String)} wins, and null is
+     * ignored.
+     */
     public Builder installation(@Nullable Installation installation) {
-      if (installation != null) {
-        this.appId = installation.getAppId();
-        this.installationId = installation.getInstallationId();
-      }
+      this.installation = installation == null ? null : installation.getAppId() + ":" + installation.getInstallationId();
       return this;
     }
 

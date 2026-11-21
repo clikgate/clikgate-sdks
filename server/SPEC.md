@@ -980,7 +980,8 @@ An SDK released today MUST keep working against a newer API:
   `installation_id` joined with `:` and parsed). When valid and `installation_id` isn't given, it fills
   `installation_id`, and `app_id` unless `app_id` is given. A missing or invalid value (either form) is ignored: never
   an error, never sent, never logged. The raw value never reaches the wire. Conformance
-  `people.identify.parsed_installation` passes the parsed form as `{app_id, installation_id}` (Node, Python, PHP).
+  `people.identify.parsed_installation` passes the parsed form as `{app_id, installation_id}` (all five SDKs; Java
+  and .NET runners build their `Installation` from it).
 - **Local checks** (before any request, after `installation` is applied): `app_id` without `installation_id`
   (`invalid_request`, param `installation_id`); at least one of `click_id`, the installation, `customer_id`
   (`invalid_request`, param `click_id`). `installation_id` without `app_id` is sent as is: the API finds the app.

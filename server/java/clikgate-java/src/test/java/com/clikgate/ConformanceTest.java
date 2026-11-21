@@ -489,16 +489,24 @@ class ConformanceTest {
       case "money.format":
         return Collections.singletonMap("value", moneyFormat(a.get("value")));
       case "identify_user":
-        return client.identifyUser(
-            IdentifyUserParams.builder()
-                .clickId((String) a.get("click_id"))
-                .installation((String) a.get("installation"))
-                .appId((String) a.get("app_id"))
-                .installationId((String) a.get("installation_id"))
-                .customerId((String) a.get("customer_id"))
-                .label((String) a.get("label"))
-                .build(),
-            ro);
+        {
+          IdentifyUserParams.Builder b = IdentifyUserParams.builder().clickId((String) a.get("click_id"));
+          Object inst = a.get("installation");
+          if (inst instanceof Map) {
+            // the parsed form {app_id, installation_id}: the language's Installation, as the framework helpers give it
+            Map<?, ?> m = (Map<?, ?>) inst;
+            b.installation(Installation.parseHeader(m.get("app_id") + ":" + m.get("installation_id")));
+          } else {
+            b.installation((String) inst);
+          }
+          return client.identifyUser(
+              b.appId((String) a.get("app_id"))
+                  .installationId((String) a.get("installation_id"))
+                  .customerId((String) a.get("customer_id"))
+                  .label((String) a.get("label"))
+                  .build(),
+              ro);
+        }
       case "payments.confirm":
         return client.payments().confirm(payment(a), ro);
       case "payments.from":

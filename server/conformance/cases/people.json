@@ -361,12 +361,7 @@
     },
     {
       "id": "people.identify.parsed_installation",
-      "description": "The parsed installation the framework helpers return ({app_id, installation_id} here, the language's Installation in the runner) works like the header; one that fails the same strict check is ignored. Java and .NET take their typed Installation (unit tests)",
-      "languages": [
-        "node",
-        "python",
-        "php"
-      ],
+      "description": "The parsed installation the framework helpers return ({app_id, installation_id} here, the language's Installation in the runner) works like the header; one that fails the same strict check is ignored",
       "responses": [
         {
           "status": 200,

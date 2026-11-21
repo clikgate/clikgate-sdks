@@ -633,15 +633,21 @@ internal static class Program
                     },
                 };
             case "identify_user":
-                return await client.IdentifyUserAsync(new IdentifyUserParams
                 {
-                    ClickId = Str(a, "click_id"),
-                    Installation = Str(a, "installation"),
-                    AppId = Str(a, "app_id"),
-                    InstallationId = Str(a, "installation_id"),
-                    CustomerId = Str(a, "customer_id"),
-                    Label = Str(a, "label"),
-                }, ro).ConfigureAwait(false);
+                    // the parsed form {app_id, installation_id} becomes the language's Installation, as the framework helpers give it
+                    var parsed = a.TryGetValue("installation", out var inst) && inst is Dictionary<string, object?> pi
+                        ? Installation.ParseHeader($"{Str(pi, "app_id")}:{Str(pi, "installation_id")}")
+                        : null;
+                    var identify = parsed is null
+                        ? new IdentifyUserParams { Installation = Str(a, "installation") }
+                        : IdentifyUserParams.For(parsed);
+                    identify.ClickId = Str(a, "click_id");
+                    identify.AppId = Str(a, "app_id") ?? identify.AppId;
+                    identify.InstallationId = Str(a, "installation_id") ?? identify.InstallationId;
+                    identify.CustomerId = Str(a, "customer_id");
+                    identify.Label = Str(a, "label");
+                    return await client.IdentifyUserAsync(identify, ro).ConfigureAwait(false);
+                }
             case "payments.confirm":
                 return await client.Payments.ConfirmAsync(ConfirmParams(a), ro).ConfigureAwait(false);
             case "payments.from":

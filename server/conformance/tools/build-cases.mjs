@@ -2515,8 +2515,7 @@ add('people', 'identifyUser() and goal labels (SPEC 24)', [
   },
   {
     id: 'people.identify.parsed_installation',
-    description: 'The parsed installation the framework helpers return ({app_id, installation_id} here, the language\'s Installation in the runner) works like the header; one that fails the same strict check is ignored. Java and .NET take their typed Installation (unit tests)',
-    languages: ['node', 'python', 'php'],
+    description: 'The parsed installation the framework helpers return ({app_id, installation_id} here, the language\'s Installation in the runner) works like the header; one that fails the same strict check is ignored',
     responses: [identified(), identified()],
     steps: [
       { call: 'identify_user', args: { installation: { app_id: APP_ID, installation_id: INSTALLATION_ID }, customer_id: 'user_42' }, expect: { result: { object: 'person_identified' } } },
