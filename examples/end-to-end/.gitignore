@@ -1,0 +1,14 @@
+# Build output and local files of the samples
+.env
+**/target/
+**/node_modules/
+**/dist/
+**/.venv/
+**/.pytest_cache/
+**/vendor/
+**/composer.lock
+**/.phpunit.cache/
+**/bin/
+**/obj/
+**/TestResults/
+**/.phpunit.result.cache

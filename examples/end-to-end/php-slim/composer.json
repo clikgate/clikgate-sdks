@@ -1,0 +1,47 @@
+{
+    "name": "clikgate/end-to-end-php-slim",
+    "description": "End-to-end sample backend for a mobile app: Slim 4 (PSR-15) and the Clikgate PHP SDK.",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.1",
+        "clikgate/clikgate-php": "^2.0.3",
+        "psr/http-server-middleware": "^1.0",
+        "slim/psr7": "^1.7",
+        "slim/slim": "^4.14"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5 || ^11.5"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../../server/php",
+            "options": {
+                "symlink": true,
+                "versions": {
+                    "clikgate/clikgate-php": "2.0.3"
+                }
+            }
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": false
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
+}
