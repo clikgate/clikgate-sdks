@@ -274,6 +274,12 @@ public sealed record Referral : WireRecord
     /// <summary><see cref="ReasonDetail"/> in words, else null.</summary>
     public string? ReasonMessage => Str("reason_message");
 
+    /// <summary>Fraud signals on this referral; empty when none.</summary>
+    public IReadOnlyList<string> FraudFlags => Strings("fraud_flags");
+
+    /// <summary>The referral's status changes, oldest first, when the API includes them; empty otherwise.</summary>
+    public IReadOnlyList<ReferralStateChange> History => Objects("history", o => new ReferralStateChange(o));
+
     /// <summary>True when the referee uninstalled the app after the referral qualified (it stays qualified).</summary>
     public bool RefereeUninstalledAfterQualification => Bool("referee_uninstalled_after_qualification") ?? false;
 
@@ -303,6 +309,31 @@ public sealed record Referral : WireRecord
 
     /// <summary>True in live mode.</summary>
     public bool? Livemode => Bool("livemode");
+}
+
+/// <summary>One status change of a referral.</summary>
+public sealed record ReferralStateChange : WireRecord
+{
+    /// <summary>Wraps the object.</summary>
+    public ReferralStateChange(JsonObject? raw)
+        : base(raw)
+    {
+    }
+
+    /// <summary>The earlier status; null for the first.</summary>
+    public string? FromStatus => Str("from_status");
+
+    /// <summary>The new status.</summary>
+    public string? ToStatus => Str("to_status");
+
+    /// <summary>Why, or null.</summary>
+    public string? Reason => Str("reason");
+
+    /// <summary>Who made the change: <c>system</c>, <c>api_key</c>, <c>user</c>, …</summary>
+    public string? Actor => Str("actor");
+
+    /// <summary>When.</summary>
+    public DateTimeOffset? CreatedAt => Time("created_at");
 }
 
 /// <summary>A referral's program.</summary>
@@ -495,6 +526,18 @@ public sealed record JobResult : WireRecord
     /// <summary>Exports: the rows in the file.</summary>
     public long? Rows => Long("rows");
 
+    /// <summary>QR placement downloads: the images in the ZIP.</summary>
+    public long? Files => Long("files");
+
+    /// <summary>Report exports: the report run exported.</summary>
+    public string? RunId => Str("run_id");
+
+    /// <summary>Test data resets: the kind of data deleted.</summary>
+    public string? Table => Str("table");
+
+    /// <summary>Test data resets: how many rows were deleted.</summary>
+    public long? Deleted => Long("deleted");
+
     /// <summary>Why the item or job failed, or null.</summary>
     public JobResultError? Error => Object("error", o => new JobResultError(o));
 }
@@ -519,6 +562,12 @@ public sealed record JobResultError : WireRecord
 
     /// <summary>The field of the item that was refused, or null.</summary>
     public string? Param => Str("param");
+
+    /// <summary>QR placement downloads: the placement left out, or null.</summary>
+    public long? Number => Long("number");
+
+    /// <summary>QR placement downloads: why it was left out; empty otherwise.</summary>
+    public IReadOnlyList<string> Reasons => Strings("reasons");
 }
 
 /// <summary>One page of a list: <c>data</c>, <c>has_more</c>, <c>next_cursor</c>.</summary>
@@ -605,6 +654,12 @@ public sealed record PrivacyExportResult : WireRecord
 
     /// <summary>When the link stops working (Unix seconds).</summary>
     public long? ExpiresAt => Long("expires_at");
+
+    /// <summary>Installs included.</summary>
+    public long Installs => Long("installs") ?? 0;
+
+    /// <summary>Goal events included.</summary>
+    public long GoalNameEvents => Long("goal_name_events") ?? 0;
 }
 
 /// <summary>A person: everything Clikgate knows belongs to one customer (<c>/v1/people</c>).</summary>
@@ -955,4 +1010,66 @@ public sealed record PaymentReport : WireRecord
 
     /// <summary>True in live mode.</summary>
     public bool? Livemode => Bool("livemode");
+}
+
+/// <summary>A customer moving to another phone, or adding one (the <c>person.device_changed</c> webhook, <see cref="WebhookEvent.AsDeviceChange"/>). Coarse device models only.</summary>
+public sealed record DeviceChange : WireRecord
+{
+    /// <summary>Wraps the object.</summary>
+    public DeviceChange(JsonObject? raw)
+        : base(raw)
+    {
+    }
+
+    /// <summary><c>&lt;device_change_id&gt;:&lt;kind&gt;</c>.</summary>
+    public string? Id => Str("id");
+
+    /// <summary>The device change.</summary>
+    public string? DeviceChangeId => Str("device_change_id");
+
+    /// <summary>The person (<c>per_…</c>).</summary>
+    public string? PersonId => Str("person_id");
+
+    /// <summary>Your user ID for the customer, or null.</summary>
+    public string? CustomerId => Str("customer_id");
+
+    /// <summary>The app.</summary>
+    public string? AppId => Str("app_id");
+
+    /// <summary><c>switch</c> (moved to another phone) or <c>second_device</c> (added one).</summary>
+    public string? Kind => Str("kind");
+
+    /// <summary>The earlier phone.</summary>
+    public DeviceChangeSide? From => Object("from", o => new DeviceChangeSide(o));
+
+    /// <summary>The new phone.</summary>
+    public DeviceChangeSide? To => Object("to", o => new DeviceChangeSide(o));
+
+    /// <summary>When the earlier phone was last seen, or null.</summary>
+    public DateTimeOffset? FromLastSeenAt => Time("from_last_seen_at");
+
+    /// <summary>When the new phone first opened the app.</summary>
+    public DateTimeOffset? ToFirstOpenAt => Time("to_first_open_at");
+
+    /// <summary>Days between the two, for a switch; null for a second device.</summary>
+    public int? GapDays => Long("gap_days") is long l ? (int)l : null;
+
+    /// <summary>True in live mode.</summary>
+    public bool? Livemode => Bool("livemode");
+}
+
+/// <summary>One phone of a <see cref="DeviceChange"/>.</summary>
+public sealed record DeviceChangeSide : WireRecord
+{
+    /// <summary>Wraps the object.</summary>
+    public DeviceChangeSide(JsonObject? raw)
+        : base(raw)
+    {
+    }
+
+    /// <summary><c>ios</c> or <c>android</c>.</summary>
+    public string? Platform => Str("platform");
+
+    /// <summary>The device model, or null.</summary>
+    public string? DeviceModel => Str("device_model");
 }

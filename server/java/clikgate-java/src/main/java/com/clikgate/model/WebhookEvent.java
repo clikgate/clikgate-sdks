@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * A webhook event: {@code id}, {@code type} (an {@link EventType} constant), {@code data}, ... Read {@code data.object}
  * typed with {@link #asReferral()}, {@link #asReferrer()}, {@link #asGoalEvent()}, {@link #asInstall()},
- * {@link #asPayment()} or {@link #asConversion()}. Each one throws {@link IllegalStateException} when the event's
+ * {@link #asPayment()}, {@link #asConversion()} or {@link #asDeviceChange()}. Each one throws {@link IllegalStateException} when the event's
  * type belongs to another family (or {@code data.object} isn't an object), so check {@link #getType()} first.
  *
  * <pre>{@code
@@ -107,6 +107,18 @@ public final class WebhookEvent extends WireObject {
    */
   public Conversion asConversion() {
     return typed("conversion.", "asConversion", Conversion::new);
+  }
+
+  /**
+   * The device change of a {@code person.device_changed} event.
+   *
+   * @throws IllegalStateException when this isn't a {@code person.device_changed} event
+   */
+  public DeviceChange asDeviceChange() {
+    if (!EventType.PERSON_DEVICE_CHANGED.equals(getType())) {
+      throw new IllegalStateException("asDeviceChange() needs a person.device_changed event, not " + getType());
+    }
+    return typed("person.device_changed", "asDeviceChange", DeviceChange::new);
   }
 
   private <T> T typed(String prefix, String method, Function<Map<String, ?>, T> make) {

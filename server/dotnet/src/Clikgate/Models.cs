@@ -94,6 +94,27 @@ public sealed class GoalEvent(JsonObject? raw) : WireObject(raw)
     /// <summary><c>link_id</c>, <c>campaign_id</c>, <c>clicked_at</c>, or null when unattributed.</summary>
     public JsonObject? AttributedTo => Raw["attributed_to"] as JsonObject;
 
+    /// <summary>True in live mode.</summary>
+    public bool? Livemode => Bool("livemode");
+
+    /// <summary>When the event happened.</summary>
+    public string? OccurredAt => String("occurred_at");
+
+    /// <summary>Goal webhooks: the alias the event arrived as; null when sent as the goal's key.</summary>
+    public string? ReceivedAs => String("received_as");
+
+    /// <summary>Goal webhooks: true when this event made a new customer, else false or null.</summary>
+    public bool? IsFirstCustomer => Bool("is_first_customer");
+
+    /// <summary>Goal webhooks: when the attributed click happened, or null.</summary>
+    public string? ClickedAt => String("clicked_at");
+
+    /// <summary><c>goal.completed</c>: the event's person (<c>person.id</c>), or null.</summary>
+    public string? PersonId => Raw["person"] is JsonObject p ? Json.Str(p["id"]) : null;
+
+    /// <summary><c>goal.completed</c>: true for an event counted from the last 30 days when the goal was set up.</summary>
+    public bool Backfilled => Bool("backfilled") ?? false;
+
     /// <summary>The link the event is attributed to: <c>link.id</c> in goal webhooks, <c>attributed_to.link_id</c> in API answers; null when unattributed.</summary>
     public string? LinkId => (Raw["link"] as JsonObject)?["id"] is JsonNode n ? Json.Str(n) : Json.Str(AttributedTo?["link_id"]);
 
@@ -383,7 +404,7 @@ public sealed class ServerSdkConfig(JsonObject? raw) : WireObject(raw)
 
 /// <summary>
 /// A webhook event. Read <c>data.object</c> typed with <see cref="AsReferral"/>, <see cref="AsReferrer"/>,
-/// <see cref="AsGoalEvent"/>, <see cref="AsInstall"/>, <see cref="AsPayment"/> or <see cref="AsConversion"/>: each returns
+/// <see cref="AsGoalEvent"/>, <see cref="AsInstall"/>, <see cref="AsPayment"/>, <see cref="AsConversion"/> or <see cref="AsDeviceChange"/>: each returns
 /// null when the event's type belongs to another family (or <c>data.object</c> isn't an object), like the <c>as</c> operator.
 /// </summary>
 /// <example><code>
@@ -430,6 +451,9 @@ public sealed class WebhookEvent(JsonObject? raw) : WireObject(raw)
 
     /// <summary>The conversion of a <c>conversion.*</c> event; null for another type.</summary>
     public Conversion? AsConversion() => Typed("conversion.", o => new Conversion(o));
+
+    /// <summary>The device change of a <c>person.device_changed</c> event; null for another type.</summary>
+    public DeviceChange? AsDeviceChange() => Type == EventType.PERSON_DEVICE_CHANGED ? Typed("person.device_changed", o => new DeviceChange(o)) : null;
 
     private T? Typed<T>(string prefix, Func<JsonObject, T> make)
         where T : class =>

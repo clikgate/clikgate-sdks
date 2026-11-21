@@ -149,6 +149,33 @@ public final class GoalEvent extends WireObject {
     return v instanceof String ? (String) v : null;
   }
 
+  /** Goal webhooks: the alias the event arrived as; null when sent as the goal's key. */
+  public @Nullable String getReceivedAs() {
+    return string("received_as");
+  }
+
+  /** Goal webhooks: true when this event made a new customer, else false or null. */
+  public @Nullable Boolean getIsFirstCustomer() {
+    return bool("is_first_customer");
+  }
+
+  /** Goal webhooks: when the attributed click happened, or null. */
+  public @Nullable String getClickedAt() {
+    return string("clicked_at");
+  }
+
+  /** {@code goal.completed}: the event's person ({@code person.id}), or null. */
+  public @Nullable String getPersonId() {
+    Map<String, @Nullable Object> p = map("person");
+    Object id = p == null ? null : p.get("id");
+    return id instanceof String ? (String) id : null;
+  }
+
+  /** {@code goal.completed}: true for an event counted from the last 30 days when the goal was set up. */
+  public boolean isBackfilled() {
+    return Boolean.TRUE.equals(bool("backfilled"));
+  }
+
   public @Nullable String getOccurredAt() {
     return string("occurred_at");
   }

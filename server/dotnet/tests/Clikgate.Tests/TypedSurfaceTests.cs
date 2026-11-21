@@ -203,6 +203,12 @@ public class TypedSurfaceTests
         Assert.Equal("ref_1", ev.AsReferral()!.Id);
         Assert.Null(ev.AsReferrer());
         Assert.Null(ev.AsPayment());
+        Assert.Null(ev.AsDeviceChange());
+        var dc = new WebhookEvent(JsonNode.Parse("{\"id\":\"evt_2\",\"type\":\"person.device_changed\",\"data\":{\"object\":{\"object\":\"device_change\","
+            + "\"device_change_id\":\"dvc_1\",\"person_id\":\"per_1\",\"kind\":\"switch\",\"from\":{\"platform\":\"android\",\"device_model\":null},"
+            + "\"to\":{\"platform\":\"ios\",\"device_model\":\"iPhone\"},\"gap_days\":3}}}") as JsonObject).AsDeviceChange();
+        Assert.Equal("ios", dc!.To!.Platform);
+        Assert.Equal(3, dc.GapDays);
         Assert.Contains("payment.verified", EventType.All);
         var hit = ev.Type switch
         {

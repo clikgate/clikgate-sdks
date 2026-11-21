@@ -84,6 +84,16 @@ public final class Referral extends WireObject {
     return string("reason_message");
   }
 
+  /** Fraud signals on this referral; empty when none. */
+  public List<String> getFraudFlags() {
+    return strings("fraud_flags");
+  }
+
+  /** The referral's status changes, oldest first, when the API includes them; empty otherwise. */
+  public List<StateChange> getHistory() {
+    return objects("history", StateChange::new);
+  }
+
   /** True when the referee uninstalled the app after the referral qualified (it stays qualified). */
   public boolean isRefereeUninstalledAfterQualification() {
     return Boolean.TRUE.equals(bool("referee_uninstalled_after_qualification"));
@@ -184,6 +194,35 @@ public final class Referral extends WireObject {
     /** Your user ID for the referee (wire {@code customer_user_id}), once known. */
     public @Nullable String getCustomerId() {
       return string("customer_user_id");
+    }
+  }
+
+  /** One status change of a referral. */
+  public static final class StateChange extends WireObject {
+    public StateChange(@Nullable Map<String, ?> fields) {
+      super(fields);
+    }
+
+    /** The earlier status; null for the first. */
+    public @Nullable String getFromStatus() {
+      return string("from_status");
+    }
+
+    public @Nullable String getToStatus() {
+      return string("to_status");
+    }
+
+    public @Nullable String getReason() {
+      return string("reason");
+    }
+
+    /** Who made the change: {@code system}, {@code api_key}, {@code user}, ... */
+    public @Nullable String getActor() {
+      return string("actor");
+    }
+
+    public @Nullable Instant getCreatedAt() {
+      return instant("created_at");
     }
   }
 

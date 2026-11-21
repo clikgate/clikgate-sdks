@@ -241,6 +241,14 @@ class TypedSurfaceTest {
     IllegalStateException e = assertThrows(IllegalStateException.class, ev::asReferrer);
     assertTrue(e.getMessage().contains("referrer."));
     assertThrows(IllegalStateException.class, ev::asPayment);
+    assertThrows(IllegalStateException.class, ev::asDeviceChange);
+    @SuppressWarnings("unchecked")
+    Map<String, Object> dc = (Map<String, Object>) Json.parse("{\"id\":\"evt_2\",\"type\":\"person.device_changed\",\"data\":{\"object\":{\"object\":\"device_change\","
+        + "\"device_change_id\":\"dvc_1\",\"person_id\":\"per_1\",\"kind\":\"switch\",\"from\":{\"platform\":\"android\",\"device_model\":null},"
+        + "\"to\":{\"platform\":\"ios\",\"device_model\":\"iPhone\"},\"gap_days\":3}}}");
+    com.clikgate.model.DeviceChange change = new WebhookEvent(dc).asDeviceChange();
+    assertEquals("ios", change.getTo().getPlatform());
+    assertEquals(Integer.valueOf(3), change.getGapDays());
     assertTrue(EventType.ALL.contains("payment.verified"));
     String sw;
     switch (ev.getType()) {

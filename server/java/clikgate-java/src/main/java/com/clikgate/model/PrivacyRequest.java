@@ -89,5 +89,15 @@ public final class PrivacyRequest extends WireObject {
     public @Nullable Long getExpiresAt() {
       return longNumber("expires_at");
     }
+
+    /** Installs included. */
+    public long getInstalls() {
+      return longOrZero("installs");
+    }
+
+    /** Goal events included. */
+    public long getGoalNameEvents() {
+      return longOrZero("goal_name_events");
+    }
   }
 }

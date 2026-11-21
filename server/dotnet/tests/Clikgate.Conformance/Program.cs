@@ -351,6 +351,7 @@ internal static class Program
         "install" => ev.AsInstall(),
         "payment" => ev.AsPayment(),
         "conversion" => ev.AsConversion(),
+        "device_change" => ev.AsDeviceChange(),
         _ => throw new InvalidOperationException("runner: unknown accessor " + accessor),
     };
 

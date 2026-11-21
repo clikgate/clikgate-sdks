@@ -584,6 +584,8 @@ class ConformanceTest {
         return ev.asPayment();
       case "conversion":
         return ev.asConversion();
+      case "device_change":
+        return ev.asDeviceChange();
       default:
         throw new IllegalStateException("runner: unknown accessor " + as);
     }

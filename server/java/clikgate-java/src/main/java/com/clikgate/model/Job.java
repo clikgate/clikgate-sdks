@@ -96,6 +96,26 @@ public final class Job extends WireObject {
       return longNumber("rows");
     }
 
+    /** QR placement downloads: the images in the ZIP. */
+    public @Nullable Long getFiles() {
+      return longNumber("files");
+    }
+
+    /** Report exports: the report run exported. */
+    public @Nullable String getRunId() {
+      return string("run_id");
+    }
+
+    /** Test data resets: the kind of data deleted. */
+    public @Nullable String getTable() {
+      return string("table");
+    }
+
+    /** Test data resets: how many rows were deleted. */
+    public @Nullable Long getDeleted() {
+      return longNumber("deleted");
+    }
+
     /** Why the item or job failed, or null. */
     public @Nullable ResultError getError() {
       return object("error", ResultError::new);
@@ -124,6 +144,16 @@ public final class Job extends WireObject {
     /** The field of the item that was refused, or null. */
     public @Nullable String getParam() {
       return string("param");
+    }
+
+    /** QR placement downloads: the placement left out, or null. */
+    public @Nullable Long getNumber() {
+      return longNumber("number");
+    }
+
+    /** QR placement downloads: why it was left out; empty otherwise. */
+    public List<String> getReasons() {
+      return strings("reasons");
     }
   }
 }
