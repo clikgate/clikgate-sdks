@@ -80,7 +80,7 @@ app.use(express.json(), clikgateMiddleware(clikgate));
 app.post('/login', async (req, res) => {
   const user = await signIn(req.body);                // your own sign-in check first
   // Path B: the app's Clikgate-Installation header; the customer ID is always your signed-in user
-  if (req.clikgate.installation) await clikgate.identifyUser({ ...req.clikgate.installation, customerId: user.id });
+  if (req.clikgate.installation) await clikgate.identifyUser({ installation: req.clikgate.installation, customerId: user.id });
   // Path A: an identity token the app passes to the mobile SDK
   const referrer = await clikgate.referrals.getOrCreateReferrer(PROGRAM_ID, { customerId: user.id, displayName: user.firstName });
   res.json({ user, clikgateIdentityToken: createIdentityToken(user.id), referralCode: referrer.code, referralUrl: referrer.url });
@@ -125,7 +125,7 @@ app.use(clikgateMiddleware(clikgate));                // also reads the Clikgate
 app.post('/login', async (req, res) => {
   const user = await signIn(req.body);                // your own sign-in check first
   if (req.clikgate.installation) {
-    await clikgate.identifyUser({ ...req.clikgate.installation, customerId: user.id });
+    await clikgate.identifyUser({ installation: req.clikgate.installation, customerId: user.id });   // the parsed installation
   }
 });
 
@@ -175,7 +175,7 @@ clikgate.goal('account_opened', { clickId: application.clickId, reference: appli
 - **Fastify:** `await app.register(clikgatePlugin, { client: clikgate })` from `@clikgate/node/fastify`, then read `request.clikgate.clickId`.
 - **Next.js 16+:** in `proxy.ts`, `export { clikgateProxy as proxy } from '@clikgate/node/next'`. Then read it with `getClickId(await cookies())`.
 - **Without a framework:** `clikgate.clickIds.fromRequest(req)` and `clikgate.clickIds.persist(res, clickId)`.
-- **The app's installation** (`Clikgate-Installation` header, for `identifyUser`): Express `req.clikgate.installation`, Fastify `request.clikgate.installation`, Next.js `getInstallation(await headers())` from `@clikgate/node/next`, and without a framework `installationFromRequest(req)` or `parseInstallationHeader(value)`. Each is `{ appId, installationId }` or `null`.
+- **The app's installation** (`Clikgate-Installation` header, for `identifyUser`): Express `req.clikgate.installation`, Fastify `request.clikgate.installation`, Next.js `getInstallation(await headers())` from `@clikgate/node/next`, and without a framework `installationFromRequest(req)` or `parseInstallationHeader(value)`. Each is `{ appId, installationId }` or `null`, and can be passed to `identifyUser` as `installation`, like the raw header.
 - **From payment payloads** (Paystack, Flutterwave, Shopify, WooCommerce): `clikgate.clickIds.fromPaymentMetadata(payload)`.
 
 ## Keep the click ID longer (Safari)

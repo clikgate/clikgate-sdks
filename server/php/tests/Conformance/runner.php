@@ -444,7 +444,7 @@ function runCase(string $base, array $c): array
                 })(),
                 'identify_user' => $client->identifyUser(array_filter([
                     'clickId' => $a['click_id'] ?? null,
-                    'installation' => $a['installation'] ?? null,
+                    'installation' => is_array($a['installation'] ?? null) ? new \Clikgate\Installation((string) ($a['installation']['app_id'] ?? ''), (string) ($a['installation']['installation_id'] ?? '')) : ($a['installation'] ?? null),
                     'appId' => $a['app_id'] ?? null,
                     'installationId' => $a['installation_id'] ?? null,
                     'customerId' => $a['customer_id'] ?? null,

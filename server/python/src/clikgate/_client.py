@@ -28,7 +28,7 @@ from ._guard import guard_payload
 from ._http import ApiRequest, AsyncRequester, Clock, Requester, RequestOptions, Settings
 from ._identity import CustomerSince
 from ._identity import _create as _create_identity_token
-from ._installation import parse_installation_header
+from ._installation import Installation, to_installation
 from ._known_customers import AsyncKnownCustomers, KnownCustomers
 from ._lookups import AsyncCodes, AsyncInstalls, AsyncPeople, AsyncPrivacy, Codes, Installs, People, Privacy
 from ._money import MoneyInput
@@ -286,11 +286,11 @@ def _identify_body(
     label: Optional[str],
     customer_since: Union[str, date, datetime, int, None] = None,
     customer_since_replace: Optional[bool] = None,
-    installation: Optional[str] = None,
+    installation: Union[str, Installation, None] = None,
 ) -> Dict[str, Any]:
     if installation_id is None and installation is not None:
-        # The raw Clikgate-Installation header: ignored (never sent) when missing or invalid
-        from_header = parse_installation_header(installation)
+        # The raw Clikgate-Installation header or a parsed Installation: ignored (never sent) when missing or invalid
+        from_header = to_installation(installation)
         if from_header is not None:
             app_id = app_id if app_id is not None else from_header.app_id
             installation_id = from_header.installation_id
@@ -553,7 +553,7 @@ class Clikgate:
         self,
         *,
         click_id: Optional[str] = None,
-        installation: Optional[str] = None,
+        installation: Union[str, Installation, None] = None,
         app_id: Optional[str] = None,
         installation_id: Optional[str] = None,
         customer_id: Optional[str] = None,
@@ -574,7 +574,9 @@ class Clikgate:
 
         Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app sends the
         ``Clikgate-Installation`` header (from the mobile SDK) to your server. After your own sign-in check succeeds,
-        and at every signed-in app open, pass the header as ``installation`` with your signed-in user's ID as
+        and at every signed-in app open, pass the header (or the parsed ``Installation`` from the framework helpers:
+        ``request.clikgate_installation``, ``g.clikgate_installation``, ``Depends(installation)``) as ``installation`` with
+        your signed-in user's ID as
         ``customer_id`` (never a customer ID read from the request). A missing or invalid header is ignored: skip the
         call. ``installation_id`` given explicitly wins over the header. ``app_id`` is optional: Clikgate finds the
         app; if the installation ID is in several of your apps, the API answers ``409 installation_in_several_apps``
@@ -587,6 +589,8 @@ class Clikgate:
             # after your sign-in check: the header from the app, your user's ID
             header = request.headers.get("Clikgate-Installation")
             clikgate.identify_user(installation=header, customer_id=str(user.id))
+            # or the parsed installation from the Django middleware
+            clikgate.identify_user(installation=request.clikgate_installation, customer_id=str(user.id))
         """
         body = _identify_body(click_id, app_id, installation_id, customer_id, label, customer_since, customer_since_replace, installation)
         if self._core.guard_state().guard:
@@ -857,7 +861,7 @@ class AsyncClikgate:
         self,
         *,
         click_id: Optional[str] = None,
-        installation: Optional[str] = None,
+        installation: Union[str, Installation, None] = None,
         app_id: Optional[str] = None,
         installation_id: Optional[str] = None,
         customer_id: Optional[str] = None,
@@ -878,7 +882,9 @@ class AsyncClikgate:
 
         Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app sends the
         ``Clikgate-Installation`` header (from the mobile SDK) to your server. After your own sign-in check succeeds,
-        and at every signed-in app open, pass the header as ``installation`` with your signed-in user's ID as
+        and at every signed-in app open, pass the header (or the parsed ``Installation`` from the framework helpers:
+        ``request.clikgate_installation``, ``g.clikgate_installation``, ``Depends(installation)``) as ``installation`` with
+        your signed-in user's ID as
         ``customer_id`` (never a customer ID read from the request). A missing or invalid header is ignored: skip the
         call. ``installation_id`` given explicitly wins over the header. ``app_id`` is optional: Clikgate finds the
         app; if the installation ID is in several of your apps, the API answers ``409 installation_in_several_apps``

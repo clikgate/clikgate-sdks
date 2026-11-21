@@ -32,8 +32,10 @@ Route::post('/login', function (Request $request) {
     }
     $user = Auth::user();
     $customerId = (string) $user->id;
-    // Path B: the app's Clikgate-Installation header, no secret (a missing or invalid header is ignored)
-    Clikgate::identifyUser(['installation' => $request->header('Clikgate-Installation'), 'customerId' => $customerId]);
+    // Path B: the app's Clikgate-Installation header, no secret (null when missing or invalid: skip the call)
+    if (null !== $installation = $request->clikgateInstallation()) {
+        Clikgate::identifyUser(['installation' => $installation, 'customerId' => $customerId]);
+    }
     // Path A: an identity token the app passes to the mobile SDK; 4. and the user's referral code and link
     $referrer = Clikgate::referrals()->getOrCreateReferrer('rpg_01J…', ['customerId' => $customerId, 'displayName' => $user->name]);
 
@@ -71,7 +73,7 @@ Application::create(['reference' => 'APP-55231', 'click_id' => $request->clikgat
 
 - The middleware keeps a `?cgid=…` in the first-party `_cg_cgid` cookie, which the web script also reads.
 - The provider excludes that cookie from `EncryptCookies`, so the web script can read it.
-- `$request->clikgateInstallation()` reads the app's `Clikgate-Installation` header (for `identifyUser`): an `Installation` (`->appId`, `->installationId`) or `null` when it is missing or invalid. It works with or without the middleware.
+- `$request->clikgateInstallation()` reads the app's `Clikgate-Installation` header (for `identifyUser`): an `Installation` (`->appId`, `->installationId`) or `null` when it is missing or invalid. Pass it to `identifyUser` as `installation` as it is. It works with or without the middleware.
 
 ## Keep the click ID longer (Safari)
 
@@ -114,7 +116,7 @@ Clikgate::createIdentityToken((string) $user->id, ['appId' => 'app_…']);   // 
 ```php
 // After your own sign-in check (Auth::attempt), with the signed-in user's ID
 if (Auth::attempt($credentials) && ($installation = $request->clikgateInstallation()) !== null) {
-    Clikgate::identifyUser($installation->toArray() + ['customerId' => (string) Auth::id()]);
+    Clikgate::identifyUser(['installation' => $installation, 'customerId' => (string) Auth::id()]);
 }
 ```
 ## Customers from before Clikgate

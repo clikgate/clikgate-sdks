@@ -9,6 +9,7 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 Additive: nothing is removed or renamed, and nothing changes on the wire.
 
+- **Added:** `identifyUser({ installation })` also takes the parsed `Installation` the framework helpers return (`req.clikgate.installation`, `getInstallation(...)`), not only the raw header string, with the same strict check.
 - **Added:** `clikgate.referrals`: `getOrCreateReferrer(programId, { customerId, displayName?, externalCode? })` (`created` is true when the referrer is new), `getReferrer`, `findReferrer(programId, { customerId } | { code })` (`null` when there is none), `get`, `list` (auto-paging) and `listPage`, `qualify`, `disqualify`, `completeStep` (`occurredAt` is required), `importReferrers` (1000 rows per request, one job per request), `blockReferrer`, `unblockReferrer` and `updateReferrer`. Results are typed: `Referrer`, `Referral`, `RewardInfo`, `Job`.
 - **Added:** reward sides keep `amount_minor` and gain `amount`, the same value in normal units as a decimal string with the currency's digits (`50000` NGN is `"500.00"`). `minorToAmount()` and `currencyExponent()` are exported.
 - **Added:** `customerId` next to `customer_user_id` on referrers and on a referral's `referrer` and `referee`.

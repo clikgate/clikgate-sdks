@@ -114,6 +114,22 @@ def test_identify_user_with_the_header_and_without_app_id(caplog: pytest.LogCapt
     c.close(0.1)
 
 
+def test_identify_user_with_the_parsed_installation() -> None:
+    rec = Recorder(_ok)
+    c = _client(rec)
+    c.identify_user(installation=Installation(APP, INST), customer_id="user_42")
+    # the same strict check: an uppercase UUID is ignored, never sent
+    c.identify_user(installation=Installation(APP, INST.upper()), click_id="clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6")
+    assert rec.bodies() == [
+        {"app_id": APP, "installation_id": INST, "customer_id": "user_42"},
+        {"click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"},
+    ]
+    with pytest.raises(InvalidRequestError) as e:
+        c.identify_user(installation=Installation("app_bad", INST))
+    assert e.value.param == "click_id"
+    c.close(0.1)
+
+
 def test_several_apps_is_a_conflict() -> None:
     def several(_r: httpx.Request) -> httpx.Response:
         return httpx.Response(
@@ -142,10 +158,11 @@ def test_async_identify_user_with_the_header() -> None:
     async def run() -> None:
         c = AsyncClikgate(KEY, http_client=httpx.AsyncClient(transport=httpx.MockTransport(rec)), shutdown_hooks=False, private_mode=False)
         await c.identify_user(installation=HEADER, customer_id="user_42")
+        await c.identify_user(installation=Installation(APP, INST), customer_id="user_42")
         await c.close(0.1)
 
     asyncio.run(run())
-    assert rec.bodies() == [{"app_id": APP, "installation_id": INST, "customer_id": "user_42"}]
+    assert rec.bodies() == [{"app_id": APP, "installation_id": INST, "customer_id": "user_42"}] * 2
 
 
 def test_flask_sets_g_clikgate_installation() -> None:

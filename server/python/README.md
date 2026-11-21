@@ -132,8 +132,7 @@ create_identity_token(str(user.id), app_id="app_…")                           
 # Django (the middleware sets request.clikgate_installation: an Installation or None)
 user = authenticate(request, username=form["email"], password=form["password"])  # your own sign-in check first
 if user is not None and request.clikgate_installation:
-    inst = request.clikgate_installation
-    clikgate.identify_user(app_id=inst.app_id, installation_id=inst.installation_id, customer_id=str(user.id))
+    clikgate.identify_user(installation=request.clikgate_installation, customer_id=str(user.id))  # the parsed installation
 
 # Any framework: pass the raw header value (ignored when missing or invalid)
 clikgate.identify_user(installation=request.headers.get("Clikgate-Installation"), customer_id=str(user.id))
@@ -182,7 +181,7 @@ get_client().goal("account_opened", click_id=app.click_id, reference=app.referen
 ```
 
 - **Without a framework:** `clikgate.click_ids.from_request(request)` and `clikgate.click_ids.persist(response, click_id, request=request)`.
-- **The app's installation** (`Clikgate-Installation` header, for `identify_user`): Django `request.clikgate_installation`, Flask `g.clikgate_installation`, FastAPI / Starlette `Depends(installation)` from `clikgate.fastapi`, and without a framework `installation_from_request(request)` or `parse_installation_header(value)`. Each is an `Installation(app_id, installation_id)` or `None`.
+- **The app's installation** (`Clikgate-Installation` header, for `identify_user`): Django `request.clikgate_installation`, Flask `g.clikgate_installation`, FastAPI / Starlette `Depends(installation)` from `clikgate.fastapi`, and without a framework `installation_from_request(request)` or `parse_installation_header(value)`. Each is an `Installation(app_id, installation_id)` or `None`, and can be passed to `identify_user` as `installation`, like the raw header.
 - **From payment payloads** (Paystack, Flutterwave, Shopify, WooCommerce): `clikgate.click_ids.from_payment_metadata(payload)`.
 
 ## Keep the click ID longer (Safari)

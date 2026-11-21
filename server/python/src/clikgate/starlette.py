@@ -120,7 +120,7 @@ def installation(request: Request) -> Optional[Installation]:
         async def login(body: Login, inst: Optional[Installation] = Depends(installation)):
             user = await sign_in(body)                     # your own sign-in check first
             if inst:
-                await clikgate.identify_user(app_id=inst.app_id, installation_id=inst.installation_id, customer_id=user.id)
+                await clikgate.identify_user(installation=inst, customer_id=user.id)
     """
     return installation_from_request(request)
 

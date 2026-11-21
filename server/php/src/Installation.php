@@ -56,6 +56,23 @@ final class Installation
     }
 
     /**
+     * An installation from the raw header (a string) or an `Installation` (from `fromRequest()` or the framework
+     * add-ons), through the same strict check as `parseHeader()`; null for anything else. Never throws.
+     *
+     * ```php
+     * $installation = Installation::from($request->clikgateInstallation());   // or Installation::from($headerValue)
+     * ```
+     */
+    public static function from(mixed $value): ?self
+    {
+        if ($value instanceof self) {
+            return self::parseHeader($value->appId . ':' . $value->installationId);
+        }
+
+        return self::parseHeader($value);
+    }
+
+    /**
      * The installation from a request's `Clikgate-Installation` header, or `null` when it is missing, invalid or sent
      * more than once. Accepts a PSR-7 `ServerRequestInterface`, a Symfony/Laravel `Request`, `['headers' => […]]`, or
      * `null` for the current request (`$_SERVER`). Never throws.

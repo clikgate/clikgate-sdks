@@ -4,7 +4,7 @@ import { Core, type OnError } from './core.js';
 import { ConfigurationError, localError } from './errors.js';
 import { createIdentityTokenWith, type IdentitySecretSource, type IdentityTokenOptions } from './identity.js';
 import { guardPayload } from './guard.js';
-import { parseInstallationHeader } from './installation.js';
+import { toInstallation, type Installation } from './installation.js';
 import type { RequestOptions } from './http.js';
 import { ApiClient } from './generated/index.js';
 import { GoalQueue, Goals, asClikgateError, buildGoalWire, checkBeforeSend, type GoalOptions } from './goals.js';
@@ -27,10 +27,12 @@ export interface IdentifyUserParams {
   /** The Clikgate click ID you kept (`clk_…`). */
   clickId?: string | null;
   /**
-   * The raw `Clikgate-Installation` header your app sent (`<app_id>:<installation_id>`). It fills `appId` and
-   * `installationId`. Missing or invalid values are ignored, never sent. Not used when `installationId` is given.
+   * The app's installation: the raw `Clikgate-Installation` header your app sent (`<app_id>:<installation_id>`), or
+   * the parsed `Installation` the framework helpers give (`req.clikgate.installation`, `getInstallation(...)`). It
+   * fills `appId` and `installationId`. Missing or invalid values (either form) are ignored, never sent. Not used when
+   * `installationId` is given.
    */
-  installation?: string | null;
+  installation?: string | Installation | null;
   /** The app the installation belongs to. Optional: without it Clikgate finds the app. Only with `installationId`. */
   appId?: string | null;
   /** The SDK's installation ID, sent by your app. */
@@ -320,13 +322,15 @@ export class Clikgate {
    * // after your sign-in check: the header from the app, your user's ID
    * const installation = req.get('Clikgate-Installation');
    * if (parseInstallationHeader(installation)) await clikgate.identifyUser({ installation, customerId: req.user.id });
+   * // or the parsed installation from the Express middleware
+   * if (req.clikgate.installation) await clikgate.identifyUser({ installation: req.clikgate.installation, customerId: req.user.id });
    */
   async identifyUser(params: IdentifyUserParams, requestOptions: RequestOptions = {}): Promise<PersonIdentified> {
     const p = (params ?? {}) as IdentifyUserParams;
     let appId = p.appId;
     let installationId = p.installationId;
     if (installationId == null && p.installation != null) {
-      const fromHeader = parseInstallationHeader(p.installation);
+      const fromHeader = toInstallation(p.installation);
       if (fromHeader) {
         appId = appId ?? fromHeader.appId;
         installationId = fromHeader.installationId;

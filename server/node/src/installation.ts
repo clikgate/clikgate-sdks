@@ -77,3 +77,16 @@ export function installationFromRequest(request: HeadersLike | null | undefined)
     return null;
   }
 }
+
+/**
+ * @internal An installation from either the raw `Clikgate-Installation` header or a parsed {@link Installation}
+ * (`req.clikgate.installation`, `getInstallation(...)`). Both go through the same strict check; anything else is `null`.
+ */
+export function toInstallation(value: unknown): Installation | null {
+  if (typeof value === 'string') return parseInstallationHeader(value);
+  if (value && typeof value === 'object') {
+    const { appId, installationId } = value as Partial<Installation>;
+    if (typeof appId === 'string' && typeof installationId === 'string') return parseInstallationHeader(`${appId}:${installationId}`);
+  }
+  return null;
+}

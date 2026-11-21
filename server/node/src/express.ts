@@ -15,7 +15,7 @@
  * app.post('/login', async (req, res) => {
  *   const user = await signIn(req.body);     // your own sign-in check first
  *   if (req.clikgate.installation) {
- *     await clikgate.identifyUser({ ...req.clikgate.installation, customerId: user.id });
+ *     await clikgate.identifyUser({ installation: req.clikgate.installation, customerId: user.id });
  *   }
  * });
  *

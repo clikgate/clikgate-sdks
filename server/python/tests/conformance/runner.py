@@ -47,6 +47,15 @@ MOCK = HERE.parents[2] / "conformance" / "mock-server" / "server.mjs"
 CLEAR = ("CLIKGATE_API_KEY", "CLIKGATE_BASE_URL", "HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy")
 
 
+def identify_kwargs(a: Dict[str, Any]) -> Dict[str, Any]:
+    """``installation`` is the raw header (a string) or a parsed installation (``{app_id, installation_id}``)."""
+    kw = {k: a.get(k) for k in ("click_id", "installation", "app_id", "installation_id", "customer_id", "label")}
+    inst = kw.get("installation")
+    if isinstance(inst, dict):
+        kw["installation"] = Installation(str(inst.get("app_id")), str(inst.get("installation_id")))
+    return kw
+
+
 def start_mock() -> Tuple[subprocess.Popen[str], str]:
     node = shutil.which("node")
     if node is None:
@@ -460,9 +469,7 @@ def sync_step(client: Clikgate, call: str, a: Dict[str, Any]) -> Any:
     if call == "conversions.create":
         return client.conversions.create(request_options=ro, **(a.get("params") or {}))
     if call == "identify_user":
-        return client.identify_user(
-            request_options=ro, **{k: a.get(k) for k in ("click_id", "installation", "app_id", "installation_id", "customer_id", "label")}
-        )
+        return client.identify_user(request_options=ro, **identify_kwargs(a))
     if call == "payments.confirm":
         return client.payments.confirm(request_options=ro, **confirm_kwargs(a))
     if call == "payments.from":
@@ -522,9 +529,7 @@ async def async_step(client: AsyncClikgate, call: str, a: Dict[str, Any]) -> Any
     if call == "conversions.create":
         return await client.conversions.create(request_options=ro, **(a.get("params") or {}))
     if call == "identify_user":
-        return await client.identify_user(
-            request_options=ro, **{k: a.get(k) for k in ("click_id", "installation", "app_id", "installation_id", "customer_id", "label")}
-        )
+        return await client.identify_user(request_options=ro, **identify_kwargs(a))
     if call == "payments.confirm":
         return await client.payments.confirm(request_options=ro, **confirm_kwargs(a))
     if call == "payments.from":

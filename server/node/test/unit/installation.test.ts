@@ -80,6 +80,19 @@ test('identifyUser: installation header, installationId without appId, explicit 
   assert.equal(calls.length, 5);
 });
 
+test('identifyUser: the parsed installation from the framework helpers works like the header', async () => {
+  const ok = { status: 200, json: { object: 'person_identified', person_id: 'per_1', label_ignored: null } };
+  const { calls, fetchLike } = capture([ok, ok]);
+  const c = client(fetchLike);
+  await c.identifyUser({ installation: PARSED, customerId: 'user_42' });
+  await c.identifyUser({ installation: { appId: APP, installationId: '6A1F0C2E-0000-4000-8000-000000000001' }, clickId: 'clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6' });
+  assert.deepEqual(JSON.parse(calls[0]!.body), { app_id: APP, installation_id: INSTALLATION, customer_id: 'user_42' });
+  // an object that fails the same strict check is ignored, never sent
+  assert.deepEqual(JSON.parse(calls[1]!.body), { click_id: 'clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6' });
+  await assert.rejects(c.identifyUser({ installation: { appId: 'app_bad', installationId: INSTALLATION } }), (e: unknown) => e instanceof InvalidRequestError && e.param === 'click_id');
+  assert.equal(calls.length, 2);
+});
+
 test('identifyUser: 409 installation_in_several_apps is a ConflictError with param app_id', async () => {
   const { fetchLike } = capture([
     { status: 409, json: { error: { type: 'conflict', code: 'installation_in_several_apps', message: 'Send app_id.', param: 'app_id', request_id: 'req_1' } } },

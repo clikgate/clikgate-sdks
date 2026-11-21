@@ -9,6 +9,7 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 Additive: nothing is removed or renamed, and nothing changes on the wire.
 
+- **Fixed:** `identify_user(installation=...)` also takes the parsed `Installation` the framework helpers return (`request.clikgate_installation`, `g.clikgate_installation`, `Depends(installation)`). Before, passing it was silently ignored. The same strict check applies.
 - **Added:** `clikgate.referrals`: `get_or_create_referrer` (with `created`), `get_referrer`, `find_referrer` (`None` when there is none), `get`, `list` / `list_page`, `qualify`, `disqualify`, `complete_step` (`occurred_at` required), `import_referrers` (batches of 1000, one job per batch), `block_referrer`, `unblock_referrer` and `update_referrer`. Results are typed dicts (`Referrer`, `Referral`, `RewardInfo`, `Job`).
 - **Added:** reward sides carry `amount`, the decimal string in normal units next to `amount_minor` (`50000` NGN is `"500.00"`), plus `currency_exponent()` and `minor_to_amount()`.
 - **Added:** typed webhook events. `webhooks.verify` returns a `WebhookEvent`, still a `dict`, with attributes (`event.type`, `event.id`, …) and `as_referral()`, `as_referrer()`, `as_goal_event()`, `as_install()`, `as_payment()`, `as_conversion()`, `as_device_change()` (each `None` for other event types), `typed()` (the `TypedWebhookEvent` union) and the `EventType` enum of every event type.

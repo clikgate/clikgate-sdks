@@ -65,6 +65,15 @@ function decode(v: Json): unknown {
   return v;
 }
 
+/** `installation` is the raw header (a string) or a parsed installation (`{app_id, installation_id}`). */
+function installationArg(v: unknown): string | Installation | undefined {
+  if (v && typeof v === 'object') {
+    const o = v as Record<string, unknown>;
+    return { appId: o.app_id as string, installationId: o.installation_id as string };
+  }
+  return v as string | undefined;
+}
+
 function referralParams(p: unknown): ReferralListParams {
   const q = (p ?? {}) as Record<string, unknown>;
   return {
@@ -426,7 +435,7 @@ async function runCase(c: RunnerCase): Promise<Record<string, unknown>> {
           result = await client.identifyUser(
             {
               clickId: a.click_id as string | undefined,
-              installation: a.installation as string | undefined,
+              installation: installationArg(a.installation),
               appId: a.app_id as string | undefined,
               installationId: a.installation_id as string | undefined,
               customerId: a.customer_id as string | undefined,

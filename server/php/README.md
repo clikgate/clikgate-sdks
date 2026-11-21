@@ -119,7 +119,7 @@ use Clikgate\Installation;
 // After your own sign-in check: the header from the app, your user's ID (ignored when missing or invalid)
 $installation = Installation::fromRequest($request);           // PSR-7, Symfony/Laravel, or null for $_SERVER
 if ($installation !== null) {
-    $clikgate->identifyUser($installation->toArray() + ['customerId' => (string) $user->id]);
+    $clikgate->identifyUser(['installation' => $installation, 'customerId' => (string) $user->id]);   // the parsed installation
 }
 // Or pass the raw header value
 $clikgate->identifyUser(['installation' => $request->getHeaderLine('Clikgate-Installation'), 'customerId' => (string) $user->id]);

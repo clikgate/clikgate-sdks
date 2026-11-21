@@ -276,8 +276,9 @@ final class Clikgate
      *
      * Path B of https://clikgate.com/docs/identify-users (no identity secret or token): the app sends the
      * `Clikgate-Installation` header (from the mobile SDK) to your server. After your own sign-in check succeeds, and
-     * at every signed-in app open, pass the header as `installation` with your signed-in user's ID as `customerId`
-     * (never a customer ID read from the request). A missing or invalid header is ignored: skip the call.
+     * at every signed-in app open, pass the header (or the parsed `Installation` from `Installation::fromRequest()`,
+     * the PSR-15 `clikgate.installation` attribute or Laravel's `$request->clikgateInstallation()`) as `installation`
+     * with your signed-in user's ID as `customerId` (never a customer ID read from the request). A missing or invalid header is ignored: skip the call.
      * `installationId` given explicitly wins over the header. `appId` is optional: Clikgate finds the app; if the
      * installation ID is in several of your apps, the API answers `409 installation_in_several_apps` (a
      * `ConflictException`, param `app_id`): send `appId` too. Clikgate accepts installations active in the last 7 days.
@@ -286,9 +287,11 @@ final class Clikgate
      * $clikgate->identifyUser(['clickId' => $order->clickId, 'customerId' => 'user_42', 'label' => 'Ada (VIP)']);
      * // after your sign-in check: the header from the app, your user's ID
      * $clikgate->identifyUser(['installation' => $request->getHeaderLine('Clikgate-Installation'), 'customerId' => (string) $user->id]);
+     * // or the parsed installation (Laravel)
+     * $clikgate->identifyUser(['installation' => $request->clikgateInstallation(), 'customerId' => (string) $user->id]);
      * ```
      *
-     * @param array{clickId?: ?string, installation?: ?string, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string, customerSince?: string|\DateTimeInterface|int|null, customerSinceReplace?: ?bool} $params
+     * @param array{clickId?: ?string, installation?: string|Installation|null, appId?: ?string, installationId?: ?string, customerId?: ?string, label?: ?string, customerSince?: string|\DateTimeInterface|int|null, customerSinceReplace?: ?bool} $params
      * @param array<string, mixed> $requestOptions
      *
      * @return array<string, mixed> `{object: "person_identified", person_id, label_ignored, customer_since_ignored, customer_id_warning}`
@@ -298,8 +301,8 @@ final class Clikgate
         $appId = $params['appId'] ?? null;
         $installationId = $params['installationId'] ?? null;
         if (null === $installationId && null !== ($params['installation'] ?? null)) {
-            // The raw Clikgate-Installation header: ignored (never sent) when missing or invalid
-            $fromHeader = Installation::parseHeader($params['installation']);
+            // The raw Clikgate-Installation header or an Installation: ignored (never sent) when missing or invalid
+            $fromHeader = Installation::from($params['installation']);
             if (null !== $fromHeader) {
                 $appId ??= $fromHeader->appId;
                 $installationId = $fromHeader->installationId;

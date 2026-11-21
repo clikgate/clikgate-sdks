@@ -971,10 +971,16 @@ An SDK released today MUST keep working against a newer API:
 - **Wire:** `POST /v1/people/identify` `{click_id?, app_id?, installation_id?, customer_id?, label?}` (nulls omitted),
   answer `{object: "person_identified", person_id, label_ignored: "plan" | "lower_rank" | null}` returned as is.
 - **`installation` argument** (canonical; Node `installation`, Python `installation`, PHP `'installation'`, Java
-  `IdentifyUserParams.Builder.installation(String)`, .NET `IdentifyUserParams.Installation`): the raw
-  `Clikgate-Installation` header value (24.1). It is parsed with `installations.parse_header`; when valid and
-  `installation_id` isn't given, it fills `installation_id`, and `app_id` unless `app_id` is given. A missing or
-  invalid value is ignored: never an error, never sent, never logged. The raw value never reaches the wire.
+  `IdentifyUserParams.Builder.installation(String | Installation)`, .NET `IdentifyUserParams.Installation` /
+  `IdentifyUserParams.For(installation, …)`): **either** the raw `Clikgate-Installation` header value (24.1) **or** the
+  parsed installation the framework add-ons return (Node `string | Installation`, Python `str | Installation`, PHP
+  `string|Installation|null`), so `req.clikgate.installation`, `request.clikgate_installation`,
+  `$request->clikgateInstallation()` and the like can be passed as they are. A string is parsed with
+  `installations.parse_header`; a parsed installation goes through the same strict check (its `app_id` and
+  `installation_id` joined with `:` and parsed). When valid and `installation_id` isn't given, it fills
+  `installation_id`, and `app_id` unless `app_id` is given. A missing or invalid value (either form) is ignored: never
+  an error, never sent, never logged. The raw value never reaches the wire. Conformance
+  `people.identify.parsed_installation` passes the parsed form as `{app_id, installation_id}` (Node, Python, PHP).
 - **Local checks** (before any request, after `installation` is applied): `app_id` without `installation_id`
   (`invalid_request`, param `installation_id`); at least one of `click_id`, the installation, `customer_id`
   (`invalid_request`, param `click_id`). `installation_id` without `app_id` is sent as is: the API finds the app.
@@ -1025,7 +1031,7 @@ An SDK released today MUST keep working against a newer API:
   Flask `g.clikgate_installation`, FastAPI / Starlette `Depends(installation)`, PSR-15 attribute
   `clikgate.installation`, Laravel `$request->clikgateInstallation()`, Spring Boot `@ClikgateInstallation Installation`
   (null when missing or invalid; never fails the request), Servlet `ClikgateInstallations.from(request)`, ASP.NET Core
-  `HttpContext.GetClikgateInstallation()`.
+  `HttpContext.GetClikgateInstallation()`. Each value can be passed straight to `identifyUser` as `installation`.
 
 
 ## 26. Identity tokens: `createIdentityToken`

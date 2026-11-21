@@ -58,6 +58,16 @@ def parse_installation_header(value: Any) -> Optional[Installation]:
     return Installation(match.group(1), match.group(2)) if match else None
 
 
+def to_installation(value: Any) -> Optional[Installation]:
+    """An installation from the raw header (a ``str``) or a parsed :class:`Installation` (from the framework helpers),
+    through the same strict check. ``None`` for anything else. Never raises."""
+    if isinstance(value, str):
+        return parse_installation_header(value)
+    if isinstance(value, Installation) and isinstance(value.app_id, str) and isinstance(value.installation_id, str):
+        return parse_installation_header(f"{value.app_id}:{value.installation_id}")
+    return None
+
+
 def installation_from_request(request: Any) -> Optional[Installation]:
     """The installation from a request's ``Clikgate-Installation`` header, or ``None`` when it is missing, invalid or
     sent more than once. Accepts Django, Flask/Werkzeug and Starlette requests, a WSGI environ, an ASGI scope, or

@@ -141,6 +141,23 @@ final class InstallationTest extends TestCase
         self::assertCount(5, $http->requests);
     }
 
+    public function testIdentifyUserWithTheParsedInstallation(): void
+    {
+        $http = new RecordingClient(static fn(): ResponseInterface => new Response(200, ['Content-Type' => 'application/json'], '{"object":"person_identified","person_id":"per_1","label_ignored":null}'));
+        $c = $this->client($http);
+        $c->identifyUser(['installation' => new Installation(self::APP, self::INST), 'customerId' => 'user_42']);
+        $c->identifyUser(['installation' => Installation::fromRequest(['headers' => ['clikgate-installation' => self::HEADER]]), 'customerId' => 'user_42']);
+        // the same strict check: an uppercase UUID is ignored, never sent
+        $c->identifyUser(['installation' => new Installation(self::APP, strtoupper(self::INST)), 'clickId' => 'clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6']);
+        self::assertSame([
+            ['app_id' => self::APP, 'installation_id' => self::INST, 'customer_id' => 'user_42'],
+            ['app_id' => self::APP, 'installation_id' => self::INST, 'customer_id' => 'user_42'],
+            ['click_id' => 'clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6'],
+        ], $http->bodies());
+        self::assertNull(Installation::from(new Installation('app_bad', self::INST)));
+        self::assertSame(self::INST, Installation::from(self::HEADER)?->installationId);
+    }
+
     public function testSeveralAppsIsAConflict(): void
     {
         $http = new RecordingClient(static fn(): ResponseInterface => new Response(409, ['Content-Type' => 'application/json'], '{"error":{"type":"conflict","code":"installation_in_several_apps","message":"Send app_id.","param":"app_id","request_id":"req_1"}}'));

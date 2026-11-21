@@ -2514,6 +2514,23 @@ add('people', 'identifyUser() and goal labels (SPEC 24)', [
     expect: { requests: [{ ...IDENTIFY_POST, json: { app_id: APP_ID, installation_id: INSTALLATION_ID, customer_id: 'user_42' } }] },
   },
   {
+    id: 'people.identify.parsed_installation',
+    description: 'The parsed installation the framework helpers return ({app_id, installation_id} here, the language\'s Installation in the runner) works like the header; one that fails the same strict check is ignored. Java and .NET take their typed Installation (unit tests)',
+    languages: ['node', 'python', 'php'],
+    responses: [identified(), identified()],
+    steps: [
+      { call: 'identify_user', args: { installation: { app_id: APP_ID, installation_id: INSTALLATION_ID }, customer_id: 'user_42' }, expect: { result: { object: 'person_identified' } } },
+      { call: 'identify_user', args: { installation: { app_id: APP_ID, installation_id: INSTALLATION_ID.toUpperCase() }, click_id: CLICK } },
+    ],
+    expect: {
+      requests: [
+        { ...IDENTIFY_POST, json: { app_id: APP_ID, installation_id: INSTALLATION_ID, customer_id: 'user_42' } },
+        { ...IDENTIFY_POST, json: { click_id: CLICK } },
+      ],
+      logs_exclude: [INSTALLATION_ID.toUpperCase()],
+    },
+  },
+  {
     id: 'people.identify.explicit_ids_win_over_the_header',
     description: 'When installationId is given, the installation header is not used',
     responses: [identified()],

@@ -360,6 +360,90 @@
       "now_ms": 1793016000000
     },
     {
+      "id": "people.identify.parsed_installation",
+      "description": "The parsed installation the framework helpers return ({app_id, installation_id} here, the language's Installation in the runner) works like the header; one that fails the same strict check is ignored. Java and .NET take their typed Installation (unit tests)",
+      "languages": [
+        "node",
+        "python",
+        "php"
+      ],
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "object": "person_identified",
+            "person_id": "per_01JCK8Z9V7Q4M2N6P8R0S2T4PE",
+            "label_ignored": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        },
+        {
+          "status": 200,
+          "json": {
+            "object": "person_identified",
+            "person_id": "per_01JCK8Z9V7Q4M2N6P8R0S2T4PE",
+            "label_ignored": null
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "identify_user",
+          "args": {
+            "installation": {
+              "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP",
+              "installation_id": "6a1f0c2e-0000-4000-8000-000000000001"
+            },
+            "customer_id": "user_42"
+          },
+          "expect": {
+            "result": {
+              "object": "person_identified"
+            }
+          }
+        },
+        {
+          "call": "identify_user",
+          "args": {
+            "installation": {
+              "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP",
+              "installation_id": "6A1F0C2E-0000-4000-8000-000000000001"
+            },
+            "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/people/identify",
+            "json": {
+              "app_id": "app_01JCK8Z9V7Q4M2N6P8R0S2T4AP",
+              "installation_id": "6a1f0c2e-0000-4000-8000-000000000001",
+              "customer_id": "user_42"
+            }
+          },
+          {
+            "method": "POST",
+            "path": "/v1/people/identify",
+            "json": {
+              "click_id": "clk_01JCK8Z9V7Q4M2N6P8R0S2T4W6"
+            }
+          }
+        ],
+        "logs_exclude": [
+          "6A1F0C2E-0000-4000-8000-000000000001"
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
       "id": "people.identify.explicit_ids_win_over_the_header",
       "description": "When installationId is given, the installation header is not used",
       "responses": [
