@@ -84,7 +84,7 @@ Inserted code sits between `// clikgate-setup:start` and `// clikgate-setup:end`
 
 5. iOS: Associated Domains. Give Release and Profile one entitlements file with `applinks:acme.ciz.to` and `applinks:go.acme.com`. Give Debug a separate file with the same entries plus `applinks:acme.dev.ciz.to`. Point each configuration's `CODE_SIGN_ENTITLEMENTS` at its file (Xcode › Runner target › Build Settings › Code Signing Entitlements, per configuration). Add `FlutterDeepLinkingEnabled` = `NO` to `ios/Runner/Info.plist`.
 
-6. In the dashboard (Apps › the app), add the Android SHA-256 signing fingerprints (the debug keystore, plus the Play App Signing key from Play Console › Protected with Play › Play Store protection › Manage Play app signing) and the Apple Team ID.
+6. In the dashboard (Connect › Apps › the app), add the Android SHA-256 signing fingerprints (the debug keystore, plus the Play App Signing key from Play Console › Protected with Play › Play Store protection › Manage Play app signing) and the Apple Team ID.
 
 ## Check
 

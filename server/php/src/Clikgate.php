@@ -105,7 +105,7 @@ final class Clikgate
             throw new ConfigurationException("No API key: pass ['apiKey' => …] or set CLIKGATE_API_KEY (cg_live_… or cg_test_…).", 'missing_api_key', param: 'apiKey');
         }
         if (1 !== preg_match('/^cg_(live|test)_[A-Za-z0-9_]+$/D', $apiKey, $m)) {
-            throw new ConfigurationException(\sprintf('The API key is %s. Server SDKs need a cg_live_… or cg_test_… API key from Developers → API keys.', self::keyType($apiKey)), 'invalid_api_key', param: 'apiKey');
+            throw new ConfigurationException(\sprintf('The API key is %s. Server SDKs need a cg_live_… or cg_test_… API key from Developers › API keys & clients.', self::keyType($apiKey)), 'invalid_api_key', param: 'apiKey');
         }
         $this->mode = $m[1];
         $baseUrl = $options['baseUrl'] ?? (getenv('CLIKGATE_BASE_URL') ?: 'https://api.clikgate.com');

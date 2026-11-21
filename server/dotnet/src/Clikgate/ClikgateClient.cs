@@ -129,7 +129,7 @@ public sealed class ClikgateClient : IClikgateClient
         var m = KeyPattern.Match(apiKey);
         if (!m.Success)
         {
-            throw new ConfigurationException("The API key is " + KeyType(apiKey!) + ". Server SDKs need a cg_live_… or cg_test_… API key from Developers → API keys.", "invalid_api_key", "ApiKey");
+            throw new ConfigurationException("The API key is " + KeyType(apiKey!) + ". Server SDKs need a cg_live_… or cg_test_… API key from Developers › API keys & clients.", "invalid_api_key", "ApiKey");
         }
         Mode = m.Groups[1].Value;
         var env = Environment.GetEnvironmentVariable("CLIKGATE_BASE_URL");

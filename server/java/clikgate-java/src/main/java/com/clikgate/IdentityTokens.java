@@ -194,7 +194,7 @@ public final class IdentityTokens {
       throw new ConfigurationException("Several apps' identity secrets are set (" + SECRETS_ENV + "): pass the appId to choose one.", "missing_identity_secret", null, null, "appId", null, null);
     }
     String message = appId == null
-        ? "No identity secret: set " + SECRET_ENV + " on your server (Apps > your app > Identity secret)."
+        ? "No identity secret: set " + SECRET_ENV + " on your server (Developers › SDKs › your app › Set up identity › Identity secret)."
         : "No identity secret for this app: add it to " + SECRETS_ENV + " or set " + SECRET_ENV + ".";
     throw new ConfigurationException(message, "missing_identity_secret", null, null, "secret", null, null);
   }

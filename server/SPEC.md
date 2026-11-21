@@ -132,7 +132,7 @@ Every request carries these headers:
   ```
 
   - `<runtime version>` has no leading `v`. For Java it is `java.version`; for .NET, `Environment.Version`.
-  - **Sanitising (required by the backend parser):** `<sdk version>` and `<runtime version>` MUST match `^[0-9][0-9A-Za-z.+-]{0,39}$`. Replace any other character with `-` and truncate to 40 characters, so Java `1.8.0_402` becomes `1.8.0-402`. The backend keeps `sdk`, `sdk_version`, `runtime` and `runtime_version` (shown in Developers → SDKs and `GET /v1/developers/sdks`, with `latest_version`, `update_available` and `below_minimum`). A runtime version that fails the regex is silently stored as part of the runtime name.
+  - **Sanitising (required by the backend parser):** `<sdk version>` and `<runtime version>` MUST match `^[0-9][0-9A-Za-z.+-]{0,39}$`. Replace any other character with `-` and truncate to 40 characters, so Java `1.8.0_402` becomes `1.8.0-402`. The backend keeps `sdk`, `sdk_version`, `runtime` and `runtime_version` (shown in Developers › SDKs and `GET /v1/developers/sdks`, with `latest_version`, `update_available` and `below_minimum`). A runtime version that fails the regex is silently stored as part of the runtime name.
   - The runtime token is the lowercase SDK token (`node`, `python`, `php`, `java`, `dotnet`), never `.NET` or `OpenJDK`.
   - `<os>` is lowercase: `linux`, `darwin`, `windows`, `freebsd`, … (Node `win32` becomes `windows`).
   - `<arch>` is normalised to `x64`, `arm64`, `x86` or `arm`. Anything else is passed through, lowercased, with spaces removed.

@@ -74,7 +74,7 @@ Every call below goes through the `Clikgate` bean and returns a typed model with
 ```java
 @RestController
 class AppController {
-  private static final String PROGRAM = "rpg_01J…";   // Referrals › your program
+  private static final String PROGRAM = "rpg_01J…";   // Grow › Referrals › Programs › your program
   private final Clikgate clikgate;
 
   AppController(Clikgate clikgate) {

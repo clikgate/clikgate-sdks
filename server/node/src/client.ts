@@ -185,7 +185,7 @@ export class Clikgate {
     const apiKey = options.apiKey ?? process.env.CLIKGATE_API_KEY;
     if (!apiKey) throw new ConfigurationError({ message: 'No API key: pass { apiKey } or set CLIKGATE_API_KEY (cg_live_… or cg_test_…).', code: 'missing_api_key', param: 'apiKey' });
     const m = KEY.exec(apiKey);
-    if (!m) throw new ConfigurationError({ message: `The API key is ${keyType(apiKey)}. Server SDKs need a cg_live_… or cg_test_… API key from Developers → API keys.`, code: 'invalid_api_key', param: 'apiKey' });
+    if (!m) throw new ConfigurationError({ message: `The API key is ${keyType(apiKey)}. Server SDKs need a cg_live_… or cg_test_… API key from Developers › API keys & clients.`, code: 'invalid_api_key', param: 'apiKey' });
     this.mode = m[1] as 'live' | 'test';
 
     const baseUrl = (options.baseUrl ?? process.env.CLIKGATE_BASE_URL ?? 'https://api.clikgate.com').replace(/\/+$/, '');

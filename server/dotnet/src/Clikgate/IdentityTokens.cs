@@ -192,7 +192,7 @@ public static class IdentityTokens
             throw new ConfigurationException("Several apps' identity secrets are set (" + SecretsEnv + "): pass the appId to choose one.", "missing_identity_secret", "appId");
         }
         var message = appId is null
-            ? "No identity secret: set " + SecretEnv + " on your server (Apps > your app > Identity secret)."
+            ? "No identity secret: set " + SecretEnv + " on your server (Developers › SDKs › your app › Set up identity › Identity secret)."
             : "No identity secret for this app: add it to " + SecretsEnv + " or set " + SecretEnv + ".";
         throw new ConfigurationException(message, "missing_identity_secret", "secret");
     }

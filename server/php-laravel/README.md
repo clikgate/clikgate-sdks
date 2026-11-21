@@ -100,7 +100,7 @@ Route::clikgateKeep('/cg/keep');
 
 ## Identify your users
 
-Full guide: https://clikgate.com/docs/identify-users. **Path A (default):** set `CLIKGATE_IDENTITY_SECRET` (Apps › your app › Identity secret) on the server only, and add one field to your sign-in and "current user" responses; the app passes it to the mobile SDK's `identifyUser()`. For several apps, `CLIKGATE_IDENTITY_SECRETS` is a JSON object of app IDs to secrets.
+Full guide: https://clikgate.com/docs/identify-users. **Path A (default):** set `CLIKGATE_IDENTITY_SECRET` (Developers › SDKs › your app › Set up identity › Identity secret) on the server only, and add one field to your sign-in and "current user" responses; the app passes it to the mobile SDK's `identifyUser()`. For several apps, `CLIKGATE_IDENTITY_SECRETS` is a JSON object of app IDs to secrets.
 
 ```php
 return response()->json(['user' => $user, 'clikgateIdentityToken' => Clikgate::createIdentityToken((string) $user->id)]);

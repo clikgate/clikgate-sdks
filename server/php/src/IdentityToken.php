@@ -139,7 +139,7 @@ final class IdentityToken
             throw new ConfigurationException(\sprintf("Several apps' identity secrets are set (%s): pass 'appId' to choose one.", self::SECRETS_ENV), 'missing_identity_secret', param: 'appId');
         }
         $message = null === $appId
-            ? \sprintf('No identity secret: set %s on your server (Apps > your app > Identity secret).', self::SECRET_ENV)
+            ? \sprintf('No identity secret: set %s on your server (Developers › SDKs › your app › Set up identity › Identity secret).', self::SECRET_ENV)
             : \sprintf('No identity secret for this app: add it to %s or set %s.', self::SECRETS_ENV, self::SECRET_ENV);
 
         throw new ConfigurationException($message, 'missing_identity_secret', param: 'secret');

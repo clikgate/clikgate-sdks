@@ -84,7 +84,7 @@ function resolveSecret(options: IdentityTokenOptions, source: IdentitySecretSour
   }
   throw new ConfigurationError({
     message: appId === null
-      ? `No identity secret: set ${IDENTITY_SECRET_ENV} on your server (Apps › your app › Identity secret).`
+      ? `No identity secret: set ${IDENTITY_SECRET_ENV} on your server (Developers › SDKs › your app › Set up identity › Identity secret).`
       : `No identity secret for this app: add it to ${IDENTITY_SECRETS_ENV} or set ${IDENTITY_SECRET_ENV}.`,
     code: 'missing_identity_secret',
     param: 'secret',

@@ -77,7 +77,7 @@ public final class Clikgate implements AutoCloseable {
     }
     Matcher m = KEY.matcher(apiKey);
     if (!m.matches()) {
-      throw new ConfigurationException("The API key is " + keyType(apiKey) + ". Server SDKs need a cg_live_… or cg_test_… API key from Developers → API keys.", "invalid_api_key", null, null, "apiKey", null, null);
+      throw new ConfigurationException("The API key is " + keyType(apiKey) + ". Server SDKs need a cg_live_… or cg_test_… API key from Developers › API keys & clients.", "invalid_api_key", null, null, "apiKey", null, null);
     }
     this.mode = m.group(1);
     this.identitySecret = b.identitySecret;

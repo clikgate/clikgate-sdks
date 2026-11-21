@@ -20,8 +20,8 @@ Each check has `id`, `status` (`pass`, `warn`, `fail`, `skip`), `title`, and opt
 | `expo.plugin` | the plugin is missing, a `*.dev.ciz.to` test host is in `linkDomains`, or the config is `app.config.*` | add `["@clikgate/react-native", {"linkDomains": ["acme.ciz.to", ...], "testLinkDomain": "acme.dev.ciz.to"}]`. For `app.config.*`, edit it by hand |
 | `android.shared_domains`, `ios.shared_domains`, `expo.shared_domains` | warns "remove this: shared domains can't open your app": a shared domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`) is still in the manifests, entitlements or plugin entry | show the user the lines, then remove them. The app subdomain (`acme.ciz.to`, debug `acme.dev.ciz.to`) and custom domains open the app; links on shared domains keep working through the browser and the store |
 | `clikgate.signed_in` | `skip` with `--json` | normal: server checks need the user's own `npx @clikgate/setup doctor` with sign-in |
-| `clikgate.<android\|ios>.app` | no Clikgate app matches the package name or bundle ID | create or fix the app in the dashboard (Apps) |
-| `clikgate.<android\|ios>.link_subdomain` | the app's link subdomain isn't confirmed (`code` `link_subdomain_not_confirmed`) | the user confirms it in the dashboard (Apps › the app › Link subdomain) or reruns the setup in their terminal |
+| `clikgate.<android\|ios>.app` | no Clikgate app matches the package name or bundle ID | create or fix the app in the dashboard (Connect › Apps) |
+| `clikgate.<android\|ios>.link_subdomain` | the app's link subdomain isn't confirmed (`code` `link_subdomain_not_confirmed`) | the user confirms it in the dashboard (Connect › Apps › the app › Link subdomain) or reruns the setup in their terminal |
 | `clikgate.android.fingerprints` | no SHA-256 fingerprint | the user adds the debug and Play App Signing fingerprints in the dashboard |
 | `clikgate.ios.team_id` | no Team ID | the user adds the Apple Team ID in the dashboard |
 | `clikgate.domain.<host>.<aasa\|assetlinks>` | the app-links file of the app subdomain (`acme.ciz.to`, `acme.dev.ciz.to`) or a custom domain doesn't list this app | see the `code` table below |
@@ -33,12 +33,12 @@ Each check has `id`, `status` (`pass`, `warn`, `fail`, `skip`), `title`, and opt
 
 | `code` | Fix |
 |---|---|
-| `domain_not_active` | finish the domain setup in the dashboard (Domains) |
+| `domain_not_active` | finish the domain setup in the dashboard (Connect › Branded domains) |
 | `unreachable`, `not_served`, `redirected`, `invalid_json` | the domain isn't serving its app-links file correctly. Check the DNS record in the dashboard; nothing to change in the app |
 | `missing_team_id` / `missing_fingerprints` | add the Team ID / the SHA-256 fingerprints in the dashboard |
 | `app_not_listed` | the app isn't attached to this domain: check the app's link domains in the dashboard |
 | `wrong_fingerprint` | the fingerprint doesn't match the build. With Play App Signing, use the one from Play Console › Protected with Play › Play Store protection › Manage Play app signing |
-| `link_subdomain_not_confirmed` | the app's link subdomain is only a suggestion: the user confirms it in the dashboard (Apps › the app › Link subdomain), or reruns `npx @clikgate/setup` in their terminal and confirms it there |
+| `link_subdomain_not_confirmed` | the app's link subdomain is only a suggestion: the user confirms it in the dashboard (Connect › Apps › the app › Link subdomain), or reruns `npx @clikgate/setup` in their terminal and confirms it there |
 
 ## Common problems
 
@@ -48,7 +48,7 @@ Each check has `id`, `status` (`pass`, `warn`, `fail`, `skip`), `title`, and opt
 | Links on `ciz.to`, `ciz.ng` or `dev.ciz.to` open the browser, not the app | expected: shared domains can't open any app. Use the app subdomain (`acme.ciz.to`, or `acme.ciz.ng` on the Free plan) or a custom domain for links that should open the app |
 | `acme.ciz.ng` in the project, and you wonder if it is a shared domain | it isn't: it is the app's own subdomain on the Free plan, so keep it in release builds. Only the bare `ciz.ng` is a shared domain |
 | Goals from the app or website don't appear in Goals reports | the name isn't counted yet: it is in the dashboard's "Seen from your app and website" and calls answer `status: received` (`not_counted_yet`). Ask the team to tick "Count this as a goal". Check the name matches the goal's key exactly (a near-duplicate such as `purchase_done` shows as a separate name). Events and goals work on every plan, up to the plan's allowance |
-| Live goals answer `422 unknown_goal` (apps: `REFUSED`, reason `unknown_goal`; debug log ``Goal `{name}` isn't set up in Clikgate``) | the organisation turned off "Allow unknown goal names", and no goal or alias has this name. Fix the name to match the goal's key exactly, or ask the team to set the goal up (or add the name as an alias) in Settings › Goals, or to turn the setting back on. It is final: don't retry, queue or check names on the device. Test keys always answer `received`, so it shows only with live keys |
+| Live goals answer `422 unknown_goal` (apps: `REFUSED`, reason `unknown_goal`; debug log ``Goal `{name}` isn't set up in Clikgate``) | the organisation turned off "Allow unknown goal names", and no goal or alias has this name. Fix the name to match the goal's key exactly, or ask the team to set the goal up (or add the name as an alias) in Grow › Goals, or to turn the setting back on. It is final: don't retry, queue or check names on the device. Test keys always answer `received`, so it shows only with live keys |
 | Live goals answer `422 goal_archived` | the goal is archived and "Allow unknown goal names" is off. The team chooses "Count again" in the dashboard. With the setting on, the same call answers `received` (`goal_archived`) |
 | `goal.completed` / `goal.reversed` webhooks or the goal events export have a `goal_group` field | the goal's group in the dashboard (`{id, name}` or `null` in webhooks; the name in exports). A label only: it never changes what counts or what is sent. Ignore it if unused |
 | `identifyUser()` logs that the identity token didn't verify | `expired`: the server should return a fresh token in its sign-in and "current user" responses; `bad_signature`: wrong secret or a different customer ID than the one signed; `secret_rotated`: the token used a secret the team rotated away; `no_secret_set`: create the identity secret for the app; `not_yet_valid`: the server's clock is ahead. Never log the token or the customer ID |

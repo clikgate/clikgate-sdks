@@ -57,7 +57,7 @@ In private mode, hash on your own server: Clikgate never hashes for you there. T
 
 Two ways to tell Clikgate which of your users is using the app. Full guide: https://clikgate.com/docs/identify-users. The customer ID is your own user ID from your database, never an email, phone number or ID number. Anonymous users don't need either path.
 
-**Path A (default): identity token.** Create the identity secret in Apps › your app › Identity secret and store it as `CLIKGATE_IDENTITY_SECRET` on your server only. `IdentityTokens.create(customerId[, appId])` (also `clikgate.createIdentityToken()`, with the builder's `identitySecret(...)` / `identitySecrets(...)`; Spring Boot: `clikgate.identity-secret`, `clikgate.identity-secrets.<appId>`) signs a token with no network call; return it in the responses the app already calls, and the app passes it to the mobile SDK's `identifyUser()`. Tokens last 30 days by default and are never force-refreshed. Throws `ClikgateServerOnlyException` in an Android app (when `android.os.Build` loads).
+**Path A (default): identity token.** Create the identity secret in Developers › SDKs › your app › Set up identity › Identity secret and store it as `CLIKGATE_IDENTITY_SECRET` on your server only. `IdentityTokens.create(customerId[, appId])` (also `clikgate.createIdentityToken()`, with the builder's `identitySecret(...)` / `identitySecrets(...)`; Spring Boot: `clikgate.identity-secret`, `clikgate.identity-secrets.<appId>`) signs a token with no network call; return it in the responses the app already calls, and the app passes it to the mobile SDK's `identifyUser()`. Tokens last 30 days by default and are never force-refreshed. Throws `ClikgateServerOnlyException` in an Android app (when `android.os.Build` loads).
 
 ```java
 // sign-in and "current user" responses: one extra field
@@ -272,7 +272,7 @@ Every call below returns a typed model with getters: no `Map` results and no cas
 ```java
 @RestController
 class AppController {
-  private static final String PROGRAM = "rpg_01J…";   // Referrals › your program
+  private static final String PROGRAM = "rpg_01J…";   // Grow › Referrals › Programs › your program
   private final Clikgate clikgate;
 
   AppController(Clikgate clikgate) {

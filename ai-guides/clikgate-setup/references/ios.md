@@ -69,7 +69,7 @@ iOS changes aren't build-tested by Clikgate's CI. Ask the user to build once in 
    - Debug: `<Target>Debug.entitlements` with the same entries plus `applinks:acme.dev.ciz.to`.
    - Set `CODE_SIGN_ENTITLEMENTS` for each configuration to its file (target › Build Settings › Code Signing Entitlements).
    - Never add a `*.dev.ciz.to` test host to the Release file, and never a shared domain (`ciz.to`, `ciz.ng`, `dev.ciz.to`) to any file: shared domains can't open the app.
-4. In the dashboard (Apps › the app), add the Apple Team ID and bundle ID, so Clikgate serves the `apple-app-site-association` file.
+4. In the dashboard (Connect › Apps › the app), add the Apple Team ID and bundle ID, so Clikgate serves the `apple-app-site-association` file.
 
 Don't add App Tracking Transparency prompts or IDFA code: Clikgate doesn't use them.
 

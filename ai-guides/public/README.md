@@ -44,7 +44,7 @@ Point the assistant to https://clikgate.com/docs/ai/setup.md, which is the same 
 
 ## The prompt
 
-The Clikgate dashboard (Apps › the app › SDK setup › "Set up with AI") gives a ready-made prompt with the app's details filled in:
+The Clikgate dashboard (Developers › SDKs › the app › "Set up with AI") gives a ready-made prompt with the app's details filled in:
 
 > Set up Clikgate in this project using the Clikgate setup skill (or https://clikgate.com/docs/ai/setup.md). My Clikgate app is "My App" (Android: com.example.app). Prefer running `npx @clikgate/setup` and let me approve the sign-in in my browser. If you can't, use offline mode with my test SDK key `cg_sdk_test_…` and link domains `go.example.com`. Show me every change before making it, then run `npx @clikgate/setup doctor`.
 
