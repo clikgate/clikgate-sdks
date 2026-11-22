@@ -1,6 +1,6 @@
 # Clikgate server SDKs and AI guides
 
-This repository holds the **server SDKs + AI guides**. The setup command (`npx @clikgate/setup`) lives with the mobile SDKs in [`clikgate_mobile_sdk`](https://github.com/clikgate/clikgate-mobile-sdk) (`cli/`) since 2026-10-26.
+This repository holds the **server SDKs + AI guides**. The setup command (`npx @clikgate/setup`) lives with the mobile SDKs in [`clikgate-mobile-sdk`](https://github.com/clikgate/clikgate-mobile-sdk) (`cli/`).
 
 | Part | Directory | Package |
 |---|---|---|
@@ -29,15 +29,15 @@ CI:
 - `server-dotnet.yml` / `server-dotnet-release.yml`: .NET 8 and 10, and .NET Framework 4.7.2; NuGet trusted publishing.
 - `server-codegen.yml`: the drift check for every generated layer.
 
-All run on Linux and Windows with the conformance suite, and every release attaches a CycloneDX SBOM.
+The five SDK workflows run on Linux and Windows with the conformance suite, and every release attaches a CycloneDX SBOM.
 
 ## Setup command (moved)
 
-`@clikgate/setup` moved to `clikgate_mobile_sdk/cli/` on 2026-10-26 (still MIT), because it is tightly coupled to the mobile SDKs' versions and APIs. Its docs are `clikgate_mobile_sdk/docs/SETUP_COMMAND.md`, and its workflows `cli.yml` / `cli-release.yml` are in that repository. The AI guides below still use it: check out `clikgate_mobile_sdk` next to this repository, or set `CLIKGATE_CLI_DIR` to its `cli/` folder.
+`@clikgate/setup` moved to the `cli/` folder of [`clikgate-mobile-sdk`](https://github.com/clikgate/clikgate-mobile-sdk) (still MIT), because it is tightly coupled to the mobile SDKs' versions and APIs. Its docs are [`docs/SETUP_COMMAND.md`](https://github.com/clikgate/clikgate-mobile-sdk/blob/main/docs/SETUP_COMMAND.md), and its workflows `cli.yml` / `cli-release.yml` are in that repository too. The AI guides below still use it: check it out next to this repository as `clikgate_mobile_sdk`, or set `CLIKGATE_CLI_DIR` to its `cli/` folder.
 
 ## AI guides
 
-- `ai-guides/clikgate-setup/` is the source of the **clikgate-setup** skill, in the Agent Skills format. It has `SKILL.md`, plus `references/` for each platform, the web script, server SDKs, goals, test links, the generated `api-surface.md` and troubleshooting.
+- `ai-guides/clikgate-setup/` is the source of the **clikgate-setup** skill, in the Agent Skills format. It has `SKILL.md`, plus `references/` for each platform (including Expo), the web script, server SDKs, goals, payments, test links, the generated `api-surface.md` and troubleshooting.
 - `ai-guides/versions.json` holds the SDK versions; `{{versions.*}}` placeholders are resolved at build time.
 - `ai-guides/plain/AGENTS.md` holds the lines for projects that can't install skills, and `ai-guides/public/README.md` is the public repository's README, with the install steps for Claude Code, Cursor and Codex.
 - Scripts (Node 18+, no dependencies), run from the repository root:
@@ -60,4 +60,4 @@ All run on Linux and Windows with the conformance suite, and every release attac
   - API-surface drift plus code blocks, against `clikgate/clikgate-mobile-sdk`;
   - publish to `clikgate/clikgate-skills`. This one runs from workflow_dispatch with `publish`, and needs the `SKILLS_DEPLOY_KEY` secret in the `skills` environment.
 
-  It also runs weekly, because changes in `clikgate_mobile_sdk` don't trigger it. `MOBILE_SDK_READ_TOKEN` (read-only Contents on `clikgate/clikgate-mobile-sdk`) is needed only while that repository is private.
+  It also runs weekly, because changes in `clikgate_mobile_sdk` don't trigger it. `MOBILE_SDK_READ_TOKEN` is optional: `clikgate/clikgate-mobile-sdk` is public, so the default token can read it.

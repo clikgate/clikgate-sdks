@@ -9,7 +9,7 @@
 | C# / .NET | `Clikgate`, `Clikgate.AspNetCore` | [`dotnet/`](dotnet/) | 2.1.0: netstandard2.0, net8.0, net10.0; ASP.NET Core |
 
 - [`SPEC.md`](SPEC.md) is the shared contract: options, methods, errors, sending modes, retries, idempotency, click IDs, private mode, money, webhooks, the User-Agent and (section 22) payments confirmed by your server: `payments.confirm` and `fromPaystack` / `fromFlutterwave` / `fromMonnify` / `fromStripe`.
-- [`conformance/`](conformance/) holds 501 language-neutral cases (122 for payments, with the backend's helper vectors; 7 for the hashed identifiers, `ads_matching`) and the mock server that judges them. Its README documents the runner protocol every SDK implements.
-- [`codegen/`](codegen/) generates the `api.*` layer from the backend's public document [`openapi/openapi-public.json`](openapi/) (the `public` audience only; `openapi/openapi.json` until it is synced), with one command (`node server/codegen/generate.mjs --from <path to the backend repository>`) and a drift check (`--check`).
+- [`conformance/`](conformance/) holds 588 language-neutral cases (119 for payments, with the backend's helper vectors; 7 for the hashed identifiers, `ads_matching`) and the mock server that judges them. Its README documents the runner protocol every SDK implements.
+- [`codegen/`](codegen/) generates the `api.*` layer from the backend's public document [`openapi/openapi-public.json`](openapi/) (the `public` audience only), with one command (`node server/codegen/generate.mjs --from <path to the backend repository>`) and a drift check (`--check`).
 
 Licence: MIT.
