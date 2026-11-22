@@ -125,7 +125,8 @@ class AppController {
 }
 ```
 
-- `getOrCreateReferrer(programId, customerId)` is the short form of `getOrCreateReferrer(programId, GetOrCreateReferrerParams.builder().customerId(…).displayName(…).externalCode(…).build())`. `referrer.isCreated()` is true when this call created it.
+- `getOrCreateReferrer(programId, customerId)` is the short form of `getOrCreateReferrer(programId, GetOrCreateReferrerParams.builder().customerId(…).displayName(…).externalCode(…).code(…).build())`. `referrer.isCreated()` is true when this call created it.
+- `code(…)` gives a new referrer your own referral code instead of one Clikgate makes up: 3-32 characters, letters, digits, `_` and `-`, stored as sent. It must be unique in your organisation, ignoring case. It applies only when the referrer is created; an existing referrer keeps theirs. A taken code throws `ConflictException` (`409 code_taken`), and an invalid one `InvalidRequestException` (`422 invalid_code`, or `422 reserved_link_ending` when it ends like a share link).
 - `event.asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()`, `asConversion()` and `asDeviceChange()` read `data.object` typed. Each returns `null` (`@Nullable`) when the event belongs to another family, never a wrong object. `EventType` constants are strings, so they also work with `equals` and in a `switch`.
 - Money in responses: `amountMinor` stays the wire's minor units, and `getAmount()` is the same amount as an exact `BigDecimal` in normal units (`50000` NGN is `500.00`, `1500` JPY is `1500`).
 

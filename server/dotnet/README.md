@@ -25,7 +25,7 @@ Create one client and reuse it. It is thread-safe.
 
 - **`Goal()`** never throws. It queues the event, and a background worker sends it in batches with safe retries.
 - **`GoalAsync()`** sends at once and awaits, and still never throws.
-- **`Goals.SendAsync()`** awaits the API and returns the `GoalEvent`: `Status` is `GoalStatus.COUNTED`, `WAITING`, `RECEIVED` or `REFUSED` (with `Reason`), plus `GoalKind` (`GoalKind.STANDARD` or `GoalKind.PAYMENT`), `EventStatus`, `AttributedTo`, …. `received` means the name isn't ticked as a goal in the dashboard yet (or the goal is archived): it is stored, not counted, and shows in "Seen from your app and website". Every status is a result, never an error, and none is retried. Goals work on every plan, up to the plan's allowance.
+- **`Goals.SendAsync()`** awaits the API and returns the `GoalEvent`: `Status` is `GoalStatus.COUNTED`, `WAITING`, `RECEIVED` or `REFUSED` (with `Reason`), plus `GoalKind` (`GoalKind.STANDARD` or `GoalKind.PAYMENT`), `EventStatus`, `AttributedTo`, …. `received` means the name isn't ticked as a goal in the dashboard yet (or the goal is archived): it is stored, not counted, and shows in Measure › Seen from your app and website. Every status is a result, never an error, and none is retried. Goals work on every plan, up to the plan's allowance.
 
 `Goal()` is the only goal method: there is no separate payment method. The goal's kind (Standard or Payment) is set in the goal's settings in the dashboard, never in the call.
 
@@ -170,7 +170,7 @@ var ev = Webhooks.Verify(rawBodyBytes, request.Headers["Clikgate-Signature"], se
 ## Private mode
 
 - With `PrivateMode.Auto` (the default), the SDK reads your organisation's setting from `GET /v1/server-sdk/config` and caches it for 10 minutes.
-- When private mode is on, only `goal`, `ClickId`, `Code`, `Reference`, `Value`, `Currency`, `Provider`, `IsFirst`, `OccurredAt` and `Consent` are sent. Anything else (`Metadata`, emails, customer IDs, …) is refused **before sending** with `PrivateModeFieldRejectedException`, which names the field, never its value.
+- When private mode is on, only `goal`, `ClickId`, `Code`, `Reference`, `Value`, `Currency`, `Provider`, `IsFirst`, `OccurredAt`, `Consent`, `KeptBy`, `BrowserEngine` and `Platform` are sent, plus `Label` (the API accepts it only with "Allow labels in private mode" in Settings › Privacy & consent › Private mode) and the hashed email and phone (only while an ad network destination matches by them). Anything else (`Metadata`, emails, customer IDs, …) is refused **before sending** with `PrivateModeFieldRejectedException`, which names the field, never its value.
 - References are redacted in logs. If the setting can't be loaded, the SDK assumes private mode is on.
 
 ## Payment goals
@@ -273,8 +273,9 @@ app.MapPost("/webhooks/clikgate", async (HttpRequest req) =>
 });
 ```
 
-- `GetOrCreateReferrerAsync(programId, customerId, ct)` is the short form of `GetOrCreateReferrerAsync(programId, new GetOrCreateReferrerParams { CustomerId = …, DisplayName = …, ExternalCode = … })`. `referrer.Created` is true when this call created it.
-- `AsReferral()`, `AsReferrer()`, `AsGoalEvent()`, `AsInstall()`, `AsPayment()` and `AsConversion()` read `data.object` typed. Like the `as` operator, each returns null when the event belongs to another family. `EventType` members are `const string`s, so they also work in `switch`.
+- `GetOrCreateReferrerAsync(programId, customerId, ct)` is the short form of `GetOrCreateReferrerAsync(programId, new GetOrCreateReferrerParams { CustomerId = …, DisplayName = …, ExternalCode = …, Code = … })`. `referrer.Created` is true when this call created it.
+- `Code` gives a new referrer your own referral code instead of one Clikgate makes up: 3-32 characters of letters, digits, `_` or `-`, stored as you send it. It must be unique across your organisation (ignoring case), among referrers and link codes. It applies only when the referrer is created: an existing referrer keeps their code. The API answers `409 code_taken` (`ConflictException`), `422 invalid_code`, or `422 reserved_link_ending` when it ends in a hyphen and one letter, which is kept for share links (both `InvalidRequestException`). `ExternalCode` (your own code, 2-64 characters) can also be changed later with `UpdateReferrerAsync`.
+- `AsReferral()`, `AsReferrer()`, `AsGoalEvent()`, `AsInstall()`, `AsPayment()`, `AsConversion()` and `AsDeviceChange()` read `data.object` typed. Like the `as` operator, each returns null when the event belongs to another family. `EventType` members are `const string`s, so they also work in `switch`.
 - Money in responses: `AmountMinor` stays the wire's minor units, and `Amount` is the same amount as an exact `decimal` in normal units (`50000` NGN is `500.00`, `1500` JPY is `1500`).
 - The new results are records: two results with the same JSON are equal, and `Raw` keeps every field.
 
