@@ -27,7 +27,7 @@ clikgate.goal("account_opened", Goal.builder().clickId(clickId).reference("APP-5
 Create one client and reuse it. It is thread-safe.
 
 - **`goal()`** never throws. It queues the event, and a daemon thread sends it in batches with safe retries. A JVM shutdown hook flushes the queue (`Spring` closes the bean instead).
-- **`goals().send()`** waits for the API and returns the `GoalEvent`: `getStatus()` is `GoalStatus.COUNTED`, `WAITING`, `RECEIVED` or `REFUSED` (with `getReason()`), plus `getGoalKind()` (`GoalKind.STANDARD` or `GoalKind.PAYMENT`), `getEventStatus()`, `getAttributedTo()`, …. `received` means the name isn't ticked as a goal in the dashboard yet (or the goal is archived): it is stored, not counted, and shows in "Seen from your app and website". Every status is a result, never an error, and none is retried. Goals work on every plan, up to the plan's allowance.
+- **`goals().send()`** waits for the API and returns the `GoalEvent`: `getStatus()` is `GoalStatus.COUNTED`, `WAITING`, `RECEIVED` or `REFUSED` (with `getReason()`), plus `getGoalKind()` (`GoalKind.STANDARD` or `GoalKind.PAYMENT`), `getEventStatus()`, `getAttributedTo()`, …. `received` means the name isn't ticked as a goal in the dashboard yet (or the goal is archived): it is stored, not counted, and shows in Measure › Seen from your app and website. Every status is a result, never an error, and none is retried. Goals work on every plan, up to the plan's allowance.
 
 `goal()` is the only goal method: there is no separate payment method. The goal's kind (Standard or Payment) is set in the goal's settings in the dashboard, never in the call.
 
@@ -38,8 +38,7 @@ Create one client and reuse it. It is thread-safe.
 | `com.clikgate:clikgate-servlet-jakarta` | `com.clikgate.servlet.jakarta.ClikgateFilter` (Jakarta Servlet 5+) |
 | `com.clikgate:clikgate-servlet-javax` | `com.clikgate.servlet.javax.ClikgateFilter` (Servlet 3.1/4, Java EE) |
 
-
-### Match by hashed email or phone (ad networks)
+## Match by hashed email or phone (ad networks)
 
 If the business has turned on matching by hashed email or phone for an ad network destination, a goal can carry the customer's email and phone as SHA-256 hashes. `HashForAds.hash(email, phone)` normalises and hashes them on your server (pure and offline; either argument may be null): the email is trimmed and lowercased, and the phone must include its country code (`+234 803 123 4567` or `00234…`; a national number such as `0803 123 4567` is refused with `invalid_argument`). Pass the result with `.hashed(…)`, or set `hashedEmail()`, `hashedPhoneE164()` and `hashedPhoneDigits()` yourself (64 lowercase hex characters, else a local `invalid_hashed_identifier`).
 
@@ -235,8 +234,8 @@ clikgate.payments().confirm(PaymentConfirmParams.builder()
   returns `null` and sends nothing when the response isn't a transaction it recognises, and it warns
   `unrecognised_payment_response`.
 - **Exact amounts:** amounts are exact decimals. Gateway minor units (Paystack, Stripe) are divided by moving the
-  decimal point, and floats are read through their shortest text. `amount` and `amountMinor` take `BigDecimal`,
-  `long` or a decimal string.
+  decimal point, and floats are read through their shortest text. `amount` takes a `BigDecimal`, a
+  `long` or a decimal string, and `amountMinor` a `Long`.
 - **Private mode:** every confirmation field is allowed. Only `extra(...)` fields are refused.
 - **Plans:** payment goals and confirmations need Starter or above; on Free the API answers `403 plan_feature_unavailable` (`PermissionException`, `getRequiredPlan()` is `starter`).
 - **Required:** `provider` and `reference` on a Payment goal (`422 payment_goal_needs_confirmation`, with `missing`); the SDK can't check it, because the kind lives only in the goal's settings. `conversions().create(...)` on a Payment goal is the same confirmation and answers the goal event: check `isGoalEvent()` and read `asGoalEvent()`.
@@ -261,7 +260,7 @@ WebhookEvent event = Webhooks.verify(rawBody, request.getHeader("Clikgate-Signat
 ## Private mode
 
 - With `PrivateMode.AUTO` (the default), the SDK reads your organisation's setting from `GET /v1/server-sdk/config` and caches it for 10 minutes.
-- When private mode is on, only `goal`, `clickId`, `code`, `reference`, `value`, `currency`, `provider`, `isFirst`, `occurredAt` and `consent` are sent. Anything else (`metadata`, emails, customer IDs, …) is refused **before sending** with `PrivateModeFieldRejectedException`, which names the field, never its value.
+- When private mode is on, only `goal`, `clickId`, `code`, `reference`, `value`, `currency`, `provider`, `isFirst`, `occurredAt`, `consent`, `keptBy`, `browserEngine` and `platform` are sent, plus `label` (the API takes it only after "Allow labels in private mode" in Settings › Privacy & consent › Private mode) and the hashed email and phone (the API takes them only while an ad network destination matches by them). Anything else (`metadata`, emails, customer IDs, …) is refused **before sending** with `PrivateModeFieldRejectedException`, which names the field, never its value.
 - Payment confirmations (`payments()`) may send all their fields (`provider`, `reference`, `status`, `amount`, `amountMinor`, `currency`, `occurredAt`, `aliases`, `clickId`, `goal`, `test`); only `extra(...)` fields are refused.
 - References are redacted in logs. If the setting can't be loaded, the SDK assumes private mode is on.
 
@@ -323,7 +322,8 @@ class AppController {
 }
 ```
 
-- `getOrCreateReferrer(programId, customerId)` is the short form of `getOrCreateReferrer(programId, GetOrCreateReferrerParams.builder().customerId(…).displayName(…).externalCode(…).build())`. `referrer.isCreated()` is true when this call created it.
+- `getOrCreateReferrer(programId, customerId)` is the short form of `getOrCreateReferrer(programId, GetOrCreateReferrerParams.builder().customerId(…).displayName(…).externalCode(…).code(…).build())`. `referrer.isCreated()` is true when this call created it.
+- `code(…)` gives a new referrer your own referral code instead of one Clikgate makes up: 3-32 characters, letters, digits, `_` and `-`, stored as sent. It must be unique in your organisation, ignoring case. It applies only when the referrer is created; an existing referrer keeps theirs. A taken code throws `ConflictException` (`409 code_taken`), and an invalid one `InvalidRequestException` (`422 invalid_code`, or `422 reserved_link_ending` when it ends like a share link).
 - `event.asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()`, `asConversion()` and `asDeviceChange()` read `data.object` typed. Each returns `null` (`@Nullable`) when the event belongs to another family, never a wrong object. `EventType` constants are strings, so they also work with `equals` and in a `switch`.
 - Money in responses: `amountMinor` stays the wire's minor units, and `getAmount()` is the same amount as an exact `BigDecimal` in normal units (`50000` NGN is `500.00`, `1500` JPY is `1500`).
 

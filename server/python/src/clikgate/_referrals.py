@@ -32,8 +32,12 @@ def _program(program_id: str) -> str:
     return f"/v1/referral-programs/{_seg(program_id, 'program_id')}"
 
 
-def _create_req(program_id: str, customer_id: str, display_name: Optional[str], external_code: Optional[str]) -> ApiRequest:
-    body = _defined(customer_user_id=require_id(customer_id, "customer_id"), display_name=display_name, external_code=external_code)
+def _create_req(
+    program_id: str, customer_id: str, display_name: Optional[str], code: Optional[str], external_code: Optional[str]
+) -> ApiRequest:
+    body = _defined(
+        customer_user_id=require_id(customer_id, "customer_id"), display_name=display_name, code=code, external_code=external_code
+    )
     return ApiRequest("POST", f"{_program(program_id)}/referrers", body=body)
 
 
@@ -121,8 +125,8 @@ def _referrer_path(referrer_id: str, suffix: str = "") -> str:
     return f"/v1/referrers/{_seg(referrer_id, 'referrer_id')}{suffix}"
 
 
-def _update_body(display_name: Optional[str], attributes: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
-    return _defined(display_name=display_name, attributes=None if attributes is None else dict(attributes))
+def _update_body(display_name: Optional[str], external_code: Optional[str], attributes: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
+    return _defined(display_name=display_name, external_code=external_code, attributes=None if attributes is None else dict(attributes))
 
 
 class Referrals:
@@ -140,6 +144,7 @@ class Referrals:
         *,
         customer_id: str,
         display_name: Optional[str] = None,
+        code: Optional[str] = None,
         external_code: Optional[str] = None,
         request_options: Optional[RequestOptions] = None,
     ) -> ReferrerResult:
@@ -147,13 +152,19 @@ class Referrals:
 
         ``created`` is true when it was just created.
 
+        Args:
+            code: your own exact Clikgate code for a new referrer instead of a generated one (3-32 letters, digits, `-` or `_`,
+                unique in your organisation). Applied only when the referrer is created; an existing referrer keeps theirs.
+                A code already in use raises ``ConflictError`` (``code_taken``).
+            external_code: an extra code from an older referral system that keeps working alongside the Clikgate code.
+
         Example::
 
             referrer = clikgate.referrals.get_or_create_referrer("rpg_01J…", customer_id=user.id, display_name=user.first_name)
             print(referrer["code"], referrer["url"], referrer["created"])
         """
         status, data, _h = self._core.requester.request(
-            _create_req(program_id, customer_id, display_name, external_code).with_options(request_options)
+            _create_req(program_id, customer_id, display_name, code, external_code).with_options(request_options)
         )
         return to_referrer_result(data, status)
 
@@ -335,16 +346,19 @@ class Referrals:
         referrer_id: str,
         *,
         display_name: Optional[str] = None,
+        external_code: Optional[str] = None,
         attributes: Optional[Mapping[str, Any]] = None,
         request_options: Optional[RequestOptions] = None,
     ) -> Referrer:
-        """Update a referrer's display name or your own free-form ``attributes``; unset fields are left as they are.
+        """Update a referrer's display name, ``external_code`` or your own free-form ``attributes``; unset fields are left as they are.
+
+        ``external_code`` replaces the extra code from an older referral system. The Clikgate ``code`` can't be changed.
 
         Example::
 
             clikgate.referrals.update_referrer("rfr_01J…", display_name="Ada O.", attributes={"tier": "gold"})
         """
-        body = _update_body(display_name, attributes)
+        body = _update_body(display_name, external_code, attributes)
         return to_referrer(self._send(ApiRequest("PATCH", _referrer_path(referrer_id), body=body), request_options))
 
 
@@ -363,17 +377,18 @@ class AsyncReferrals:
         *,
         customer_id: str,
         display_name: Optional[str] = None,
+        code: Optional[str] = None,
         external_code: Optional[str] = None,
         request_options: Optional[RequestOptions] = None,
     ) -> ReferrerResult:
-        """Get or create the referrer for one of your customers.
+        """Get or create the referrer for one of your customers (see the sync client for ``code`` and ``external_code``).
 
         Example::
 
             referrer = await clikgate.referrals.get_or_create_referrer("rpg_01J…", customer_id=user.id)
         """
         status, data, _h = await self._core.requester.request(
-            _create_req(program_id, customer_id, display_name, external_code).with_options(request_options)
+            _create_req(program_id, customer_id, display_name, code, external_code).with_options(request_options)
         )
         return to_referrer_result(data, status)
 
@@ -555,6 +570,7 @@ class AsyncReferrals:
         referrer_id: str,
         *,
         display_name: Optional[str] = None,
+        external_code: Optional[str] = None,
         attributes: Optional[Mapping[str, Any]] = None,
         request_options: Optional[RequestOptions] = None,
     ) -> Referrer:
@@ -564,5 +580,5 @@ class AsyncReferrals:
 
             await clikgate.referrals.update_referrer("rfr_01J…", display_name="Ada O.")
         """
-        body = _update_body(display_name, attributes)
+        body = _update_body(display_name, external_code, attributes)
         return to_referrer(await self._send(ApiRequest("PATCH", _referrer_path(referrer_id), body=body), request_options))

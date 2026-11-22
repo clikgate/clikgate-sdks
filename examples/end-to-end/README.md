@@ -16,8 +16,8 @@ any of them. The full walkthrough is [Backend setup for your mobile app](https:/
 ## What each sample shows
 
 1. **Identity tokens.** Sign-up, sign-in and `GET /me` return `clikgateIdentityToken`, made with
-   `createIdentityToken(userId, appId, customerSince)`. The account's creation date is always sent, so Clikgate can tell
-   an existing customer from a new one.
+   `createIdentityToken` from the user ID and the account's creation date (`customerSince`). The date is always sent, so
+   Clikgate can tell an existing customer from a new one.
 2. **The installation header (no token needed).** The backend reads the app's `Clikgate-Installation` header with the
    SDK's framework helper and, after its own sign-in check, calls `identifyUser` with the installation, the customer ID
    and the account date. An app uses either this or the token; the samples show both.
@@ -38,7 +38,7 @@ nothing between requests). Each store's comment says which database table replac
 | `POST /auth/sign-up` | `{"email", "password"}` | `201 {"user", "accessToken", "clikgateIdentityToken"}`, `409` when the email is taken |
 | `POST /auth/sign-in` | `{"email", "password"}` | `200 {"user", "accessToken", "clikgateIdentityToken"}`, `401` for a wrong password |
 | `GET /me` | | `200 {"user", "clikgateIdentityToken"}`, `401` without a session |
-| `POST /payments/paystack/confirm` | `{"reference"}` | `200 {"status": "paid", "reference"}` |
+| `POST /payments/paystack/confirm` | `{"reference"}` | `200 {"status": "paid", "reference"}`, `402 {"error"}` when the payment didn't succeed |
 | `GET /me/referral` | | `200 {"code", "link"}` |
 | `POST /webhooks/clikgate` | the signed event | `200`, or `400 {"error"}` for a bad signature |
 
@@ -72,8 +72,8 @@ The documentation shows parts of these files. The parts are marked with `#region
 
 ## SDK versions
 
-The samples build against SDK 2.1.0 in this repository (a path, file or project reference), so they work before that
-version is published. Each sample's README says what to change at release. Two functions per sample use the typed
+The Node, Python and PHP samples build against SDK 2.1.1 and the Java and .NET samples against 2.1.0, from this
+repository (a path, file or project reference), so they work before a version is published. Each sample's README says what to change at release. Two functions per sample use the typed
 referral methods and typed webhook events of 2.1.0:
 
 - `getOrCreateReferralCode` (`get_or_create_referral_code` in Python) is one call that gets or creates

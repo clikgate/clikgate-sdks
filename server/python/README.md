@@ -152,7 +152,7 @@ print(result["accepted"], result["refused_by_reason"])  # refused rows are count
 
 ## People: identify a user and label them
 
-Link a click, an app installation or your customer ID to a person, and give them a label your team sees instead of the click ID (1-80 characters; Growth and up). From your server this is always verified. Goals take the same `label`, and `isFirst` from your server is what counts a new customer. Don't put information in labels that your customers wouldn't expect you to keep.
+Link a click, an app installation or your customer ID to a person, and give them a label your team sees instead of the click ID (1-80 characters; Growth and up). From your server this is always verified. Goals take the same `label`, and `is_first` from your server is what counts a new customer. Don't put information in labels that your customers wouldn't expect you to keep.
 
 ```python
 clikgate.identify_user(click_id=order.click_id, customer_id="user_42", label="Ada (VIP)")
@@ -217,7 +217,7 @@ MIDDLEWARE = [..., "clikgate.django.ClikgateMiddleware"]
 
 **FastAPI / Starlette:** `app.add_api_route("/cg/keep", keep_endpoint(client=clikgate), methods=["POST"])` with `from clikgate.fastapi import keep_endpoint` (Starlette: `Route("/cg/keep", keep_endpoint(client=clikgate), methods=["POST"])`).
 
-**Anything else:** `route = clikgate.click_ids.keep_route()`, then `route.handle_keep(method, headers, body)` returns `(status, headers, body)` to send as is (read at most 1025 bytes of the body).
+**Anything else:** `route = clikgate.click_ids.keep_route()`, then `route.handle_keep(method, headers, body)` returns a `KeepResponse(status, headers, body)` to send as is (read at most 1025 bytes of the body; the body it returns is always empty).
 
 Then send what you know about how it was kept with the goal. `click_ids.context(request)` returns `{"click_id", "kept_by", "browser_engine", "platform"}`; the engine and platform are worked out from the `User-Agent` in the SDK (the User-Agent itself is never sent), and all three are allowed in private mode:
 
@@ -303,7 +303,7 @@ In a serverless function, a Celery task or a management command, call `clikgate.
 ## Private mode
 
 - With `private_mode="auto"` (the default), the SDK reads your organisation's setting from `GET /v1/server-sdk/config` and caches it for 10 minutes.
-- When private mode is on, only `goal`, `click_id`, `code`, `reference`, `value`, `currency`, `is_first`, `occurred_at`, `provider` and `consent` are sent. Anything else (`metadata`, emails, customer IDs, …) is refused **before sending** with `PrivateModeFieldRejectedError`, which names the field, never its value.
+- When private mode is on, a goal sends only `goal`, `click_id`, `code`, `reference`, `value`, `currency`, `is_first`, `occurred_at`, `consent`, `provider`, `kept_by`, `browser_engine` and `platform`, plus `label` and the hashed email and phone fields when your organisation allows them in private mode. Anything else (`metadata`, emails, customer IDs, …) is refused **before sending** with `PrivateModeFieldRejectedError`, which names the field, never its value.
 - References are redacted in logs.
 - If the setting can't be loaded, the SDK assumes private mode is on.
 
@@ -338,9 +338,10 @@ for referral in clikgate.referrals.list(program_id=PROGRAM_ID, status="qualified
 clikgate.referrals.complete_step(referral_id, goal="first_order", occurred_at=order.paid_at, value=Decimal("1500.50"), currency="NGN")
 clikgate.referrals.qualify(referral_id, reason="Checked by support")   # or disqualify(...)
 jobs = clikgate.referrals.import_referrers(PROGRAM_ID, [{"customer_id": "user-42", "external_code": "ADA-OLD"}])   # batches of 1000
-clikgate.referrals.block_referrer(referrer["id"], reason="Fake installs")   # unblock_referrer, update_referrer(display_name=, attributes=)
+clikgate.referrals.block_referrer(referrer["id"], reason="Fake installs")   # unblock_referrer, update_referrer(display_name=, external_code=, attributes=)
 ```
 
+- `get_or_create_referrer` keywords: `code=` is your own Clikgate code for a new referrer instead of a generated one. It is 3-32 letters, digits, `-` or `_`, and stored exactly as you send it. It must be unique in your organisation, ignoring case: else `ConflictError` with code `code_taken` (409). A code in another format is an `InvalidRequestError` with code `invalid_code` (422), and one that ends like a share link ending is `reserved_link_ending` (422). `external_code=` (2-64 letters, digits, `-` or `_`) is an extra code from an older referral system that keeps working alongside the Clikgate code. Both apply only when the referrer is created: an existing referrer is returned unchanged. `update_referrer(referrer_id, external_code=...)` replaces the extra code later; the Clikgate `code` can't be changed.
 - Results are typed dicts with the API's keys; your customer ID is `customer_user_id`, and the SDK adds the same value as `customer_id` on referrers and on a referral's `referrer` and `referee`. `list_page(...)` returns one page; `list(...)` iterates lazily (filters `program_id`, `referrer_id`, `referee_customer_id`, `status`, `from_`, `to`, `limit`).
 - A reward side's `amount_minor` (minor units, as the API sends it) comes with `amount`, the same amount in normal units as a decimal string with the currency's decimals (`50000` NGN is `"500.00"`, `1500` JPY is `"1500"`). Clikgate never pays rewards.
 
@@ -360,13 +361,13 @@ All of it is on `AsyncClikgate` too (`await`, `async for`).
 
 ## Errors
 
-Every error extends `ClikgateError` (`code`, `http_status`, `request_id`, `param`, `type`, `raw`): `ConfigurationError`, `AuthenticationError`, `PermissionError`, `InvalidRequestError`, `PrivateModeFieldRejectedError`, `NotFoundError`, `ConflictError`, `LinkLockedError`, `IdempotencyError`, `RateLimitError` (`retry_after`), `ServerError`, `NetworkError`, `TimeoutError` and `SignatureVerificationError`. `PermissionError` and `TimeoutError` are Clikgate's own classes (import them from `clikgate`); they don't extend the built-ins of the same name.
+Every error extends `ClikgateError` (`code`, `http_status`, `request_id`, `param`, `type`, `raw`): `ConfigurationError`, `AuthenticationError`, `PermissionError`, `InvalidRequestError`, `PrivateModeFieldRejectedError`, `NotFoundError`, `ConflictError`, `LinkLockedError`, `IdempotencyError`, `RateLimitError` (`retry_after`), `ServerError`, `NetworkError`, `TimeoutError`, `SignatureVerificationError` and `ClikgateServerOnlyError`. `PermissionError` and `TimeoutError` are Clikgate's own classes (import them from `clikgate`); they don't extend the built-ins of the same name.
 
 Network errors, timeouts and HTTP 429, 500, 502, 503 and 504 are retried up to `max_retries` (3) with full-jitter backoff, honouring `Retry-After`. Each call sends a random `Idempotency-Key`, reused across its retries; the API ignores a second goal event with the same goal and reference, so a retry never double counts.
 
 ## Options
 
-`Clikgate(api_key=None, *, base_url, timeout=10.0, max_retries=3, send_mode="background", private_mode="auto", click_id_param, logger, on_error, http_client, proxy, batch_size=100, flush_interval=1.0, max_queue_size=10_000, shutdown_hooks=True, clock, random)`.
+`Clikgate(api_key=None, *, base_url, timeout=10.0, max_retries=3, send_mode="background", private_mode="auto", click_id_param, logger, on_error, http_client, proxy, batch_size=100, flush_interval=1.0, max_queue_size=10_000, shutdown_hooks=True, identity_secret, identity_secrets, clock, random)`.
 
 - `logger` is `logging.getLogger("clikgate")` by default; warnings carry `extra={"clikgate_code": …}`.
 - `proxy` takes an `http(s)://user:pass@host:port` URL, or `False` to ignore `HTTPS_PROXY`/`NO_PROXY`. `http_client` takes your own `httpx.Client` (mTLS, corporate CAs).

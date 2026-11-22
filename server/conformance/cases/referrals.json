@@ -168,6 +168,144 @@
       "now_ms": 1793016000000
     },
     {
+      "id": "referrals.get_or_create_referrer.custom_code",
+      "description": "code (your own Clikgate code for a new referrer) is sent as code, next to external_code",
+      "responses": [
+        {
+          "status": 201,
+          "json": {
+            "id": "rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR",
+            "object": "referrer",
+            "program_id": "rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP",
+            "customer_user_id": "user-42",
+            "display_name": "Ada",
+            "code": "ADA2026",
+            "external_code": "ada-old",
+            "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "url": "https://ciz.to/r/ADA42",
+            "short_url": "https://ciz.to/a",
+            "status": "active",
+            "blocked_reason": null,
+            "blocked_at": null,
+            "stats": {
+              "installs": 4,
+              "signups": 3,
+              "in_progress": 1,
+              "qualified": 2,
+              "disqualified": 1,
+              "rejected": 0,
+              "clicks": 9,
+              "referee_uninstall_rate_7d": 0.25
+            },
+            "attributes": {
+              "tier": "gold"
+            },
+            "leaderboard_opt_out": false,
+            "quality_score": null,
+            "quality_band": null,
+            "last_activity_at": "2026-10-25T10:00:00Z",
+            "created_at": "2026-10-20T09:30:00Z",
+            "updated_at": "2026-10-25T10:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "referrals.get_or_create_referrer",
+          "args": {
+            "program_id": "rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP",
+            "customer_id": "user-42",
+            "display_name": "Ada",
+            "code": "ADA2026",
+            "external_code": "ada-old"
+          },
+          "expect": {
+            "result": {
+              "id": "rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR",
+              "code": "ADA2026",
+              "external_code": "ada-old",
+              "created": true
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/referral-programs/rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP/referrers",
+            "query": {},
+            "json": {
+              "customer_user_id": "user-42",
+              "display_name": "Ada",
+              "code": "ADA2026",
+              "external_code": "ada-old"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "referrals.get_or_create_referrer.code_taken",
+      "description": "A code already used in the organisation answers 409 code_taken: a ConflictError with param code, never retried",
+      "client": {
+        "max_retries": 3
+      },
+      "responses": [
+        {
+          "status": 409,
+          "headers": {
+            "x-request-id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+          },
+          "json": {
+            "error": {
+              "type": "conflict",
+              "code": "code_taken",
+              "message": "Another referrer or link in this organisation has this code.",
+              "param": "code",
+              "request_id": "req_01JCK8Z9V7Q4M2N6P8R0S2T4RQ"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "referrals.get_or_create_referrer",
+          "args": {
+            "program_id": "rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP",
+            "customer_id": "user-42",
+            "code": "ADA2026"
+          },
+          "expect": {
+            "error": {
+              "class": "ConflictError",
+              "code": "code_taken",
+              "param": "code",
+              "http_status": 409
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "POST",
+            "path": "/v1/referral-programs/rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP/referrers",
+            "json": {
+              "customer_user_id": "user-42",
+              "code": "ADA2026"
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
       "id": "referrals.get_or_create_referrer.empty_customer_id",
       "description": "An empty customer ID is refused locally with invalid_argument",
       "steps": [
@@ -8383,6 +8521,80 @@
                 "tier": "platinum",
                 "city": "Lagos"
               }
+            }
+          }
+        ]
+      },
+      "now_ms": 1793016000000
+    },
+    {
+      "id": "referrals.update_referrer.external_code",
+      "description": "update_referrer sends external_code (the extra code from an older system); the Clikgate code stays",
+      "responses": [
+        {
+          "status": 200,
+          "json": {
+            "id": "rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR",
+            "object": "referrer",
+            "program_id": "rpg_01JCK8Z9V7Q4M2N6P8R0S2T4RP",
+            "customer_user_id": "user-42",
+            "display_name": "Ada",
+            "code": "ADA42",
+            "external_code": "ADA-NEW",
+            "link_id": "lnk_01JCK8Z9V7Q4M2N6P8R0S2T4AA",
+            "url": "https://ciz.to/r/ADA42",
+            "short_url": "https://ciz.to/a",
+            "status": "active",
+            "blocked_reason": null,
+            "blocked_at": null,
+            "stats": {
+              "installs": 4,
+              "signups": 3,
+              "in_progress": 1,
+              "qualified": 2,
+              "disqualified": 1,
+              "rejected": 0,
+              "clicks": 9,
+              "referee_uninstall_rate_7d": 0.25
+            },
+            "attributes": {
+              "tier": "gold"
+            },
+            "leaderboard_opt_out": false,
+            "quality_score": null,
+            "quality_band": null,
+            "last_activity_at": "2026-10-25T10:00:00Z",
+            "created_at": "2026-10-20T09:30:00Z",
+            "updated_at": "2026-10-25T10:00:00Z",
+            "livemode": false
+          },
+          "headers": {
+            "x-request-id": "req_ok"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "call": "referrals.update_referrer",
+          "args": {
+            "id": "rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR",
+            "external_code": "ADA-NEW"
+          },
+          "expect": {
+            "result": {
+              "code": "ADA42",
+              "external_code": "ADA-NEW"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "requests": [
+          {
+            "method": "PATCH",
+            "path": "/v1/referrers/rfr_01JCK8Z9V7Q4M2N6P8R0S2T4RR",
+            "json": {
+              "external_code": "ADA-NEW"
             }
           }
         ]

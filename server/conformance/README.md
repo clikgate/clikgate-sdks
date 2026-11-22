@@ -152,11 +152,14 @@ Result shapes are canonical JSON, the wire objects with `snake_case` keys. Typed
 | `click_ids.context` | `request: {url, headers}` | `{"click_id": id \| null, "kept_by": string \| null, "browser_engine": string, "platform": string}` (SPEC 13.1) |
 | `click_ids.keep` | `request: {method, url, headers, body}` (body a string), `days?`, `secure?`, `domain?`. Call the SDK's keep handler (`click_ids.keep_route()` or the framework equivalent) on a native request built from these; `click_id_param` comes from `client` | `{"status": int, "cache_control": "<Cache-Control>", "set_cookie": [all Set-Cookie values, in order], "body": "<response body, \"\" when empty>", "location": <Location header or null>}`, plus `"allow"` when the response has an `Allow` header |
 | `hash_for_ads` | `email?`, `phone?` (strings; absent = not given). Call the SDK's pure helper (SPEC 25) | the helper's fields in wire names: `{"hashed_email"?, "hashed_phone_e164"?, "hashed_phone_digits"?}` (only those given) |
+| `identify_user` | `click_id?`, `installation?` (the raw `Clikgate-Installation` header, or `{app_id, installation_id}` for the parsed form), `app_id?`, `installation_id?`, `customer_id?`, `label?` | the identify response (SPEC 24) |
+| `installations.parse_header` | `value` (the header value) | `{"value": {"app_id", "installation_id"} \| null}` (SPEC 24.1) |
+| `installations.from_request` | `request: {url, headers}` | as `installations.parse_header` |
 | `money.format` | `value` | `{"value": "<wire string>"}`. If your formatter has no logger, record `inexact_number` when it signals inexactness |
 | `payments.confirm` | the SPEC 22.2 fields in `snake_case` (`provider`, `reference`, `status`, `amount`, `amount_minor`, `currency`, `occurred_at`, `aliases`, `click_id`, `goal`, `test`, `extra`) + `idempotency_key?` | the `payment_confirmation` |
 | `payments.from` | `gateway` (`paystack` \| `flutterwave` \| `monnify` \| `stripe`), `response` (any JSON), `goal?`, `click_id?`. Call the matching `from_*` helper | the confirmation, or `null` |
 | `payments.build` | as `payments.from`. Call the matching pure `build_from_*` | `{"value": body \| null}` (exact) |
-| `referrals.get_or_create_referrer` | `program_id`, `customer_id`, `display_name?`, `external_code?` | the referrer + `created` (SPEC 28) |
+| `referrals.get_or_create_referrer` | `program_id`, `customer_id`, `display_name?`, `code?`, `external_code?` | the referrer + `created` (SPEC 28) |
 | `referrals.get_referrer` | `id` | the referrer |
 | `referrals.find_referrer` | `program_id`, `customer_id?`, `code?` | the referrer, or `null` on 404 |
 | `referrals.get` | `id` | the referral (reward sides gain `amount`) |
@@ -165,7 +168,7 @@ Result shapes are canonical JSON, the wire objects with `snake_case` keys. Typed
 | `referrals.qualify`, `referrals.disqualify` | `id`, `reason` | the referral |
 | `referrals.complete_step` | `id`, `goal`, `occurred_at` (missing: `invalid_argument`), `value?`, `currency?` | the referral |
 | `referrals.import_referrers` | `program_id`, `rows: [{customer_id, external_code?, display_name?}]` | the list of jobs |
-| `referrals.block_referrer` / `unblock_referrer` / `update_referrer` | `id` (+ `reason?` / `display_name?`, `attributes?`) | the referrer |
+| `referrals.block_referrer` / `unblock_referrer` / `update_referrer` | `id` (+ `reason?` / `display_name?`, `external_code?`, `attributes?`) | the referrer |
 | `privacy.create_request` | `type`, `subject_type`, `subject_id`, `app_id?` | the privacy request (SPEC 30) |
 | `privacy.get_request` | `id` | the privacy request |
 | `links.archive`, `links.pause`, `links.resume` | `id` | the link (SPEC 31) |

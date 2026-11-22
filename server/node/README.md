@@ -23,7 +23,7 @@ Create one client and reuse it. `goal()` is the one method for every goal, Stand
 
 - **`goal()`** never throws. It queues the event and sends it in the background, in batches, with safe retries.
 - **`goals.send()`** waits for the API and returns the result: `status` is a `GoalStatus` (`counted`, `waiting`,
-  `received` or `refused`), with `reason`, `goal_kind` (`GoalKind`), `attributed_to`, … `received` means the name isn't ticked as a goal in the dashboard yet (or the goal is archived): it is stored, not counted, and shows in "Seen from your app and website". Every status is a result, never an error, and none is retried. Goals work on every plan, up to the plan's allowance.
+  `received` or `refused`), with `reason`, `goal_kind` (`GoalKind`), `attributed_to`, … `received` means the name isn't ticked as a goal in the dashboard yet (or the goal is archived): it is stored, not counted, and shows in Measure › Seen from your app and website. Every status is a result, never an error, and none is retried. Goals work on every plan, up to the plan's allowance.
 
 ```ts
 import { GoalStatus } from '@clikgate/node';
@@ -301,7 +301,7 @@ In a serverless function, call `await clikgate.flush()` before returning. Altern
 ## Private mode
 
 - With `privateMode: 'auto'` (the default), the SDK reads your organisation's setting from `GET /v1/server-sdk/config` and caches it for 10 minutes.
-- When private mode is on, only `goal`, `clickId`, `code`, `reference`, `value`, `currency`, `provider`, `isFirst`, `occurredAt` and `consent` are sent. Anything else (`metadata`, emails, customer IDs, …) is refused **before sending** with `PrivateModeFieldRejectedError`, which names the field, never its value.
+- When private mode is on, only `goal`, `clickId`, `code`, `reference`, `value`, `currency`, `provider`, `isFirst`, `occurredAt`, `consent`, `keptBy`, `browserEngine` and `platform` are sent, plus `label` (the API accepts it only when an Owner allows labels in private mode) and the three hashed identifiers (accepted only while an ad network destination matches by hashed email or phone). Anything else (`metadata`, emails, customer IDs, …) is refused **before sending** with `PrivateModeFieldRejectedError`, which names the field, never its value.
 - References are redacted in logs.
 - If the setting can't be loaded, the SDK assumes private mode is on.
 
@@ -344,6 +344,13 @@ const jobs = await clikgate.referrals.importReferrers(programId, [{ customerId: 
 await clikgate.referrals.blockReferrer(referrer.id, { reason: 'Fake installs' });       // unblockReferrer, updateReferrer
 ```
 
+- `getOrCreateReferrer` options: `code` is your own Clikgate code for a new referrer instead of a generated one. It is
+  3-32 letters, digits, `-` or `_`, stored as you send it, and unique in your organisation ignoring case. A code
+  that is taken is a `ConflictError` (`409 code_taken`); a bad format is an `InvalidRequestError` (`422 invalid_code`),
+  and so is a code that ends in a hyphen and one letter, such as `ADA-w`, which is kept for share links (`422 reserved_link_ending`). `externalCode` (2-64 characters)
+  is an extra code from an older referral system that keeps working alongside the Clikgate code. Both apply only when
+  the referrer is created: an existing referrer is returned unchanged. `updateReferrer(id, { externalCode })`
+  replaces the extra code later; the Clikgate `code` can't be changed.
 - Results are typed (`Referrer`, `Referral`, `RewardInfo`, `Job`) with the API's keys. The SDK adds `customerId` next
   to `customer_user_id` on referrers and on a referral's `referrer` and `referee`.
 - Reward sides keep `amount_minor` (minor units) and gain `amount`, the same value in normal units as a decimal string
@@ -388,7 +395,7 @@ Every error extends `ClikgateError`, with `code`, `httpStatus`, `requestId` and 
 | Option | Default |
 |---|---|
 | `apiKey` | `CLIKGATE_API_KEY` |
-| `baseUrl` | `https://api.clikgate.com` |
+| `baseUrl` | `CLIKGATE_BASE_URL`, else `https://api.clikgate.com` |
 | `timeout` | 10 000 ms |
 | `maxRetries` | 3 |
 | `sendMode` | `'background'` (or `'sync'`) |
@@ -397,7 +404,7 @@ Every error extends `ClikgateError`, with `code`, `httpStatus`, `requestId` and 
 | `logger` | `console`, warnings and errors only |
 | `onError` | — (background failures) |
 | `httpClient` | built-in (a `fetch`-compatible function for mTLS or tracing) |
-| `proxy` | `HTTPS_PROXY` / `NO_PROXY` (or an explicit URL, or `false`) |
+| `proxy` | `HTTPS_PROXY` / `HTTP_PROXY` / `NO_PROXY` (or an explicit URL, or `false`) |
 | `batchSize` / `flushInterval` / `maxQueueSize` | 100 / 1000 ms / 10 000 |
 | `shutdownHooks` | `true` |
 

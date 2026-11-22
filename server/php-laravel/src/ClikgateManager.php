@@ -117,6 +117,8 @@ final class ClikgateManager
      *
      * ```php
      * $referrer = Clikgate::referrals()->getOrCreateReferrer('rpg_…', ['customerId' => (string) $user->id]);
+     * // Your own exact code for a new referrer (409 code_taken when it is used in your organisation):
+     * $referrer = Clikgate::referrals()->getOrCreateReferrer('rpg_…', ['customerId' => (string) $user->id, 'code' => 'ADA2026']);
      * ```
      */
     public function referrals(): Referrals

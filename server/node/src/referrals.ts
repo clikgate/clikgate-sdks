@@ -12,7 +12,9 @@ export interface ReferrerCreateParams {
   /** Your customer ID (sent as `customer_user_id`). */
   customerId: string;
   displayName?: string;
-  /** A code the customer already had in your own system. */
+  /** Your own exact Clikgate code for a new referrer instead of a generated one (3-32 letters, digits, `-` or `_`, unique in your organisation; `code_taken` otherwise). An existing referrer keeps theirs. */
+  code?: string;
+  /** An extra code from an older referral system that keeps working alongside the Clikgate code. */
   externalCode?: string;
 }
 
@@ -55,6 +57,8 @@ export interface ReferrerImportRow {
 /** Fields of `referrals.updateReferrer`. */
 export interface ReferrerUpdateParams {
   displayName?: string | null;
+  /** Replace the extra code from an older referral system (`null` removes it). The Clikgate `code` can't be changed. */
+  externalCode?: string | null;
   /** Your own free-form data about the referrer. */
   attributes?: Record<string, unknown> | null;
 }
@@ -74,7 +78,8 @@ export class Referrals {
 
   /**
    * Get the referrer for one of your customers in a program, creating it (with its code and link) the first time.
-   * `created` is true when it was just created.
+   * `created` is true when it was just created. `code` applies only when the referrer is created; an existing
+   * referrer is returned unchanged. A `code` already used in your organisation throws a `ConflictError` (`code_taken`).
    *
    * @example
    * const referrer = await clikgate.referrals.getOrCreateReferrer('rpg_01J…', { customerId: user.id, displayName: user.firstName });
@@ -82,7 +87,7 @@ export class Referrals {
    */
   async getOrCreateReferrer(programId: string, params: ReferrerCreateParams, requestOptions: RequestOptions = {}): Promise<ReferrerResult> {
     const program = encodePathSegment(requireId(programId, 'program_id'));
-    const body = defined({ customer_user_id: requireId(params?.customerId, 'customer_id'), display_name: params.displayName, external_code: params.externalCode });
+    const body = defined({ customer_user_id: requireId(params?.customerId, 'customer_id'), display_name: params.displayName, code: params.code, external_code: params.externalCode });
     const { status, data } = await this.call<unknown>('POST', `/v1/referral-programs/${program}/referrers`, { body }, requestOptions);
     return toReferrerResult(data, status);
   }
@@ -261,7 +266,7 @@ export class Referrals {
    * await clikgate.referrals.updateReferrer('rfr_01J…', { displayName: 'Ada O.', attributes: { tier: 'gold' } });
    */
   async updateReferrer(referrerId: string, params: ReferrerUpdateParams, requestOptions: RequestOptions = {}): Promise<Referrer> {
-    const body = defined({ display_name: params?.displayName, attributes: params?.attributes });
+    const body = defined({ display_name: params?.displayName, external_code: params?.externalCode, attributes: params?.attributes });
     const { data } = await this.call<unknown>('PATCH', `/v1/referrers/${encodePathSegment(requireId(referrerId, 'referrer_id'))}`, { body }, requestOptions);
     return toReferrer(data);
   }

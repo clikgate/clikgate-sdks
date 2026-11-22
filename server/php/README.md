@@ -21,7 +21,7 @@ $clikgate->goal('account_opened', ['clickId' => $clickId, 'reference' => 'APP-55
 Laravel: `composer require clikgate/clikgate-laravel` (provider, facade, `clikgate` middleware and queued sending). See its README.
 
 - **`goal()`** is the one method for goals and payments. It never throws: failures go to the logger and `onError`.
-- **`goals->send()`** waits for the API and returns the result (the wire JSON as an array): `status` is a `GoalStatus` value, `counted`, `waiting`, `received` or `refused` (with `reason`), plus `goal_kind`, `attributed_to`, … `received` means the name isn't ticked as a goal in the dashboard yet (or the goal is archived): it is stored, not counted, and shows in "Seen from your app and website". Every status is a result, never an error, and none is retried. Goals work on every plan, up to the plan's allowance.
+- **`goals->send()`** waits for the API and returns the result (the wire JSON as an array): `status` is a `GoalStatus` value, `counted`, `waiting`, `received` or `refused` (with `reason`), plus `goal_kind`, `attributed_to`, … `received` means the name isn't ticked as a goal in the dashboard yet (or the goal is archived): it is stored, not counted, and shows in Measure › Seen from your app and website. Every status is a result, never an error, and none is retried. Goals work on every plan, up to the plan's allowance.
 
 ```php
 use Clikgate\Enum\GoalKind;
@@ -259,7 +259,7 @@ if (EventType::GoalCompleted === $event->type) {
 ## Private mode
 
 - With `'privateMode' => 'auto'` (the default), the SDK reads your organisation's setting from `GET /v1/server-sdk/config` and caches it for 10 minutes (per PHP process).
-- When private mode is on, only `goal`, `clickId`, `code`, `reference`, `value`, `currency`, `isFirst`, `occurredAt`, `provider` and `consent` are sent. Anything else (`metadata`, emails, customer IDs, …) is refused **before sending** with `PrivateModeFieldRejectedException`, which names the field, never its value.
+- When private mode is on, only `goal`, `clickId`, `code`, `reference`, `value`, `currency`, `isFirst`, `occurredAt`, `provider`, `consent`, `keptBy`, `browserEngine` and `platform` are sent, plus `label` (the API accepts it only with "Allow labels in private mode" in Settings › Privacy & consent › Private mode) and the hashed email and phone (only while an ad network destination matches by them). Anything else (`metadata`, emails, customer IDs, …) is refused **before sending** with `PrivateModeFieldRejectedException`, which names the field, never its value.
 - Payment confirmations allow their own fields (see Payments). References are redacted in logs. If the setting can't be loaded, the SDK assumes private mode is on.
 
 ## Links
@@ -302,6 +302,7 @@ $redemption = $clikgate->codes->redeem(['externalId' => 'POS-991', 'code' => 'AD
 ```
 
 - Reward amounts: `amountMinor` is the integer the API sends (minor units); `amount` is the same amount in normal units as an exact decimal string with the currency's decimals (`50000` NGN is `'500.00'`, `1500` JPY is `'1500'`).
+- `getOrCreateReferrer()` params: `code` is your own exact Clikgate code for a new referrer instead of a generated one (3-32 letters, digits, `-` or `_`, stored exactly as you send it and unique in your organisation ignoring case: a taken code throws `ConflictException` `code_taken` (409), another format `InvalidRequestException` `invalid_code` (422), and a code that ends like a share link ending, a hyphen and one letter such as `ADA-w`, `InvalidRequestException` `reserved_link_ending` (422)); `externalCode` (2-64 characters) is an extra code from an older referral system that keeps working alongside the Clikgate code. Both apply only when the referrer is created: an existing referrer is returned unchanged. `updateReferrer($id, ['externalCode' => …])` replaces the extra code later; the Clikgate `code` can't be changed. Laravel: `Clikgate::referrals()->getOrCreateReferrer(...)` takes the same params.
 - `findReferrer()` returns `null` only for a 404; every other error throws. The installs lookups currently need `appId`.
 
 ## Errors
@@ -312,7 +313,7 @@ Network errors, timeouts and HTTP 429, 500, 502, 503 and 504 are retried up to `
 
 ## Options
 
-`new Clikgate([...])` takes `apiKey`, `baseUrl`, `timeout` (seconds, default 3), `maxRetries`, `sendMode`, `privateMode`, `clickIdParam`, `logger` (PSR-3), `onError`, `httpClient` (PSR-18), `proxy` (`http(s)://user:pass@host:port` or `false`), `batchSize`, `maxQueueSize` and `shutdownHooks`. An unknown option throws `ConfigurationException`.
+`new Clikgate([...])` takes `apiKey`, `baseUrl`, `timeout` (seconds, default 3), `maxRetries`, `sendMode`, `privateMode`, `clickIdParam`, `logger` (PSR-3), `onError`, `httpClient` (PSR-18), `proxy` (`http(s)://user:pass@host:port` or `false`), `batchSize` (default 100), `flushInterval` (accepted so options match the other SDKs; PHP has no timers, so batches are sent by size, `flush()` and at shutdown), `maxQueueSize` (default 10,000), `shutdownHooks`, and `identitySecret` / `identitySecrets` (see Identify your users; by default they are read from `CLIKGATE_IDENTITY_SECRET` / `CLIKGATE_IDENTITY_SECRETS`). An unknown option throws `ConfigurationException`.
 
 - With the built-in transport (ext-curl), `timeout` and `proxy` apply, and libcurl reads `https_proxy`/`HTTPS_PROXY`/`NO_PROXY`.
 - With your own PSR-18 client, configure its timeout and proxy on that client.
