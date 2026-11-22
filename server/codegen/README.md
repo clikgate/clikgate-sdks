@@ -1,6 +1,7 @@
 # Generated API layer (`clikgate.api.*`)
 
-One command regenerates every SDK's `api.*` layer from the backend's `openapi.json`:
+One command regenerates every SDK's `api.*` layer, and the shared enums (`GoalKind`, `GoalStatus`, `Provider`), from the
+backend's public OpenAPI document:
 
 ```bash
 node server/codegen/generate.mjs --from <path to the backend repository>   # copy docs/openapi-public.json, then regenerate
@@ -9,7 +10,7 @@ node server/codegen/generate.mjs --check                  # CI drift check (exit
 node server/codegen/generate.mjs --lang node              # one language
 ```
 
-You need Java 11+. The pinned OpenAPI Generator JAR is downloaded to `.cache/` once and verified
+You need Java 11+. The pinned OpenAPI Generator JAR is downloaded to `server/codegen/.cache/` once and verified
 against the SHA-256 in `generator.json`.
 
 ## The pipeline
@@ -24,9 +25,11 @@ against the SHA-256 in `generator.json`.
 
    What was skipped, and why, is in `server/openapi/filter-report.txt`.
 3. **Generate.** OpenAPI Generator runs with **custom templates only** (`templates/<lang>/`). The generated methods call the SDK's own request function, so the transport, User-Agent, retries, idempotency keys, typed errors and logging are the hand-written ones (SPEC section 16).
-4. **Post-process.** For Node, the per-model and per-API files become one module, `server/node/src/generated/index.ts`, ending with the `ApiClient` aggregator. Resource names come from the tags, through `filter.mjs` `resourceName`.
+4. **Post-process.** `POSTPROCESS.<lang>` in `generate.mjs` maps the raw output to the files that are committed, each with an `ApiClient` aggregator. Node gets one module, `server/node/src/generated/index.ts`. PHP, Java and .NET get one class per resource (`server/php/src/Generated`, `com.clikgate.api`, `server/dotnet/src/Clikgate/Api`), and Python gets `ApiClient` and `AsyncApiClient` in `server/python/src/clikgate/api.py`. Resource names come from the tags, through `filter.mjs` `resourceName`. The shared enums are written from the document directly, without the generator.
 
-## Adding a language (Python, PHP, Java, .NET)
+## Adding a language
+
+All five languages (Node, Python, PHP, Java, .NET) are configured. To add another:
 
 1. Add an entry under `languages` in `generator.json`: `generator` (e.g. `python`, `php`, `java`, `csharp`), `templates`, `output`, `type_mappings` and `additional_properties`.
 2. Write `templates/<lang>/` so models are plain typed data and every operation calls the SDK's request function. For a starting point, export the stock templates with `java -jar .cache/openapi-generator-cli-*.jar author template -g <generator> -o /tmp/t`.
@@ -40,7 +43,7 @@ against the SHA-256 in `generator.json`.
 |---|---|---|---|
 | Licence and cost | Apache 2.0, free, self-hosted | MIT, free | Commercial SaaS; the free tier is 1 SDK and 50 methods; hooks need Business or Enterprise |
 | Our 5 languages | yes (`typescript-fetch`, `python`, `php`, `java`, `csharp`), with Java 8 and .NET Standard 2.0 options | yes, but TypeScript is still "preview" | yes |
-| Runtime dependencies | **none**, with custom templates | **required** runtime packages (`@microsoft/kiota-abstractions`, HTTP and serialisation libraries per language). That breaks the SDK spec's dependency budget ("Node zero, Python httpx only, Java Jackson only, .NET none") | Zod and decimal.js in TypeScript, and its own runtime per language |
+| Runtime dependencies | **none**, with custom templates | **required** runtime packages (`@microsoft/kiota-abstractions`, HTTP and serialisation libraries per language). That breaks the SDK spec's dependency budget (SPEC section 1: Node none, Python `httpx` only, PHP PSR interfaces, Java Jackson only, .NET none on .NET 8) | Zod and decimal.js in TypeScript, and its own runtime per language |
 | Using our transport, retries and errors | full control: the templates call our request function | through Kiota's `RequestAdapter` abstraction (an extra layer per language) | through hooks (`beforeRequest`, `afterError`) on top of its own HTTP layer |
 | OpenAPI 3.1 | beta, so we down-convert to 3.0 in `filter.mjs` | supported since 1.24 | supported |
 | Runs offline in CI, reproducibly | yes: a pinned JAR with a checked SHA-256 | yes | needs the Speakeasy CLI and an account |
