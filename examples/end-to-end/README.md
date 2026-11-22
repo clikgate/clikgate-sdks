@@ -72,8 +72,8 @@ The documentation shows parts of these files. The parts are marked with `#region
 
 ## SDK versions
 
-The samples build against SDK 2.1.1 in this repository (a path, file or project reference), so they work before that
-version is published. Each sample's README says what to change at release. Two functions per sample use the typed
+The Node, Python and PHP samples build against SDK 2.1.1 and the Java and .NET samples against 2.1.0, from this
+repository (a path, file or project reference), so they work before a version is published. Each sample's README says what to change at release. Two functions per sample use the typed
 referral methods and typed webhook events of 2.1.0:
 
 - `getOrCreateReferralCode` (`get_or_create_referral_code` in Python) is one call that gets or creates
