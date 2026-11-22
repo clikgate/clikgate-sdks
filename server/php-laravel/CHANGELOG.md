@@ -9,7 +9,7 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 - **Added:** `Clikgate::referrals()->getOrCreateReferrer($programId, ['customerId' => …, 'code' => …])` passes `code` through: your own exact Clikgate code for a new referrer (see `clikgate/clikgate-php` 2.1.1).
 - Requires `clikgate/clikgate-php` 2.1.1.
 
-## [2.1.0] - unreleased
+## [2.1.0] - 2026-11-21
 
 ### Typed models
 

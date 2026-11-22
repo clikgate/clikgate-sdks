@@ -10,7 +10,7 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 - **Added:** `$clikgate->referrals->getOrCreateReferrer($programId, ['customerId' => …, 'code' => …])` takes `code`, sent as `code`: your own exact Clikgate code for a new referrer instead of a generated one. The API needs 3-32 letters, digits, `-` or `_` (else `invalid_code`), unique in your organisation whatever the case; a code in use throws `ConflictException` with error code `code_taken`. It applies only when the referrer is created: an existing referrer is returned unchanged. `externalCode` stays an extra code from an older referral system that keeps working alongside the Clikgate code.
 - **Added:** `$clikgate->referrals->updateReferrer($referrerId, ['externalCode' => …])` replaces that extra code (`null` removes it), as the Java and .NET SDKs already did. The Clikgate `code` can't be changed after creation.
 
-## [2.1.0] - unreleased
+## [2.1.0] - 2026-11-21
 
 ### Typed models for referrals, webhooks, privacy, people, installs and codes
 

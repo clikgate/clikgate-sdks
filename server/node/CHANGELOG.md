@@ -10,7 +10,7 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 - **Added:** `referrals.getOrCreateReferrer(programId, { customerId, displayName?, code?, externalCode? })` takes `code`, sent as `code`: your own exact Clikgate code for a new referrer instead of a generated one. The API needs 3-32 letters, digits, `-` or `_` (else `invalid_code`), unique in your organisation whatever the case; a code in use is a `ConflictError` with code `code_taken`. It applies only when the referrer is created: an existing referrer is returned unchanged. `externalCode` stays an extra code from an older referral system that keeps working alongside the Clikgate code.
 - **Added:** `referrals.updateReferrer(referrerId, { externalCode })` replaces that extra code (`null` removes it), as the Java and .NET SDKs already did. The Clikgate `code` can't be changed after creation.
 
-## [2.1.0] - unreleased
+## [2.1.0] - 2026-11-21
 
 ### Typed referrals, webhook events, privacy, people, installs and codes
 

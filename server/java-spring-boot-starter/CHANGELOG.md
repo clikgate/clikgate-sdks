@@ -2,7 +2,7 @@
 
 All notable changes to these artifacts, which are released together. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the artifacts use [semantic versioning](https://semver.org/). Deprecations are announced at least 6 months ahead, and Java versions are dropped only after their end of life.
 
-## [2.1.0] - unreleased
+## [2.1.0] - 2026-11-21
 
 ### A typed surface
 
