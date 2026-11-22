@@ -313,7 +313,7 @@ Network errors, timeouts and HTTP 429, 500, 502, 503 and 504 are retried up to `
 
 ## Options
 
-`new Clikgate([...])` takes `apiKey`, `baseUrl`, `timeout` (seconds, default 3), `maxRetries`, `sendMode`, `privateMode`, `clickIdParam`, `logger` (PSR-3), `onError`, `httpClient` (PSR-18), `proxy` (`http(s)://user:pass@host:port` or `false`), `batchSize`, `maxQueueSize` and `shutdownHooks`. An unknown option throws `ConfigurationException`.
+`new Clikgate([...])` takes `apiKey`, `baseUrl`, `timeout` (seconds, default 3), `maxRetries`, `sendMode`, `privateMode`, `clickIdParam`, `logger` (PSR-3), `onError`, `httpClient` (PSR-18), `proxy` (`http(s)://user:pass@host:port` or `false`), `batchSize` (default 100), `flushInterval` (accepted so options match the other SDKs; PHP has no timers, so batches are sent by size, `flush()` and at shutdown), `maxQueueSize` (default 10,000), `shutdownHooks`, and `identitySecret` / `identitySecrets` (see Identify your users; by default they are read from `CLIKGATE_IDENTITY_SECRET` / `CLIKGATE_IDENTITY_SECRETS`). An unknown option throws `ConfigurationException`.
 
 - With the built-in transport (ext-curl), `timeout` and `proxy` apply, and libcurl reads `https_proxy`/`HTTPS_PROXY`/`NO_PROXY`.
 - With your own PSR-18 client, configure its timeout and proxy on that client.

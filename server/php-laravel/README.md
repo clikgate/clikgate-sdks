@@ -48,6 +48,7 @@ Clikgate::payments()->confirm(['provider' => Provider::Paystack, 'reference' => 
 
 // 5. Webhooks: the raw body, then the typed object
 Route::post('/webhooks/clikgate', function (Request $request) {
+    // config/services.php: 'clikgate' => ['webhook_secret' => env('CLIKGATE_WEBHOOK_SECRET')] (the secret from Developers › Webhooks)
     $event = Clikgate::verifyWebhook($request->getContent(), $request->header('Clikgate-Signature'), (string) config('services.clikgate.webhook_secret'));
     $referral = $event->asReferral();   // null for other event types
     if (null !== $referral && EventType::ReferralQualified === $event->type) {
@@ -141,6 +142,7 @@ Set `CLIKGATE_QUEUE=redis` (any queue connection) and, optionally, `CLIKGATE_QUE
 - `Clikgate::payments()->fromPaystack($verifyResponse)` (and `fromFlutterwave`, `fromMonnify`, `fromStripe`, `confirm([...])`): confirm a payment **right after your own verification with the gateway**, never with data from the browser or the app (see the PHP SDK's Payments section).
 - `Clikgate::goal('order_paid', ['reference' => 'T123456', 'provider' => Provider::Paystack])` reports a payment on a Payment goal; results carry `status` (`GoalStatus`: `counted`, `waiting`, `received`, `refused`). See the PHP SDK's Payment goals section.
 - `Clikgate::goals()->send(…)`, `Clikgate::links()`, `Clikgate::clickIds()` and `Clikgate::api()`. Link methods return typed models (`$link->shortUrl`) that keep array access (`$link['short_url']`).
+- `Clikgate::referrals()->getOrCreateReferrer('rpg_01J…', ['customerId' => $customerId, 'code' => 'ADA2024'])` creates the user's referrer with your own code instead of a generated one (2.1.1 or newer; 3-32 letters, digits, `-` or `_`, unique in your organisation, else a `ConflictException` with code `code_taken`). It applies only when the referrer is created: later calls for the same user return the same referrer and code. `externalCode` keeps a code from an older referral system working alongside it.
 - `Clikgate::referrals()`, `Clikgate::privacy()`, `Clikgate::people()`, `Clikgate::installs()` and `Clikgate::codes()`: typed resources (see the PHP SDK's "Referrals, privacy, people, installs and codes" section).
 - `Clikgate::verifyWebhook($request->getContent(), $request->header('Clikgate-Signature'), $secret)` returns a `Clikgate\Model\WebhookEvent`: `asReferral()`, `asReferrer()`, `asGoalEvent()`, `asInstall()`, `asPayment()`, `asConversion()`, `asDeviceChange()`; compare `$event->type` with the `EventType` string constants; `$event['type']` keeps working.
 - `app(\Clikgate\Clikgate::class)` gives the client itself.
